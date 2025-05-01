@@ -1,0 +1,342 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', 'Cairo', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* RTL Support */
+  html[dir="rtl"] body {
+    font-family: 'Cairo', 'Inter', sans-serif;
+  }
+  
+  /* Make sure images behave responsively */
+  img {
+    @apply max-w-full h-auto;
+  }
+  
+  /* Improve text readability on small screens */
+  @media (max-width: 640px) {
+    h1 {
+      @apply text-2xl;
+    }
+    h2 {
+      @apply text-xl;
+    }
+    h3 {
+      @apply text-lg;
+    }
+    p, li, a {
+      @apply text-sm;
+    }
+  }
+}
+
+@layer components {
+  .glass-morphism {
+    @apply backdrop-blur-md bg-white/20 dark:bg-black/20 border border-white/10 dark:border-white/5 shadow-lg;
+  }
+
+  .neo-card {
+    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-blue text-white hover:bg-blue-light transition-colors duration-300 px-6 py-2 rounded-md font-medium shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-blue hover:bg-secondary/80 transition-colors duration-300 px-6 py-2 rounded-md font-medium shadow-sm;
+  }
+
+  .btn-success {
+    @apply bg-green text-white hover:bg-green-light transition-colors duration-300 px-6 py-2 rounded-md font-medium shadow-sm;
+  }
+
+  .heading-xl {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .heading-lg {
+    @apply text-3xl md:text-4xl font-bold tracking-tight;
+  }
+
+  .heading-md {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+
+  .heading-sm {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+  }
+
+  .paragraph {
+    @apply text-base text-gray-600 dark:text-gray-300;
+  }
+  
+  /* Responsive utilities */
+  .responsive-container {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
+  
+  .responsive-flex {
+    @apply flex flex-col md:flex-row items-start md:items-center;
+  }
+  
+  .mobile-menu {
+    @apply fixed inset-0 z-50 bg-white dark:bg-gray-900 md:hidden;
+  }
+  
+  .chat-message {
+    @apply max-w-[85%] sm:max-w-[75%] md:max-w-[65%];
+  }
+}
+
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Cool focus effect for inputs */
+input:focus, 
+textarea:focus, 
+select:focus {
+  @apply outline-none ring-2 ring-blue/50 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 transition-all duration-200;
+}
+
+/* Smooth transition for dark mode */
+/* Add this to your existing CSS */
+.dark-theme-transition,
+.dark-theme-transition * {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease, 
+              fill 0.3s ease, 
+              stroke 0.3s ease !important;
+}
+
+/* Override any existing dark mode transitions */
+.dark-mode-transition {
+  transition: none !important;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  .chat-container {
+    @apply h-[calc(100vh-4rem)];
+  }
+  
+  .message-input {
+    @apply p-2;
+  }
+  
+  .message-actions {
+    @apply space-x-1;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .chat-container {
+    @apply h-[calc(100vh-5rem)];
+  }
+}
+
+/* Improved scrollbar styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 20px;
+}
+
+/* Better touch interactions on mobile */
+@media (hover: none) {
+  .hover\:bg-gray-50:hover {
+    @apply active:bg-gray-50;
+  }
+  
+  .hover\:bg-blue-600:hover {
+    @apply active:bg-blue-600;
+  }
+}
+
+/* Improved accessibility */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+.focus-visible\:ring:focus-visible {
+  @apply ring-2 ring-blue ring-offset-2 outline-none;
+}
+
+/* Chat message animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animate-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Loading animations */
+.loading-dot {
+  @apply w-2 h-2 bg-gray-400 rounded-full;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { 
+    transform: scale(0);
+  } 
+  40% { 
+    transform: scale(1.0);
+  }
+}
+
+.category-swiper {
+  padding: 1.5rem 0.5rem !important;
+}
+
+.category-swiper .swiper-button-next,
+.category-swiper .swiper-button-prev {
+  color: #3b82f6;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+}
+
+.category-swiper .swiper-button-next:after,
+.category-swiper .swiper-button-prev:after {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.dark .category-swiper .swiper-button-next,
+.dark .category-swiper .swiper-button-prev {
+  background: rgba(31, 41, 55, 0.8);
+  color: #60a5fa;
+}
+
+.category-swiper .swiper-pagination-bullet {
+  background: #3b82f6;
+}
+
+.dark .category-swiper .swiper-pagination-bullet {
+  background: #60a5fa;
+}
+
