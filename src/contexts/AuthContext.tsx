@@ -30,12 +30,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const validateToken = async () => {
     try {
-      await authService.validateToken(token!);
-      setIsAuthenticated(true);
+      const isValid = await authService.validateToken();
+      if (isValid) {
+        setIsAuthenticated(true);
+        const user = authService.getCurrentUser();
+        setUser(user);
+      } else {
+        setIsAuthenticated(false);
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     } catch (error) {
       setIsAuthenticated(false);
       setToken(null);
+      setUser(null);
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
   };
 
@@ -43,7 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await authService.login(data);
     setToken(response.token);
     setUser(response.user);
-    localStorage.setItem('token', response.token);
     setIsAuthenticated(true);
   };
 
@@ -58,17 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
   };
 
   const changePassword = async (data: ChangePasswordData) => {
     if (!token) throw new Error('Not authenticated');
-    await authService.changePassword(data, token);
+    await authService.changePassword(data);
   };
 
   const forgotPassword = async (email: string) => {
-    if (!token) throw new Error('Not authenticated');
-    await authService.forgotPassword(email, token);
+    await authService.forgotPassword(email);
   };
 
   const confirmEmail = async (data: ConfirmEmailData) => {
@@ -76,8 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const sendEmailConfirmation = async (email: string) => {
-    if (!token) throw new Error('Not authenticated');
-    await authService.sendEmailConfirmation(email, token);
+    await authService.sendEmailConfirmation(email);
   };
 
   return (

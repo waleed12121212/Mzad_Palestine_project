@@ -1,14 +1,14 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuctionDetails from "./pages/AuctionDetails";
-import Auth from "./pages/Auth";
+import { AuthPage } from "./pages/AuthPage";
 import Categories from "./pages/Categories";
 import Profile from "./pages/Profile";
 import ActiveAuctions from "./pages/ActiveAuctions";
@@ -27,6 +27,8 @@ import Checkout from "./pages/Checkout";
 import AIPriceGuide from "./pages/AIPriceGuide";
 import ProductRecommendation from "./pages/ProductRecommendation";
 import SellerProfile from "./pages/SellerProfile";
+import { LogoutHandler } from "./components/auth/LogoutHandler";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -66,38 +68,47 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auctions" element={<ActiveAuctions />} />
-            <Route path="/auction/:id" element={<AuctionDetails />} />
-            <Route path="/buy-now" element={<BuyNow />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/:category" element={<Categories />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/create-auction" element={<CreateAuction />} />
-            <Route path="/sell-product" element={<SellProduct />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/chat/:id" element={<Chat />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/ai-price-guide" element={<AIPriceGuide />} />
-            <Route path="/product-recommendation" element={<ProductRecommendation />} />
-            <Route path="/seller/:id" element={<SellerProfile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auctions" element={<ActiveAuctions />} />
+              <Route path="/auction/:id" element={<AuctionDetails />} />
+              <Route path="/buy-now" element={<BuyNow />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              
+              {/* Auth Routes */}
+              <Route path="/auth/*" element={<AuthPage />} />
+              <Route path="/logout" element={<LogoutHandler />} />
+              
+              {/* Protected Routes */}
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/create-auction" element={<ProtectedRoute><CreateAuction /></ProtectedRoute>} />
+              <Route path="/sell-product" element={<ProtectedRoute><SellProduct /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              
+              {/* Public Routes */}
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/categories/:category" element={<Categories />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/ai-price-guide" element={<AIPriceGuide />} />
+              <Route path="/product-recommendation" element={<ProductRecommendation />} />
+              <Route path="/seller/:id" element={<SellerProfile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
