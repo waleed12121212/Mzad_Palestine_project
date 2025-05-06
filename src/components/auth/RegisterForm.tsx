@@ -76,7 +76,7 @@ export const RegisterForm: React.FC = () => {
         description: "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني"
       });
       
-      navigate('/auth/login');
+      navigate('/auth/confirm-email');
     } catch (error: any) {
       toast({
         title: "خطأ في التسجيل",
