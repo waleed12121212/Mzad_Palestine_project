@@ -305,6 +305,8 @@ const Index = () => {
   const featuredAuctions = auctions.filter(auction => auction.isPopular);
   const filteredAuctions = getFilteredAuctions();
 
+  console.log("user from AuthContext:", user);
+
   return (
     <PageWrapper>
       <section className="pt-28 pb-16 relative bg-gradient-to-b from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent dark-mode-transition">

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Package, PlusCircle, User } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,7 +6,7 @@ interface UserQuickPanelProps {
   userName?: string;
 }
 
-const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName = "وليد دويكات" }) => {
+const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName = "المستخدم" }) => {
   return (
     <div className="flex flex-wrap justify-end gap-4 mb-6 rtl">
       <Link 

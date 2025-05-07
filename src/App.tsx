@@ -29,6 +29,7 @@ import ProductRecommendation from "./pages/ProductRecommendation";
 import SellerProfile from "./pages/SellerProfile";
 import { LogoutHandler } from "./components/auth/LogoutHandler";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import UserManagement from "./pages/Admin/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,13 @@ function App() {
               <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/users" element={
+                <ProtectedRoute adminOnly>
+                  <UserManagement />
+                </ProtectedRoute>
+              } />
               
               {/* Public Routes */}
               <Route path="/categories" element={<Categories />} />
