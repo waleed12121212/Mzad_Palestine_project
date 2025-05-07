@@ -25,12 +25,14 @@ import {
   Utensils 
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
+import { useAuth } from "../contexts/AuthContext";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -307,7 +309,7 @@ const Index = () => {
     <PageWrapper>
       <section className="pt-28 pb-16 relative bg-gradient-to-b from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent dark-mode-transition">
         <div className="container mx-auto px-4">
-          <UserQuickPanel />
+          <UserQuickPanel userName={user?.username || undefined} />
           
           <div className="mb-4 rtl text-right">
             <span className="text-sm font-medium text-blue dark:text-blue-light">طريقة جديدة للمزايدة</span>
@@ -589,7 +591,7 @@ const Index = () => {
             <HowItWorksCard
               number={3}
               title="قدم عرضك"
-              description="ضع مزايدتك بسهولة وتابع حالة المزاد في الو��ت الحقيقي"
+              description="ضع مزايدتك بسهولة وتابع حالة المزاد في الوقت الحقيقي"
               icon={<ArrowRight className="h-7 w-7" />}
             />
             <HowItWorksCard
