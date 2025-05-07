@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../ui/use-toast';
 
@@ -10,14 +10,13 @@ export const ChangePasswordForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
-    new: false,
-    confirm: false
+    new: false
   });
   
   const [formData, setFormData] = useState({
+    email: '',
     currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: ''
+    newPassword: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,7 +27,7 @@ export const ChangePasswordForm: React.FC = () => {
     }));
   };
 
-  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
+  const togglePasswordVisibility = (field: 'current' | 'new') => {
     setShowPasswords(prev => ({
       ...prev,
       [field]: !prev[field]
@@ -36,19 +35,10 @@ export const ChangePasswordForm: React.FC = () => {
   };
 
   const validateForm = () => {
-    if (!formData.currentPassword || !formData.newPassword || !formData.confirmNewPassword) {
+    if (!formData.email || !formData.currentPassword || !formData.newPassword) {
       toast({
         title: "خطأ",
-        description: "الرجاء إدخال جميع كلمات المرور",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (formData.newPassword !== formData.confirmNewPassword) {
-      toast({
-        title: "خطأ",
-        description: "كلمة المرور الجديدة غير متطابقة",
+        description: "الرجاء إدخال جميع البيانات المطلوبة",
         variant: "destructive"
       });
       return false;
@@ -83,8 +73,8 @@ export const ChangePasswordForm: React.FC = () => {
       navigate('/auth/login');
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
+        title: "خطأ في تغيير كلمة المرور",
+        description: error.message || "حدث خطأ أثناء تغيير كلمة المرور",
         variant: "destructive"
       });
     } finally {
@@ -97,11 +87,30 @@ export const ChangePasswordForm: React.FC = () => {
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">تغيير كلمة المرور</h2>
         <p className="text-gray-600 dark:text-gray-300">
-          قم بإدخال كلمة المرور الحالية وكلمة المرور الجديدة
+          قم بإدخال بريدك الإلكتروني وكلمة المرور الحالية والجديدة
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-2">
+            البريد الإلكتروني
+          </label>
+          <div className="relative">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+              placeholder="your.email@example.com"
+              disabled={loading}
+            />
+            <Mail className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+
         <div>
           <label htmlFor="currentPassword" className="block text-sm font-medium mb-2">
             كلمة المرور الحالية
@@ -152,33 +161,6 @@ export const ChangePasswordForm: React.FC = () => {
               disabled={loading}
             >
               {showPasswords.new ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="confirmNewPassword" className="block text-sm font-medium mb-2">
-            تأكيد كلمة المرور الجديدة
-          </label>
-          <div className="relative">
-            <input
-              id="confirmNewPassword"
-              name="confirmNewPassword"
-              type={showPasswords.confirm ? "text" : "password"}
-              value={formData.confirmNewPassword}
-              onChange={handleChange}
-              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-              placeholder="●●●●●●●●"
-              disabled={loading}
-            />
-            <Lock className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
-            <button
-              type="button"
-              onClick={() => togglePasswordVisibility('confirm')}
-              className="absolute top-1/2 transform -translate-y-1/2 left-4 text-gray-400"
-              disabled={loading}
-            >
-              {showPasswords.confirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
         </div>

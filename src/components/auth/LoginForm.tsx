@@ -45,6 +45,7 @@ export const LoginForm: React.FC = () => {
     try {
       await login(formData);
       
+      // Only show success message and navigate after successful login
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في مزاد فلسطين"
@@ -54,9 +55,10 @@ export const LoginForm: React.FC = () => {
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from);
     } catch (error: any) {
+      // Show the specific error message from the API if available
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: error.response?.data?.message || "خطأ في البريد الإلكتروني أو كلمة المرور",
+        description: error.message || "خطأ في البريد الإلكتروني أو كلمة المرور",
         variant: "destructive"
       });
     } finally {
