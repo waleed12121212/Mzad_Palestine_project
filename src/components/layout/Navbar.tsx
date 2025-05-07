@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Bell, Menu, X, Heart, MessageCircle, ShoppingCart, PlusCircle } from "lucide-react";
 import DarkModeToggle from "../ui/DarkModeToggle";
+import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,6 +12,7 @@ const Navbar: React.FC = () => {
   const [lang, setLang] = useState<"ar" | "en">("ar");
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Update document direction based on language
   useEffect(() => {
@@ -145,9 +146,15 @@ const Navbar: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-1">
-              <Link to="/auth" className="btn-primary">
-                {lang === "ar" ? "تسجيل الدخول" : "Login"}
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/logout" className="btn-primary">
+                  {lang === "ar" ? "تسجيل الخروج" : "Logout"}
+                </Link>
+              ) : (
+                <Link to="/auth" className="btn-primary">
+                  {lang === "ar" ? "تسجيل الدخول" : "Login"}
+                </Link>
+              )}
             </div>
           </div>
 
@@ -221,9 +228,17 @@ const Navbar: React.FC = () => {
             </nav>
 
             <div className="flex gap-2 mt-6">
-              <Link to="/auth" className="flex-1 btn-primary">
-                {lang === "ar" ? "تسجيل الدخول" : "Login"}
-              </Link>
+              <div className="flex items-center gap-1">
+                {isAuthenticated ? (
+                  <Link to="/logout" className="btn-primary">
+                    {lang === "ar" ? "تسجيل الخروج" : "Logout"}
+                  </Link>
+                ) : (
+                  <Link to="/auth" className="btn-primary">
+                    {lang === "ar" ? "تسجيل الدخول" : "Login"}
+                  </Link>
+                )}
+              </div>
               <button
                 onClick={toggleLanguage}
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium border border-gray-200 dark:border-gray-700"

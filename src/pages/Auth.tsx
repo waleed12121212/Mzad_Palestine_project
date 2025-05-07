@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, User, Phone, ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -23,6 +23,7 @@ const Auth = () => {
   const [userType, setUserType] = useState<"buyer" | "seller">("buyer");
   
   const { login } = useAuth();
+  const navigate = useNavigate();
   
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,9 @@ const Auth = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحباً بك في مزاد فلسطين"
       });
-      // يمكنك إعادة التوجيه هنا إذا أردت
+      setTimeout(() => {
+        window.location.reload();
+      }, 700); // إعادة تحميل الصفحة بعد النجاح
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",

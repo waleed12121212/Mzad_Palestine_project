@@ -10,7 +10,6 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (data: ChangePasswordData) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
   confirmEmail: (data: ConfirmEmailData) => Promise<void>;
   sendEmailConfirmation: (email: string) => Promise<void>;
 }
@@ -18,38 +17,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (token) {
-      validateToken();
-    }
-  }, [token]);
-
-  const validateToken = async () => {
-    try {
-      const isValid = await authService.validateToken();
-      if (isValid) {
-        setIsAuthenticated(true);
-        const user = authService.getCurrentUser();
-        setUser(user);
-      } else {
-        setIsAuthenticated(false);
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
-    } catch (error) {
-      setIsAuthenticated(false);
-      setToken(null);
-      setUser(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
-  };
 
   const login = async (data: { email: string; password: string }) => {
     const response = await authService.login(data);
@@ -64,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     if (token) {
-      await authService.logout(token);
+      await authService.logout();
     }
     setToken(null);
     setUser(null);
@@ -76,10 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const changePassword = async (data: ChangePasswordData) => {
     if (!token) throw new Error('Not authenticated');
     await authService.changePassword(data);
-  };
-
-  const forgotPassword = async (email: string) => {
-    await authService.forgotPassword(email);
   };
 
   const confirmEmail = async (data: ConfirmEmailData) => {
@@ -100,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         changePassword,
-        forgotPassword,
         confirmEmail,
         sendEmailConfirmation,
       }}
