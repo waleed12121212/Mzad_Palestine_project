@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, User, Phone, ArrowRight } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from '../contexts/AuthContext';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -22,10 +22,10 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState<"buyer" | "seller">("buyer");
   
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const { login } = useAuth();
+  
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
     if (!loginEmail || !loginPassword) {
       toast({
         title: "خطأ في تسجيل الدخول",
@@ -34,14 +34,20 @@ const Auth = () => {
       });
       return;
     }
-    
-    // Simulate login API call
-    console.log("Login:", { email: loginEmail, password: loginPassword });
-    
-    toast({
-      title: "تم تسجيل الدخول بنجاح",
-      description: "مرحباً بك في مزاد فلسطين"
-    });
+    try {
+      await login({ email: loginEmail, password: loginPassword });
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحباً بك في مزاد فلسطين"
+      });
+      // يمكنك إعادة التوجيه هنا إذا أردت
+    } catch (error: any) {
+      toast({
+        title: "خطأ في تسجيل الدخول",
+        description: error.message || "خطأ في البريد الإلكتروني أو كلمة المرور",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleSignupSubmit = (e: React.FormEvent) => {

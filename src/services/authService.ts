@@ -114,10 +114,17 @@ export const authService = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
       const response = await axiosInstance.post('/Login', data);
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      const token = response.data.token;
+      if (
+        !token ||
+        typeof token !== "string" ||
+        token.trim() === "" ||
+        token.split('.').length !== 3
+      ) {
+        throw new Error('خطأ في البريد الإلكتروني أو كلمة المرور');
       }
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
       return response.data;
     } catch (error: any) {
       throw new Error(error.message || 'خطأ في البريد الإلكتروني أو كلمة المرور');
