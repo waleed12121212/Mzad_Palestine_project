@@ -1,12 +1,36 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Package, PlusCircle, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { userService, UserProfile } from "../../services/userService";
 
 interface UserQuickPanelProps {
   userName?: string;
 }
 
-const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName = "المستخدم" }) => {
+const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName }) => {
+  const { isAuthenticated } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (isAuthenticated) {
+        try {
+          const profile = await userService.getCurrentUser();
+          setUserProfile(profile);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchUserProfile();
+  }, [isAuthenticated]);
+
+  const displayName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : userName || "المستخدم";
+
   return (
     <div className="flex flex-wrap justify-end gap-4 mb-6 rtl">
       <Link 
@@ -14,7 +38,7 @@ const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName = "المست�
         className="flex items-center bg-white dark:bg-gray-800 rounded-full px-4 py-3 shadow-sm hover:shadow-md transition-shadow"
       >
         <div className="mr-3 text-right">
-          <p className="font-bold text-base">{userName}</p>
+          <p className="font-bold text-base">{displayName}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">عرض الملف الشخصي</p>
         </div>
         <div className="w-10 h-10 bg-blue/10 dark:bg-blue-dark/20 rounded-full flex items-center justify-center text-blue dark:text-blue-light">
