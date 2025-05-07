@@ -193,11 +193,32 @@ const Profile = () => {
         <div className="absolute inset-0 bg-black/30" />
       </div>
       <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col md:flex-row items-center md:items-end gap-4 transform translate-y-16 md:translate-y-12">
-        <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg group">
-          <img 
-            src={userData.profilePicture || "/images/default-profile.png"}
-            alt={userData.username}
-            className="w-full h-full object-cover"
+        <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg group cursor-pointer">
+          {userData.profilePicture ? (
+            <img
+              src={
+                userData.profilePicture.startsWith('http')
+                  ? userData.profilePicture
+                  : `http://mazadpalestine.runasp.net${userData.profilePicture}`
+              }
+              alt={userData.username}
+              className="w-full h-full object-cover"
+              onClick={() => document.getElementById('profile-upload')?.click()}
+            />
+          ) : (
+            <span
+              className="text-5xl font-bold text-blue dark:text-blue-light select-none flex items-center justify-center w-full h-full"
+              onClick={() => document.getElementById('profile-upload')?.click()}
+            >
+              {userData.firstName?.charAt(0)?.toUpperCase() || <User className="w-16 h-16" />}
+            </span>
+          )}
+          <input
+            id="profile-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleProfilePictureUpload}
           />
         </div>
         <div className="text-center md:text-right md:mr-4">
@@ -383,7 +404,8 @@ const Profile = () => {
               id="dateOfBirth"
               label="تاريخ الميلاد"
               icon={Calendar}
-              value={isEditing ? formData.dateOfBirth : (userData.dateOfBirth ? userData.dateOfBirth : 'غير محدد')}
+              type="date"
+              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData.dateOfBirth ? userData.dateOfBirth.substring(0, 10) : '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
