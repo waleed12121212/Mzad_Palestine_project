@@ -22,7 +22,11 @@ import {
   Shirt,
   Watch,
   Laptop,
-  Utensils 
+  Utensils,
+  BookOpen,
+  Camera,
+  Baby,
+  Coffee
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
@@ -68,21 +72,31 @@ const Index = () => {
     return auctions.filter(auction => auction.category === selectedCategory);
   };
 
-  const getCategoryIcon = (categoryName: string) => {
-    const iconMap: { [key: string]: JSX.Element } = {
-      "العقارات": <Building2 className="h-5 w-5" />,
-      "المركبات": <Car className="h-5 w-5" />,
-      "الإلكترونيات": <Smartphone className="h-5 w-5" />,
-      "الأثاث": <Sofa className="h-5 w-5" />,
-      "التحف والمقتنيات": <Gem className="h-5 w-5" />,
-      "الملابس": <Shirt className="h-5 w-5" />,
-      "الساعات": <Watch className="h-5 w-5" />,
-      "الكمبيوترات": <Laptop className="h-5 w-5" />,
-      "المقتنيات": <Trophy className="h-5 w-5" />,
-      "أدوات المطبخ": <Utensils className="h-5 w-5" />,
-    };
-
-    return iconMap[categoryName] || <Package className="h-5 w-5" />;
+  const getCategoryIcon = (name: string) => {
+    switch (name) {
+      case "أزياء":
+        return <Shirt className="h-5 w-5" />;
+      case "إلكترونيات":
+        return <Smartphone className="h-5 w-5" />;
+      case "مركبات":
+      case "سيارات":
+        return <Car className="h-5 w-5" />;
+      case "إكسسوارات":
+        return <Gem className="h-5 w-5" />;
+      case "كتب":
+      case "الكتب والمجلات":
+        return <BookOpen className="h-5 w-5" />;
+      case "كاميرات":
+        return <Camera className="h-5 w-5" />;
+      case "مستلزمات الأطفال":
+        return <Baby className="h-5 w-5" />;
+      case "مستلزمات منزلية":
+        return <Coffee className="h-5 w-5" />;
+      case "أثاث":
+        return <Sofa className="h-5 w-5" />;
+      default:
+        return <Gem className="h-5 w-5" />;
+    }
   };
 
   const auctions = [
@@ -468,7 +482,11 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="lg:w-1/4 w-full">
               <CategorySidebar
-                categories={categories}
+                categories={categories.map(cat => ({
+                  ...cat,
+                  icon: getCategoryIcon(cat.name),
+                  count: cat.listings?.length || 0
+                }))}
                 onSelectCategory={handleCategorySelect}
                 selectedCategoryId={selectedCategory || undefined}
               />
