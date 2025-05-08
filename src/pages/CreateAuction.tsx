@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -22,16 +21,17 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AIPriceSuggestion from "@/components/ui/AIPriceSuggestion";
+import { categoryService, Category } from "@/services/categoryService";
 
 const CreateAuction = () => {
   const { toast } = useToast();
-  const [activeStep, setActiveStep] = useState<number>(1);  // Change type to number
+  const [activeStep, setActiveStep] = useState<number>(1);
   const [images, setImages] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
-    subcategory: "",
     startingPrice: "",
     incrementAmount: "",
     endDate: "",
@@ -41,151 +41,26 @@ const CreateAuction = () => {
     terms: false
   });
 
-  const categories = [
-    {
-      id: "real-estate",
-      name: "العقارات",
-      icon: <Building2 className="h-6 w-6" />,
-      subcategories: [
-        { id: "apartments", name: "شقق" },
-        { id: "lands", name: "أراضي" },
-        { id: "commercial", name: "عقارات تجارية" },
-      ],
-    },
-    {
-      id: "vehicles",
-      name: "المركبات",
-      icon: <Car className="h-6 w-6" />,
-      subcategories: [
-        { id: "cars", name: "سيارات" },
-        { id: "motorcycles", name: "دراجات نارية" },
-        { id: "trucks", name: "شاحنات" },
-      ],
-    },
-    {
-      id: "electronics",
-      name: "الإلكترونيات",
-      icon: <Smartphone className="h-6 w-6" />,
-      subcategories: [
-        { id: "mobile", name: "هواتف محمولة" },
-        { id: "computers", name: "أجهزة كمبيوتر" },
-        { id: "tvs", name: "تلفزيونات" },
-      ],
-    },
-    {
-      id: "furniture",
-      name: "الأثاث",
-      icon: <Sofa className="h-6 w-6" />,
-      subcategories: [
-        { id: "living", name: "غرف معيشة" },
-        { id: "bedroom", name: "غرف نوم" },
-        { id: "kitchen", name: "مطابخ" },
-      ],
-    },
-    {
-      id: "antiques",
-      name: "التحف والمقتنيات",
-      icon: <Gem className="h-6 w-6" />,
-      subcategories: [
-        { id: "jewelry", name: "مجوهرات" },
-        { id: "art", name: "فنون" },
-        { id: "collectibles", name: "قطع نادرة" },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const activeCategories = await categoryService.getActiveCategories();
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "خطأ",
+          description: "حدث خطأ أثناء تحميل التصنيفات",
+          variant: "destructive"
+        });
+      }
+    };
 
-  const [additionalFields, setAdditionalFields] = useState<Record<string, string>>({});
+    fetchCategories();
+  }, []);
 
-  // Add this after the categories array
-  const categorySpecificFields = {
-    electronics: {
-      computers: [
-        { id: 'processor', name: 'المعالج', placeholder: 'مثال: Intel Core i7-11700K' },
-        { id: 'ram', name: 'الذاكرة العشوائية', placeholder: 'مثال: 16GB DDR4' },
-        { id: 'storage_hdd', name: 'القرص الصلب HDD', placeholder: 'مثال: 1TB HDD' },
-        { id: 'storage_ssd', name: 'القرص الصلب SSD', placeholder: 'مثال: 512GB SSD' },
-        { id: 'battery_health', name: 'حالة البطارية', placeholder: 'مثال: 85%' },
-        { id: 'graphics_card', name: 'كرت الشاشة', placeholder: 'مثال: NVIDIA RTX 3060' }
-      ],
-      mobile: [
-        { id: 'storage', name: 'سعة التخزين', placeholder: 'مثال: 128GB' },
-        { id: 'ram', name: 'الذاكرة العشوائية', placeholder: 'مثال: 8GB' },
-        { id: 'battery_health', name: 'حالة البطارية', placeholder: 'مثال: 90%' },
-        { id: 'screen_condition', name: 'حالة الشاشة', placeholder: 'مثال: ممتازة، بدون خدوش' }
-      ],
-      tvs: [
-        { id: 'screen_size', name: 'حجم الشاشة', placeholder: 'مثال: 55 inch' },
-        { id: 'screen_type', name: 'نوع الشاشة', placeholder: 'مثال: OLED, LED' },
-        { id: 'resolution', name: 'دقة الشاشة', placeholder: 'مثال: 4K UHD' }
-      ]
-    },
-    vehicles: {
-      cars: [
-        { id: 'make', name: 'الشركة المصنعة', placeholder: 'مثال: Toyota' },
-        { id: 'model', name: 'الموديل', placeholder: 'مثال: Camry' },
-        { id: 'year', name: 'سنة الصنع', placeholder: 'مثال: 2020' },
-        { id: 'mileage', name: 'عدد الكيلومترات', placeholder: 'مثال: 50000' },
-        { id: 'fuel_type', name: 'نوع الوقود', placeholder: 'مثال: بنزين' },
-        { id: 'transmission', name: 'ناقل الحركة', placeholder: 'مثال: أوتوماتيك' }
-      ],
-      motorcycles: [
-        { id: 'make', name: 'الشركة المصنعة', placeholder: 'مثال: Honda' },
-        { id: 'model', name: 'الموديل', placeholder: 'مثال: CBR' },
-        { id: 'year', name: 'سنة الصنع', placeholder: 'مثال: 2021' },
-        { id: 'mileage', name: 'عدد الكيلومترات', placeholder: 'مثال: 10000' },
-        { id: 'engine_size', name: 'حجم المحرك', placeholder: 'مثال: 600cc' }
-      ]
-    },
-    'real-estate': {
-      apartments: [
-        { id: 'area', name: 'المساحة', placeholder: 'مثال: 150 متر مربع' },
-        { id: 'rooms', name: 'عدد الغرف', placeholder: 'مثال: 3' },
-        { id: 'bathrooms', name: 'عدد الحمامات', placeholder: 'مثال: 2' },
-        { id: 'floor', name: 'الطابق', placeholder: 'مثال: الثالث' },
-        { id: 'parking', name: 'موقف سيارات', placeholder: 'مثال: نعم/لا' }
-      ],
-      lands: [
-        { id: 'area', name: 'المساحة', placeholder: 'مثال: 500 متر مربع' },
-        { id: 'land_type', name: 'نوع الأرض', placeholder: 'مثال: سكني/تجاري' },
-        { id: 'zoning', name: 'التصنيف', placeholder: 'مثال: A, B, C' }
-      ]
-    },
-    furniture: {
-      living: [
-        { id: 'material', name: 'المواد المستخدمة', placeholder: 'مثال: خشب، قماش' },
-        { id: 'dimensions', name: 'الأبعاد', placeholder: 'مثال: 200x180x75 سم' },
-        { id: 'color', name: 'اللون', placeholder: 'مثال: بني غامق' }
-      ],
-      bedroom: [
-        { id: 'bed_size', name: 'حجم السرير', placeholder: 'مثال: كينج، كوين' },
-        { id: 'material', name: 'المواد المستخدمة', placeholder: 'مثال: خشب زان' },
-        { id: 'includes', name: 'المحتويات', placeholder: 'مثال: سرير، 2 كومودينو، دولاب' }
-      ]
-    },
-    antiques: {
-      jewelry: [
-        { id: 'material', name: 'المعدن', placeholder: 'مثال: ذهب عيار 18' },
-        { id: 'weight', name: 'الوزن', placeholder: 'مثال: 10 جرام' },
-        { id: 'gems', name: 'الأحجار الكريمة', placeholder: 'مثال: الماس' },
-        { id: 'age', name: 'العمر التقريبي', placeholder: 'مثال: 50 سنة' }
-      ],
-      art: [
-        { id: 'artist', name: 'الفنان', placeholder: 'مثال: محمد سعيد' },
-        { id: 'year', name: 'سنة الإنتاج', placeholder: 'مثال: 1980' },
-        { id: 'medium', name: 'الوسيط', placeholder: 'مثال: زيت على قماش' },
-        { id: 'dimensions', name: 'الأبعاد', placeholder: 'مثال: 60x80 سم' }
-      ]
-    }
-  };
-
-  // Add this to your handleChange function
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
-    if (name === 'category' || name === 'subcategory') {
-      // Reset additional fields when category/subcategory changes
-      setAdditionalFields({});
-    }
     
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
@@ -195,46 +70,6 @@ const CreateAuction = () => {
     }
   };
 
-  const handleAdditionalFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAdditionalFields(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Add this inside your form, in activeStep === 1 section, after the condition radio buttons
-  const renderAdditionalFields = () => {
-    const category = formData.category as keyof typeof categorySpecificFields;
-    const subcategory = formData.subcategory;
-    
-    if (!categorySpecificFields[category] || !categorySpecificFields[category][subcategory]) {
-      return null;
-    }
-
-    return (
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium mb-2">معلومات إضافية</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {categorySpecificFields[category][subcategory].map(field => (
-            <div key={field.id}>
-              <label htmlFor={field.id} className="block mb-2 text-sm font-medium">
-                {field.name}
-              </label>
-              <input
-                type="text"
-                id={field.id}
-                name={field.id}
-                placeholder={field.placeholder}
-                value={additionalFields[field.id] || ''}
-                onChange={handleAdditionalFieldChange}
-                className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Add this inside your form, after the condition radio group
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newImages = Array.from(e.target.files).map(file => URL.createObjectURL(file));
@@ -249,7 +84,6 @@ const CreateAuction = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
     if (activeStep === 3 && !formData.terms) {
       toast({
         title: "خطأ في النموذج",
@@ -262,18 +96,15 @@ const CreateAuction = () => {
     if (activeStep < 3) {
       setActiveStep(activeStep + 1);
     } else {
-      // Submit form with additional fields
       console.log("Form submitted", { 
         ...formData, 
-        images,
-        additionalFields  // Include the additional fields in submission
+        images
       });
       toast({
         title: "تم إنشاء المزاد بنجاح",
         description: "سيتم مراجعة المزاد من قبل الإدارة قبل نشره",
       });
       
-      // Redirect to home page after successful submission
       setTimeout(() => {
         window.location.href = "/";
       }, 2000);
@@ -383,49 +214,25 @@ const CreateAuction = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="category" className="block mb-2 text-sm font-medium">
-                        الفئة <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="category"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                        required
-                      >
-                        <option value="">اختر فئة</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="subcategory" className="block mb-2 text-sm font-medium">
-                        الفئة الفرعية <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="subcategory"
-                        name="subcategory"
-                        value={formData.subcategory}
-                        onChange={handleChange}
-                        className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                        disabled={!formData.category}
-                        required
-                      >
-                        <option value="">اختر فئة فرعية</option>
-                        {selectedCategory?.subcategories.map(subcat => (
-                          <option key={subcat.id} value={subcat.id}>
-                            {subcat.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label htmlFor="category" className="block mb-2 text-sm font-medium">
+                      الفئة <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                      required
+                    >
+                      <option value="">اختر فئة</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -457,9 +264,6 @@ const CreateAuction = () => {
                       </label>
                     </div>
                   </div>
-
-                  {/* Add the additional fields rendering here */}
-                  {renderAdditionalFields()}
 
                   <div>
                     <label htmlFor="location" className="block mb-2 text-sm font-medium">
@@ -507,7 +311,6 @@ const CreateAuction = () => {
                   {/* AI Price Suggestion Component */}
                   <AIPriceSuggestion
                     category={formData.category}
-                    subcategory={formData.subcategory}
                     title={formData.title}
                     description={formData.description}
                     condition={formData.condition}
@@ -699,9 +502,6 @@ const CreateAuction = () => {
                         <h4 className="text-sm text-gray-500 dark:text-gray-400">الفئة</h4>
                         <p className="font-medium">
                           {selectedCategory?.name || "غير محدد"}
-                          {formData.subcategory && selectedCategory && (
-                            <span> / {selectedCategory.subcategories.find(s => s.id === formData.subcategory)?.name}</span>
-                          )}
                         </p>
                       </div>
                     </div>
@@ -827,4 +627,5 @@ const CreateAuction = () => {
     </div>
   );
 };
+
 export default CreateAuction;
