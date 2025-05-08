@@ -58,6 +58,8 @@ const Chat: React.FC = () => {
   const [tab, setTab] = useState<'inbox' | 'sent' | 'conversation'>('inbox');
   const [inboxMessages, setInboxMessages] = useState([]);
   const [sentMessages, setSentMessages] = useState([]);
+  const [showConversation, setShowConversation] = useState(false);
+  const [markedAsReadIds, setMarkedAsReadIds] = useState<Set<number>>(new Set());
 
   // Responsive handler
   useEffect(() => {
@@ -84,25 +86,43 @@ const Chat: React.FC = () => {
       }
 
       try {
-        const response = await fetch('/api/contacts');
-        const data = await response.json();
-        setContacts(data);
+        console.log('Loading inbox...');
+        const inboxData = await messageService.getInbox();
+        setInboxMessages(inboxData);
+        
+        // Extract unique contacts from inbox messages
+        const uniqueContacts = inboxData.reduce((acc: Contact[], message) => {
+          const existingContact = acc.find(c => c.id === message.senderId);
+          if (!existingContact) {
+            acc.push({
+              id: message.senderId,
+              name: message.senderName || 'مستخدم',
+              avatar: message.senderAvatar || '',
+              lastMessage: message.content,
+              lastMessageTime: message.timestamp,
+              unreadCount: message.isRead ? 0 : 1
+            });
+          }
+          return acc;
+        }, []);
+        
+        setContacts(uniqueContacts);
 
         // التحقق من وجود معرف جهة اتصال في الرابط
         const contactId = new URLSearchParams(window.location.search).get('contact');
         if (contactId) {
-          const contact = data.find(c => c.id === parseInt(contactId));
-        if (contact) {
-          setActiveContact(contact);
+          const contact = uniqueContacts.find(c => c.id === parseInt(contactId));
+          if (contact) {
+            setActiveContact(contact);
             fetchMessages(contact.id);
+          }
+        } else if (uniqueContacts.length > 0) {
+          // Default to first contact if no id specified
+          setActiveContact(uniqueContacts[0]);
+          fetchMessages(uniqueContacts[0].id);
         }
-        } else if (data.length > 0) {
-        // Default to first contact if no id specified
-          setActiveContact(data[0]);
-          fetchMessages(data[0].id);
-      }
 
-      setLoading(false);
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('حدث خطأ أثناء تحميل البيانات');
@@ -127,12 +147,9 @@ const Chat: React.FC = () => {
 
   const fetchMessages = async (contactId: number) => {
     try {
-      const response = await fetch(`http://mazadpalestine.runasp.net/Message/conversation/${contactId}`, {
-        headers: { ...getAuthHeader() },
-      });
-      const data = await response.json();
+      const data = await messageService.getConversation(contactId);
       setMessages(data);
-      markMessagesAsRead(contactId);
+      // Do not mark as read here
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('حدث خطأ أثناء تحميل الرسائل');
@@ -141,10 +158,7 @@ const Chat: React.FC = () => {
 
   const markMessagesAsRead = async (contactId: number) => {
     try {
-      await fetch(`http://mazadpalestine.runasp.net/Message/${contactId}/read`, {
-        method: 'PUT',
-        headers: { ...getAuthHeader() },
-      });
+      await messageService.markAsRead(contactId);
       // تحديث عدد الرسائل غير المقروءة في قائمة جهات الاتصال
       setContacts(prev => prev.map(contact => 
         contact.id === contactId ? { ...contact, unreadCount: 0 } : contact
@@ -161,17 +175,10 @@ const Chat: React.FC = () => {
 
   const handleContactClick = (contact: Contact) => {
     setActiveContact(contact);
-    
-    // Update URL to show contact ID
-    navigate(`/chat?contact=${contact.id}`);
-    
-    // In mobile view, once a contact is selected, hide the contacts list
+    setShowConversation(false);
     if (isMobile) {
       setShowContactsList(false);
     }
-    
-    // Load appropriate messages for the contact
-    fetchMessages(contact.id);
   };
 
   const handleSendMessage = async () => {
@@ -289,8 +296,13 @@ const Chat: React.FC = () => {
   const handleOpenConversation = (contactId: number, senderName = 'مستخدم', senderAvatar = '') => {
     setTab('conversation');
     setActiveContact({ id: contactId, name: senderName, avatar: senderAvatar });
+    setShowConversation(true);
+    console.log('Selected conversation:', contactId);
     messageService.getConversation(contactId)
-      .then(setMessages)
+      .then(data => {
+        console.log('Loaded messages for conversation:', contactId);
+        setMessages(data);
+      })
       .catch(() => setMessages([]));
   };
 
@@ -303,6 +315,21 @@ const Chat: React.FC = () => {
       }
     } catch {}
   };
+
+  // Mark messages as read only when conversation is actually opened
+  useEffect(() => {
+    if (showConversation && activeContact && messages.length > 0 && user) {
+      messages.forEach(async (message) => {
+        if (!message.isRead && message.receiverId === user.id && !markedAsReadIds.has(message.id)) {
+          console.log('Calling markAsRead for message:', message.id);
+          await markMessagesAsRead(message.id);
+          setMarkedAsReadIds(prev => new Set(prev).add(message.id));
+          setMessages(prevMsgs => prevMsgs.map(m => m.id === message.id ? { ...m, isRead: true } : m));
+        }
+      });
+    }
+  // Only re-run if showConversation, activeContact.id, messages, or user.id changes
+  }, [showConversation, activeContact?.id, messages, user?.id, markedAsReadIds]);
 
   if (loading) {
     return (
@@ -474,7 +501,7 @@ const Chat: React.FC = () => {
           )}
           
           {/* Chat Window */}
-          {activeContact && (!showContactsList || !isMobile) && (
+          {activeContact && showConversation && (!showContactsList || !isMobile) && (
             <div className="flex-1 flex flex-col rtl" ref={chatContainerRef}>
               {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
@@ -551,7 +578,7 @@ const Chat: React.FC = () => {
                       new Date(messages[index - 1].timestamp).toDateString();
                     
                     return (
-                      <React.Fragment key={message.id}>
+                      <div key={message.id}>
                         {showDate && (
                           <div className="flex justify-center my-4">
                             <span className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-xs">
@@ -573,13 +600,13 @@ const Chat: React.FC = () => {
                             <p className="break-words">{message.content}</p>
                             <div className={`flex justify-end items-center gap-1 mt-1 ${message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'}`}>
                               <span className="text-xs">{formatTime(new Date(message.timestamp))}</span>
-                              {message.senderId === user?.id && (
-                                <CheckCheck className={`h-3 w-3 ${message.isRead ? 'text-blue-100' : 'text-blue-200'}`} />
+                              {message.isRead && (
+                                <CheckCheck className="h-3 w-3 text-blue-100" />
                               )}
                             </div>
                           </div>
                         </div>
-                      </React.Fragment>
+                      </div>
                     );
                   })
                 ) : (
