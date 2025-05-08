@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageWrapper from "@/components/layout/PageWrapper";
 import AuctionCard from "@/components/ui/AuctionCard";
@@ -26,19 +26,29 @@ import {
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
+import { categoryService, Category } from "@/services/categoryService";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    const fetchCategories = async () => {
+      try {
+        const activeCategories = await categoryService.getActiveCategories();
+        setCategories(activeCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   const handleCategorySelect = (categoryId: string) => {
@@ -58,83 +68,22 @@ const Index = () => {
     return auctions.filter(auction => auction.category === selectedCategory);
   };
 
-  const categories = [
-    {
-      id: "real-estate",
-      name: "العقارات",
-      icon: <Building2 className="h-5 w-5" />,
-      count: 24,
-      subcategories: [
-        { id: "apartments", name: "شقق", count: 12 },
-        { id: "lands", name: "أراضي", count: 8 },
-        { id: "commercial", name: "عقارات تجارية", count: 4 },
-      ],
-    },
-    {
-      id: "vehicles",
-      name: "المركبات",
-      icon: <Car className="h-5 w-5" />,
-      count: 36,
-      subcategories: [
-        { id: "cars", name: "سيارات", count: 22 },
-        { id: "motorcycles", name: "دراجات نارية", count: 8 },
-        { id: "trucks", name: "شاحنات", count: 6 },
-      ],
-    },
-    {
-      id: "electronics",
-      name: "الإلكترونيات",
-      icon: <Smartphone className="h-5 w-5" />,
-      count: 42,
-      subcategories: [
-        { id: "mobile", name: "هواتف محمولة", count: 24 },
-        { id: "computers", name: "أجهزة كمبيوتر", count: 10 },
-        { id: "tvs", name: "تلفزيونات", count: 8 },
-      ],
-    },
-    {
-      id: "furniture",
-      name: "الأثاث",
-      icon: <Sofa className="h-5 w-5" />,
-      count: 18,
-    },
-    {
-      id: "antiques",
-      name: "التحف والمقتنيات",
-      icon: <Gem className="h-5 w-5" />,
-      count: 15,
-    },
-    {
-      id: "clothing",
-      name: "الملابس",
-      icon: <Shirt className="h-5 w-5" />,
-      count: 28,
-    },
-    {
-      id: "watches",
-      name: "الساعات",
-      icon: <Watch className="h-5 w-5" />,
-      count: 14,
-    },
-    {
-      id: "computers",
-      name: "الكمبيوترات",
-      icon: <Laptop className="h-5 w-5" />,
-      count: 22,
-    },
-    {
-      id: "collectibles",
-      name: "المقتنيات",
-      icon: <Trophy className="h-5 w-5" />,
-      count: 19,
-    },
-    {
-      id: "kitchenware",
-      name: "أدوات المطبخ",
-      icon: <Utensils className="h-5 w-5" />,
-      count: 16,
-    },
-  ];
+  const getCategoryIcon = (categoryName: string) => {
+    const iconMap: { [key: string]: JSX.Element } = {
+      "العقارات": <Building2 className="h-5 w-5" />,
+      "المركبات": <Car className="h-5 w-5" />,
+      "الإلكترونيات": <Smartphone className="h-5 w-5" />,
+      "الأثاث": <Sofa className="h-5 w-5" />,
+      "التحف والمقتنيات": <Gem className="h-5 w-5" />,
+      "الملابس": <Shirt className="h-5 w-5" />,
+      "الساعات": <Watch className="h-5 w-5" />,
+      "الكمبيوترات": <Laptop className="h-5 w-5" />,
+      "المقتنيات": <Trophy className="h-5 w-5" />,
+      "أدوات المطبخ": <Utensils className="h-5 w-5" />,
+    };
+
+    return iconMap[categoryName] || <Package className="h-5 w-5" />;
+  };
 
   const auctions = [
     {
@@ -388,7 +337,17 @@ const Index = () => {
           </div>
           
           <CategoryCarousel 
-            categories={categories} 
+            categories={categories.map(cat => ({
+              id: cat.id,
+              name: cat.name,
+              icon: getCategoryIcon(cat.name),
+              count: cat.listings?.length || 0,
+              subcategories: cat.subCategories?.map(sub => ({
+                id: sub.id,
+                name: sub.name,
+                count: sub.listings?.length || 0
+              }))
+            }))}
             selectedCategory={selectedCategory}
             onSelectCategory={handleCategorySelect}
           />
