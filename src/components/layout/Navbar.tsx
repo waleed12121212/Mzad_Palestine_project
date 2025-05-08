@@ -126,7 +126,7 @@ const Navbar: React.FC = () => {
               <Heart className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </Link>
 
-            <Link to="/chat" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <Link to="/conversations" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <MessageCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               <span className="absolute top-1 right-1 h-2 w-2 bg-blue rounded-full"></span>
             </Link>
@@ -219,7 +219,7 @@ const Navbar: React.FC = () => {
               <MobileNavLink href="/favorites" active={isActive("/favorites")}>
                 {lang === "ar" ? "المفضلة" : "Favorites"}
               </MobileNavLink>
-              <MobileNavLink href="/chat" active={isActive("/chat")}>
+              <MobileNavLink href="/conversations" active={isActive("/conversations")}>
                 {lang === "ar" ? "الدردشة" : "Chat"}
               </MobileNavLink>
               <MobileNavLink href="/notifications" active={isActive("/notifications")}>

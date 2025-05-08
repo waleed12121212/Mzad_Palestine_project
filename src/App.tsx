@@ -91,8 +91,8 @@ function App() {
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/create-auction" element={<ProtectedRoute><CreateAuction /></ProtectedRoute>} />
               <Route path="/sell-product" element={<ProtectedRoute><SellProduct /></ProtectedRoute>} />
-              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/conversations" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/conversations/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
               
               {/* Admin Routes */}

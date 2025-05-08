@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,41 +14,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import PageWrapper from "@/components/layout/PageWrapper";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from '../contexts/AuthContext';
+import { messageService } from '@/services/messageService';
 
 interface Message {
   id: number;
-  text: string;
-  sender: "user" | "other";
-  timestamp: Date;
-  read: boolean;
+  senderId: number;
+  receiverId: number;
+  content: string;
+  subject?: string;
+  timestamp: string;
+  isRead: boolean;
 }
 
 interface Contact {
-  id: string | number;
+  id: number;
   name: string;
-  lastMessage: string;
-  lastMessageTime: Date;
-  unread: number;
-  avatar?: string;
-  isOnline: boolean;
+  avatar: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+  isOnline?: boolean;
 }
 
 const Chat: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [messageSubject, setMessageSubject] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState<"all" | "unread">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
   const [showContactsList, setShowContactsList] = useState(!id);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<'inbox' | 'sent' | 'conversation'>('inbox');
+  const [inboxMessages, setInboxMessages] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
 
   // Responsive handler
   useEffect(() => {
@@ -70,97 +78,79 @@ const Chat: React.FC = () => {
   // Load contacts and messages
   useEffect(() => {
     const fetchData = async () => {
-      // Mock data - simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (!user) {
+        navigate('/login');
+        return;
+      }
 
-      const contactsData: Contact[] = [
-        { id: "seller123", name: "أحمد محمود", lastMessage: "رائع! يسعدني اهتمامك. هل لديك أي أسئلة محددة حول الشقة؟", lastMessageTime: new Date(Date.now() - 20 * 60 * 1000), unread: 1, isOnline: true },
-        { id: 2, name: "سارة خالد", lastMessage: "شكراً لتواصلك، سأرد عليك في أقرب وقت", lastMessageTime: new Date(Date.now() - 2 * 60 * 60 * 1000), unread: 2, isOnline: true },
-        { id: 3, name: "محمد علي", lastMessage: "تم استلام طلبك وسيتم التعامل معه قريباً", lastMessageTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), unread: 3, isOnline: false },
-        { id: 4, name: "فاطمة أحمد", lastMessage: "أنا مهتمة بالمنتج، هل هو متوفر؟", lastMessageTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), unread: 1, isOnline: false },
-        { id: 5, name: "عمر حسن", lastMessage: "شكراً جزيلاً", lastMessageTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), unread: 0, isOnline: false },
-        { id: 6, name: "ليلى سليم", lastMessage: "سعر جيد، هل يمكن التفاوض؟", lastMessageTime: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), unread: 0, isOnline: true },
-        { id: 7, name: "خالد عبدالله", lastMessage: "متى يمكن أن أستلم المنتج؟", lastMessageTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), unread: 0, isOnline: false },
-        { id: 8, name: "ياسمين أحمد", lastMessage: "هل لديك صور إضافية للمنتج؟", lastMessageTime: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), unread: 0, isOnline: true },
-        { id: 9, name: "زياد محمود", lastMessage: "سأفكر في الأمر وأعود إليك قريباً", lastMessageTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), unread: 0, isOnline: false },
-        { id: 10, name: "رنا سمير", lastMessage: "هل يمكنني الحصول على خصم إذا اشتريت منتجين؟", lastMessageTime: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), unread: 0, isOnline: true },
-      ];
+      try {
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        setContacts(data);
 
-      setContacts(contactsData);
-
-      // If we have an id parameter, set the active contact
-      if (id) {
-        const contact = contactsData.find(c => c.id.toString() === id);
+        // التحقق من وجود معرف جهة اتصال في الرابط
+        const contactId = new URLSearchParams(window.location.search).get('contact');
+        if (contactId) {
+          const contact = data.find(c => c.id === parseInt(contactId));
         if (contact) {
           setActiveContact(contact);
-          // Load messages for this contact
-          loadMessagesForContact(contact);
-        } else {
-          // If contact not found, navigate to base chat route
-          navigate('/chat');
+            fetchMessages(contact.id);
         }
-      } else if (contactsData.length > 0) {
+        } else if (data.length > 0) {
         // Default to first contact if no id specified
-        setActiveContact(contactsData[0]);
-        loadMessagesForContact(contactsData[0]);
+          setActiveContact(data[0]);
+          fetchMessages(data[0].id);
       }
 
       setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('حدث خطأ أثناء تحميل البيانات');
+        setLoading(false);
+      }
     };
 
     fetchData();
-  }, [id, navigate]);
 
-  const loadMessagesForContact = (contact: Contact) => {
-    // Create custom messages based on the contact
-    const now = Date.now();
-    let contactMessages: Message[] = [];
-    
-    if (contact.id === "seller123") {
-      contactMessages = [
-        { id: 1, text: "مرحباً، كيف يمكنني مساعدتك اليوم؟", sender: "other", timestamp: new Date(now - 25 * 60 * 1000), read: true },
-        { id: 2, text: "أنا مهتم بالمزاد الذي أقمته للشقة الفاخرة في رام الله", sender: "user", timestamp: new Date(now - 24 * 60 * 1000), read: true },
-        { id: 3, text: "رائع! يسعدني اهتمامك. هل لديك أي أسئلة محددة حول الشقة؟", sender: "other", timestamp: new Date(now - 20 * 60 * 1000), read: contact.unread === 0 },
-        { id: 4, text: "نعم، هل يمكنك إخباري المزيد عن حالة الشقة والمرافق القريبة؟", sender: "user", timestamp: new Date(now - 18 * 60 * 1000), read: true },
-        { id: 5, text: "بالتأكيد! الشقة بحالة ممتازة وتم تجديدها بالكامل قبل 6 أشهر. وهي قريبة من مركز المدينة، ومحاطة بالعديد من المرافق مثل المدارس والمستشفيات والمحلات التجارية.", sender: "other", timestamp: new Date(now - 15 * 60 * 1000), read: contact.unread === 0 },
-      ];
-    } else if (contact.id === 2) {
-      contactMessages = [
-        { id: 1, text: "مرحباً بك في المتجر", sender: "other", timestamp: new Date(now - 3 * 60 * 60 * 1000), read: true },
-        { id: 2, text: "شكراً، لدي استفسار حول المنتجات الجديدة", sender: "user", timestamp: new Date(now - 2.5 * 60 * 60 * 1000), read: true },
-        { id: 3, text: "شكراً لتواصلك، سأرد عليك في أقرب وقت", sender: "other", timestamp: new Date(now - 2 * 60 * 60 * 1000), read: contact.unread === 0 },
-      ];
-    } else if (contact.id === 3) {
-      contactMessages = [
-        { id: 1, text: "مرحباً، هل المنتجات ستصل في الموعد المحدد؟", sender: "user", timestamp: new Date(now - 50 * 60 * 1000), read: true },
-        { id: 2, text: "بالتأكيد، جميع الطلبات ستصل في الوقت المحدد", sender: "other", timestamp: new Date(now - 48 * 60 * 1000), read: true },
-        { id: 3, text: "هل يمكنني تغيير عنوان التوصيل؟", sender: "user", timestamp: new Date(now - 46 * 60 * 1000), read: true },
-        { id: 4, text: "تم استلام طلبك وسيتم التعامل معه قريباً", sender: "other", timestamp: new Date(now - 1 * 24 * 60 * 60 * 1000), read: contact.unread === 0 },
-      ];
-    } else if (contact.id === 4) {
-      contactMessages = [
-        { id: 1, text: "مرحباً، رأيت منتجك على المنصة وأنا مهتمة به", sender: "other", timestamp: new Date(now - 3 * 24 * 60 * 60 * 1000), read: true },
-        { id: 2, text: "أهلاً بك، يسعدني اهتمامك. المنتج متوفر ويمكنني إرسال صور إضافية له", sender: "user", timestamp: new Date(now - 2.5 * 24 * 60 * 60 * 1000), read: true },
-        { id: 3, text: "رائع! أنا مهتمة بالمنتج، هل هو متوفر؟", sender: "other", timestamp: new Date(now - 2 * 24 * 60 * 60 * 1000), read: contact.unread === 0 },
-      ];
-    } else {
-      // Generic messages for other contacts
-      contactMessages = [
-        { id: 1, text: `مرحباً، أنا ${contact.name}، كيف يمكنني مساعدتك؟`, sender: "other", timestamp: new Date(now - 35 * 60 * 1000), read: true },
-        { id: 2, text: "أنا مهتم بمنتجاتك، هل يمكنك إخباري المزيد عنها؟", sender: "user", timestamp: new Date(now - 30 * 60 * 1000), read: true },
-        { id: 3, text: contact.lastMessage, sender: "other", timestamp: contact.lastMessageTime, read: contact.unread === 0 },
-      ];
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [user, navigate]);
+
+  const getAuthHeader = () => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
+  const fetchMessages = async (contactId: number) => {
+    try {
+      const response = await fetch(`http://mazadpalestine.runasp.net/Message/conversation/${contactId}`, {
+        headers: { ...getAuthHeader() },
+      });
+      const data = await response.json();
+      setMessages(data);
+      markMessagesAsRead(contactId);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast.error('حدث خطأ أثناء تحميل الرسائل');
     }
-    
-    setMessages(contactMessages);
+  };
 
-    // Mark messages as read
-    if (contact.unread > 0) {
-      setContacts(prevContacts => 
-        prevContacts.map(c => 
-          c.id === contact.id ? { ...c, unread: 0 } : c
-        )
-      );
+  const markMessagesAsRead = async (contactId: number) => {
+    try {
+      await fetch(`http://mazadpalestine.runasp.net/Message/${contactId}/read`, {
+        method: 'PUT',
+        headers: { ...getAuthHeader() },
+      });
+      // تحديث عدد الرسائل غير المقروءة في قائمة جهات الاتصال
+      setContacts(prev => prev.map(contact => 
+        contact.id === contactId ? { ...contact, unreadCount: 0 } : contact
+      ));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
     }
   };
 
@@ -173,7 +163,7 @@ const Chat: React.FC = () => {
     setActiveContact(contact);
     
     // Update URL to show contact ID
-    navigate(`/chat/${contact.id}`);
+    navigate(`/chat?contact=${contact.id}`);
     
     // In mobile view, once a contact is selected, hide the contacts list
     if (isMobile) {
@@ -181,37 +171,51 @@ const Chat: React.FC = () => {
     }
     
     // Load appropriate messages for the contact
-    loadMessagesForContact(contact);
+    fetchMessages(contact.id);
   };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() === "") return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() && !messageSubject.trim()) return;
+    try {
+      const sent = await messageService.sendMessage({
+        receiverId: activeContact?.id,
+        subject: messageSubject,
+        content: newMessage,
+      });
+      setMessages(prev => [...prev, sent]);
+      setNewMessage('');
+      setMessageSubject('');
+      toast.success('تم إرسال الرسالة بنجاح');
+    } catch {
+      toast.error('حدث خطأ أثناء إرسال الرسالة');
+    }
+  };
 
-    const newMsg: Message = {
-      id: messages.length + 1,
-      text: newMessage,
-      sender: "user",
-      timestamp: new Date(),
-      read: false
-    };
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    setMessages(prevMessages => [...prevMessages, newMsg]);
-    setNewMessage("");
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('receiverId', activeContact?.id.toString() || '');
 
-    // Show notification that message was sent
-    toast.success("تم إرسال الرسالة");
+    try {
+      const response = await fetch('/api/messages/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // Simulate automated reply after 2 seconds
-    setTimeout(() => {
-      const autoReply: Message = {
-        id: messages.length + 2,
-        text: "شكراً لرسالتك! سأرد عليك في أقرب وقت ممكن.",
-        sender: "other",
-        timestamp: new Date(),
-        read: false
-      };
-      setMessages(prevMessages => [...prevMessages, autoReply]);
-    }, 2000);
+      if (response.ok) {
+        const uploadedMessage = await response.json();
+        setMessages(prev => [...prev, uploadedMessage]);
+        toast.success('تم رفع الملف بنجاح');
+      } else {
+        throw new Error('Failed to upload file');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('حدث خطأ أثناء رفع الملف');
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -236,12 +240,11 @@ const Chat: React.FC = () => {
   // Filter contacts based on tab and search term
   const filteredContacts = useMemo(() => {
     return contacts.filter(contact => {
-      const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           contact.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTab = currentTab === "all" || (currentTab === "unread" && contact.unread > 0);
+      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTab = currentTab === "all" || (currentTab === "unread" && contact.unreadCount && contact.unreadCount > 0);
       return matchesSearch && matchesTab;
     });
-  }, [contacts, searchTerm, currentTab]);
+  }, [contacts, searchQuery, currentTab]);
 
   const handleBackToContacts = () => {
     setShowContactsList(true);
@@ -254,7 +257,7 @@ const Chat: React.FC = () => {
   };
 
   const clearSearch = () => {
-    setSearchTerm('');
+    setSearchQuery('');
     if (searchInputRef.current) {
       searchInputRef.current.focus();
     }
@@ -270,6 +273,37 @@ const Chat: React.FC = () => {
     toast.info("هذه الميزة قيد التطوير");
   };
 
+  useEffect(() => {
+    if (tab === 'inbox') {
+      messageService.getInbox()
+        .then(setInboxMessages)
+        .catch(() => setInboxMessages([]));
+    } else if (tab === 'sent') {
+      messageService.getSent()
+        .then(setSentMessages)
+        .catch(() => setSentMessages([]));
+    }
+    // لا تجلب المحادثة إلا عند اختيار جهة اتصال
+  }, [tab]);
+
+  const handleOpenConversation = (contactId: number, senderName = 'مستخدم', senderAvatar = '') => {
+    setTab('conversation');
+    setActiveContact({ id: contactId, name: senderName, avatar: senderAvatar });
+    messageService.getConversation(contactId)
+      .then(setMessages)
+      .catch(() => setMessages([]));
+  };
+
+  const handleMarkAsRead = async (messageId: number) => {
+    try {
+      await messageService.markAsRead(messageId);
+      // حدث الرسائل بعد التعليم كمقروء
+      if (tab === 'inbox') {
+        setInboxMessages(msgs => msgs.map(m => m.id === messageId ? { ...m, isRead: true } : m));
+      }
+    } catch {}
+  };
+
   if (loading) {
     return (
       <PageWrapper>
@@ -282,7 +316,7 @@ const Chat: React.FC = () => {
     );
   }
 
-  const totalUnread = contacts.reduce((sum, contact) => sum + contact.unread, 0);
+  const totalUnread = contacts.reduce((sum, contact) => sum + (contact.unreadCount || 0), 0);
 
   return (
     <PageWrapper>
@@ -306,11 +340,11 @@ const Chat: React.FC = () => {
                     type="text" 
                     placeholder="بحث في المحادثات..." 
                     className="pr-10 rtl" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
                   />
-                  {searchTerm && (
+                  {searchQuery && (
                     <button 
                       onClick={clearSearch}
                       className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
@@ -337,7 +371,40 @@ const Chat: React.FC = () => {
               </div>
               
               <div className="flex-1 overflow-y-auto">
-                {filteredContacts.length > 0 ? (
+                {tab === 'inbox' ? (
+                  inboxMessages.length > 0 ? (
+                    inboxMessages.map(msg => (
+                      <div
+                        key={msg.id}
+                        className={`p-4 mb-3 rounded-lg shadow-sm border transition hover:bg-blue-50 cursor-pointer ${!msg.isRead ? 'border-blue-400' : 'border-gray-200'}`}
+                        onClick={() => handleOpenConversation(msg.senderId, msg.senderName, msg.senderAvatar)}
+                      >
+                        <div className="flex items-center mb-1">
+                          <span className="font-bold text-lg text-gray-800 flex-1">{msg.subject}</span>
+                          {!msg.isRead && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded ml-2">جديد</span>}
+                        </div>
+                        <div className="flex items-center mb-1">
+                          {msg.senderAvatar && (
+                            <img src={msg.senderAvatar} alt={msg.senderName} className="w-7 h-7 rounded-full ml-2" />
+                          )}
+                          <span className="text-sm text-blue-700 font-medium">{msg.senderName || 'مستخدم'}</span>
+                        </div>
+                        <div className="text-gray-600 text-sm mb-1" style={{whiteSpace: 'pre-line'}}>
+                          {msg.content.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content}
+                        </div>
+                        <div className="text-xs text-gray-400">{new Date(msg.timestamp).toLocaleString('ar-EG')}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-4">
+                      <div className="text-gray-400 mb-4">
+                        <Search className="h-10 w-10 mx-auto" />
+                      </div>
+                      <p className="text-gray-500 text-center">لا توجد رسائل واردة</p>
+                    </div>
+                  )
+                ) : (
+                  filteredContacts.length > 0 ? (
                   filteredContacts.map((contact) => (
                     <div 
                       key={contact.id}
@@ -362,14 +429,14 @@ const Chat: React.FC = () => {
                       <div className="mr-3 flex-1 min-w-0">
                         <div className="flex justify-between items-start w-full">
                           <h3 className="font-semibold truncate">{contact.name}</h3>
-                          <span className="text-xs text-gray-500 whitespace-nowrap mr-1">{formatDate(contact.lastMessageTime)}</span>
+                            <span className="text-xs text-gray-500 whitespace-nowrap mr-1">{formatDate(new Date(contact.lastMessageTime || ""))}</span>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{contact.lastMessage}</p>
                       </div>
                       
-                      {contact.unread > 0 && (
+                        {contact.unreadCount && (
                         <div className="bg-blue text-white text-xs font-bold min-w-[1.5rem] h-6 flex items-center justify-center rounded-full mr-1">
-                          {contact.unread}
+                            {contact.unreadCount}
                         </div>
                       )}
                     </div>
@@ -384,13 +451,14 @@ const Chat: React.FC = () => {
                       variant="outline" 
                       className="mt-4"
                       onClick={() => {
-                        setSearchTerm('');
+                          setSearchQuery('');
                         setCurrentTab('all');
                       }}
                     >
                       إعادة ضبط الفلتر
                     </Button>
                   </div>
+                  )
                 )}
               </div>
               
@@ -487,23 +555,26 @@ const Chat: React.FC = () => {
                         {showDate && (
                           <div className="flex justify-center my-4">
                             <span className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-xs">
-                              {formatDate(message.timestamp)}
+                              {formatDate(new Date(message.timestamp))}
                             </span>
                           </div>
                         )}
                         
-                        <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+                        <div className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'} mb-4`}>
                           <div className={`max-w-[70%] md:max-w-[60%] ${
-                            message.sender === 'user' 
+                            message.senderId === user?.id 
                               ? 'bg-blue text-white' 
                               : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                             } rounded-lg px-4 py-2 shadow-sm`}
                           >
-                            <p className="break-words">{message.text}</p>
-                            <div className={`flex justify-end items-center gap-1 mt-1 ${message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
-                              <span className="text-xs">{formatTime(message.timestamp)}</span>
-                              {message.sender === 'user' && (
-                                <CheckCheck className={`h-3 w-3 ${message.read ? 'text-blue-100' : 'text-blue-200'}`} />
+                            {message.subject && (
+                              <div className="text-sm font-medium mb-1">{message.subject}</div>
+                            )}
+                            <p className="break-words">{message.content}</p>
+                            <div className={`flex justify-end items-center gap-1 mt-1 ${message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'}`}>
+                              <span className="text-xs">{formatTime(new Date(message.timestamp))}</span>
+                              {message.senderId === user?.id && (
+                                <CheckCheck className={`h-3 w-3 ${message.isRead ? 'text-blue-100' : 'text-blue-200'}`} />
                               )}
                             </div>
                           </div>
@@ -548,6 +619,26 @@ const Chat: React.FC = () => {
                       <Image className="h-5 w-5" />
                     </Button>
                   </div>
+                  <Input 
+                    type="text" 
+                    placeholder="موضوع الرسالة (اختياري)"
+                    className="border-0 bg-transparent flex-1 focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    value={messageSubject}
+                    onChange={(e) => setMessageSubject(e.target.value)}
+                  />
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-blue hover:bg-blue-600 text-white rounded-full ml-2 p-2 h-10 w-10"
+                    aria-label="إرفاق ملف"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
                   <Input 
                     type="text" 
                     placeholder="اكتب رسالتك هنا..." 
