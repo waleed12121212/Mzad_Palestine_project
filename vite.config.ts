@@ -32,6 +32,18 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/Message/, '/Message')
       },
+      '/Listing': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Listing/, '/Listing')
+      },
+      '/Auction': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Auction/, '/Auction')
+      }
     }
   },
   plugins: [

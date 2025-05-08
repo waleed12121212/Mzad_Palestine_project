@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { 
@@ -22,12 +22,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import AIPriceSuggestion from "@/components/ui/AIPriceSuggestion";
 import { categoryService, Category } from "@/services/categoryService";
+import { listingService } from "@/services/listingService";
+import { auctionService } from "@/services/auctionService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CreateAuction = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeStep, setActiveStep] = useState<number>(1);
   const [images, setImages] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -81,7 +87,7 @@ const CreateAuction = () => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (activeStep === 3 && !formData.terms) {
@@ -96,18 +102,162 @@ const CreateAuction = () => {
     if (activeStep < 3) {
       setActiveStep(activeStep + 1);
     } else {
-      console.log("Form submitted", { 
-        ...formData, 
-        images
-      });
+      try {
+        setIsSubmitting(true);
+
+        // Validate required fields
+        if (!formData.title || !formData.description || !formData.category || !formData.startingPrice || !formData.endDate || !formData.endTime) {
+          toast({
+            title: "خطأ في النموذج",
+            description: "جميع الحقول المطلوبة يجب ملؤها",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Format dates to match backend requirements
+        const endDate = new Date(`${formData.endDate}T${formData.endTime}`);
+        const startDate = new Date(); // Current time for start
+
+        // Validate dates
+        if (endDate <= startDate) {
+          toast({
+            title: "خطأ في التاريخ",
+            description: "تاريخ انتهاء المزاد يجب أن يكون في المستقبل",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Create listing with exact backend format
+        const listingData = {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          startingPrice: Number(formData.startingPrice),
+          categoryId: Number(formData.category),
+          endDate: endDate.toISOString(),
+          images: images.length > 0 ? images : ["https://example.com/images/placeholder.jpg"],
+          userId: user?.id?.toString() || "1"
+        };
+
+        console.log("Creating listing with data:", JSON.stringify(listingData, null, 2));
+        const listing = await listingService.createListing(listingData);
+        console.log("Listing created:", listing);
+
+        if (!listing || (!listing.id && !listing.listingId)) {
+          throw new Error('Failed to create listing: No listing ID returned');
+        }
+
+        // Wait a moment to ensure the listing is fully created
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // بعد إنشاء listing
+        const plainListing = JSON.parse(JSON.stringify(listing));
+        console.log('plainListing:', plainListing);
+        let listingId = plainListing.listingId ?? plainListing.id;
+        if (typeof listingId === 'string') {
+          listingId = parseInt(listingId, 10);
+        }
+        console.log('Using listingId for auction:', listingId, typeof listingId);
+        if (!listingId || isNaN(listingId)) {
+          throw new Error('No valid listingId returned from listing creation');
+        }
+
+        // Create auction with exact backend format
+        const auctionData = {
+          listingId: listingId,
+          name: formData.title.trim(),
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString(),
+          reservePrice: Number(formData.startingPrice),
+          bidIncrement: Number(formData.incrementAmount || 10),
+          imageUrl: images[0] || "https://example.com/images/placeholder.jpg"
+        };
+
+        // Log the exact data being sent
+        console.log("Creating auction with data:", JSON.stringify(auctionData, null, 2));
+        console.log("Auction data types:", {
+          listingId: typeof auctionData.listingId,
+          name: typeof auctionData.name,
+          startTime: typeof auctionData.startTime,
+          endTime: typeof auctionData.endTime,
+          reservePrice: typeof auctionData.reservePrice,
+          bidIncrement: typeof auctionData.bidIncrement,
+          imageUrl: typeof auctionData.imageUrl
+        });
+
+        // Validate auction data before sending
+        if (!auctionData.listingId || !auctionData.name || !auctionData.startTime || !auctionData.endTime || 
+            !auctionData.reservePrice || !auctionData.bidIncrement || !auctionData.imageUrl) {
+          throw new Error('Missing required auction fields');
+        }
+
+        // Ensure listingId is a number
+        auctionData.listingId = Number(auctionData.listingId);
+        if (isNaN(auctionData.listingId)) {
+          throw new Error('Invalid listing ID');
+        }
+
+        // Ensure all numeric fields are valid
+        if (isNaN(auctionData.reservePrice) || isNaN(auctionData.bidIncrement)) {
+          throw new Error('Invalid numeric values');
+        }
+
+        // Ensure dates are valid
+        const startTime = new Date(auctionData.startTime);
+        const endTime = new Date(auctionData.endTime);
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+          throw new Error('Invalid date format');
+        }
+
+        // Format the data exactly as the backend expects
+        const formattedAuctionData = {
+          listingId: auctionData.listingId,
+          name: auctionData.name,
+          startTime: auctionData.startTime,
+          endTime: auctionData.endTime,
+          reservePrice: auctionData.reservePrice,
+          bidIncrement: auctionData.bidIncrement,
+          imageUrl: auctionData.imageUrl
+        };
+
+        console.log("Sending formatted auction data:", JSON.stringify(formattedAuctionData, null, 2));
+
+        const auction = await auctionService.createAuction(formattedAuctionData);
+        console.log("Auction created:", auction);
+
+        if (!auction || !auction.id) {
+          throw new Error('Failed to create auction: No auction ID returned');
+        }
+
       toast({
         title: "تم إنشاء المزاد بنجاح",
         description: "سيتم مراجعة المزاد من قبل الإدارة قبل نشره",
       });
       
       setTimeout(() => {
-        window.location.href = "/";
+          navigate(`/auction/${auction.id}`);
       }, 2000);
+      } catch (error: any) {
+        console.error("Error creating auction:", error);
+        console.error("Error response data:", error.response?.data);
+        console.error("Validation errors:", error.response?.data?.errors);
+        console.error("Error response status:", error.response?.status);
+        console.error("Error response headers:", error.response?.headers);
+        console.error("Request config:", error.config);
+        
+        const errorMessage = error.response?.data?.message 
+          || (error.response?.data?.errors && JSON.stringify(error.response.data.errors))
+          || error.message 
+          || "حدث خطأ أثناء إنشاء المزاد";
+        toast({
+          title: "خطأ",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -599,6 +749,7 @@ const CreateAuction = () => {
                   type="button"
                   onClick={goToPreviousStep}
                   className="btn-secondary"
+                  disabled={isSubmitting}
                 >
                   العودة للخطوة السابقة
                 </button>
@@ -609,8 +760,14 @@ const CreateAuction = () => {
               <button
                 type="submit"
                 className="btn-primary flex items-center gap-2"
+                disabled={isSubmitting}
               >
-                {activeStep < 3 ? (
+                {isSubmitting ? (
+                  <>
+                    <span>جاري الحفظ...</span>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  </>
+                ) : activeStep < 3 ? (
                   <>
                     <span>التالي</span>
                     <ArrowRight className="h-4 w-4" />
