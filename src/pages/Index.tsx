@@ -592,7 +592,7 @@ const HowItWorksCard = ({ number, title, description, icon }) => {
     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
       <div className="relative mb-6">
         <div className="w-16 h-16 bg-blue/10 dark:bg-blue/20 rounded-full flex items-center justify-center text-blue dark:text-blue-light">
-          {icon}
+          {React.cloneElement(icon, { className: "w-8 h-8 text-gray-500" })}
         </div>
         <div className="absolute top-0 right-0 w-8 h-8 bg-blue text-white rounded-full flex items-center justify-center font-bold text-lg transform translate-x-1/4 -translate-y-1/4">
           {number}

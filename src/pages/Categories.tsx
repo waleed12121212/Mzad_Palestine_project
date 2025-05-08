@@ -21,6 +21,35 @@ function getRoleFromToken(token) {
   }
 }
 
+// دالة اختيار الأيقونة حسب اسم التصنيف
+function getCategoryIcon(name) {
+  switch (name) {
+    case "أزياء":
+      return <Shirt className="inline-block w-5 h-5 ml-1" />;
+    case "إلكترونيات":
+      return <Smartphone className="inline-block w-5 h-5 ml-1" />;
+    case "مركبات":
+    case "سيارات":
+      return <Car className="inline-block w-5 h-5 ml-1" />;
+    case "إكسسوارات":
+      return <Gem className="inline-block w-5 h-5 ml-1" />;
+    case "كتب":
+    case "الكتب والمجلات":
+      return <BookOpen className="inline-block w-5 h-5 ml-1" />;
+    case "كاميرات":
+      return <Camera className="inline-block w-5 h-5 ml-1" />;
+    case "مستلزمات الأطفال":
+      return <Baby className="inline-block w-5 h-5 ml-1" />;
+    case "مستلزمات منزلية":
+      return <Coffee className="inline-block w-5 h-5 ml-1" />;
+    case "أثاث":
+      return <Sofa className="inline-block w-5 h-5 ml-1" />;
+    default:
+      // أيقونة افتراضية
+      return <Gem className="inline-block w-5 h-5 ml-1" />;
+  }
+}
+
 const Categories = () => {
   const { category } = useParams<{ category?: string }>();
   const [auctions, setAuctions] = useState<any[]>([]);
@@ -436,7 +465,7 @@ const Categories = () => {
 
   // تصميم كرت التصنيف
   const CategoryCard = ({ category }) => (
-    <div className="relative rounded-2xl overflow-hidden shadow-md group w-80 h-48">
+    <div className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0">
       {/* صورة الخلفية */}
       <img
         src={category.imageUrl}
@@ -445,9 +474,24 @@ const Categories = () => {
       />
       {/* طبقة شفافة */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-      {/* أزرار الأدمن */}
+      {/* اسم التصنيف والأيقونة في الأعلى يمين */}
+      <div className="absolute top-3 right-4 z-10 flex items-center gap-2">
+        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/30 backdrop-blur-sm">
+          {React.cloneElement(getCategoryIcon(category.name), { className: "w-5 h-5 text-white" })}
+        </span>
+        <span className="text-lg font-bold text-white drop-shadow">{category.name}</span>
+      </div>
+      {/* الوصف في الأسفل */}
+      <div className="absolute bottom-8 right-4 left-4 z-10">
+        <p className="text-sm text-gray-200 line-clamp-2">{category.description}</p>
+      </div>
+      {/* عدد المنتجات في الأسفل يمين */}
+      <div className="absolute bottom-3 right-4 z-10">
+        <span className="text-xs text-gray-200">{category.count ? `${category.count} منتج` : ''}</span>
+      </div>
+      {/* أزرار الأدمن (إن وجد) */}
       {isAdmin && (
-        <div className="absolute top-2 left-2 flex gap-2 z-20">
+        <div className="absolute top-3 left-3 flex gap-2 z-20">
           <button
             onClick={() => {
               setSelectedCategory(category);
@@ -473,21 +517,6 @@ const Categories = () => {
           </button>
         </div>
       )}
-      {/* محتوى الكرت */}
-      <div className="relative z-10 flex flex-col justify-between h-full p-4">
-        <div>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            {category.name}
-          </h3>
-          <p className="text-sm text-gray-200 mt-1 line-clamp-2">{category.description}</p>
-        </div>
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-xs text-gray-200">{category.count ? `${category.count} منتج` : ''}</span>
-          <button className="text-white bg-white/20 hover:bg-white/40 rounded-full p-1 transition">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-        </div>
-      </div>
     </div>
   );
 
