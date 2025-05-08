@@ -1,0 +1,1 @@
+export const API_BASE_URL = 'http://mazadpalestine.runasp.net'; 

@@ -1,10 +1,25 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronRight, Search, Filter, SlidersHorizontal, Building2, Car, Smartphone, Sofa, Gem, BookOpen, Camera, Baby, Coffee, Shirt, Utensils, Dumbbell, ChevronLeft } from "lucide-react";
+import { ChevronRight, Search, Filter, SlidersHorizontal, Building2, Car, Smartphone, Sofa, Gem, BookOpen, Camera, Baby, Coffee, Shirt, Utensils, Dumbbell, ChevronLeft, Plus, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from '@/components/ui/use-toast';
+import { categoryService, Category, CreateCategoryData, UpdateCategoryData } from '@/services/categoryService';
+import { useAuth } from '@/contexts/AuthContext';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+
+// دالة استخراج الدور من التوكن
+function getRoleFromToken(token) {
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.role || payload.Role || payload.roles || payload.Roles;
+  } catch {
+    return undefined;
+  }
+}
 
 const Categories = () => {
   const { category } = useParams<{ category?: string }>();
@@ -14,9 +29,33 @@ const Categories = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [sortBy, setSortBy] = useState<string>("ending-soon");
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const token = localStorage.getItem('token');
+  const roleFromToken = getRoleFromToken(token);
+  const isAdmin = (!!user && String(user.role).toLowerCase() === 'admin') ||
+                  (!user && String(roleFromToken).toLowerCase() === 'admin');
+  
+  // Debug: طباعة بيانات المستخدم وصلاحيات الأدمن
+  console.log("user:", user, "role:", user?.role || roleFromToken, "isAdmin:", isAdmin);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // Form states
+  const [formData, setFormData] = useState<CreateCategoryData>({
+    name: '',
+    description: '',
+    imageUrl: '',
+    parentCategoryId: null
+  });
   
   // Mock data for categories
-  const categories = [
+  const mockCategories = [
     {
       id: "accessories",
       name: "إكسسوارات",
@@ -290,222 +329,340 @@ const Categories = () => {
     }, 1000);
   }, [category, sortBy, priceRange]);
 
-  const selectedCategory = categories.find(c => c.id === category);
+  useEffect(() => {
+    fetchCategories();
+  }, [showActiveOnly]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = showActiveOnly 
+        ? await categoryService.getActiveCategories()
+        : await categoryService.getAllCategories();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء تحميل التصنيفات');
+      setCategories([]);
+      toast({
+        title: "خطأ",
+        description: err.message || 'حدث خطأ أثناء تحميل التصنيفات',
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await categoryService.createCategory(formData);
+      toast({
+        title: "تمت الإضافة",
+        description: "تم إضافة التصنيف بنجاح"
+      });
+      setIsCreateModalOpen(false);
+      setFormData({
+        name: '',
+        description: '',
+        imageUrl: '',
+        parentCategoryId: null
+      });
+      fetchCategories();
+    } catch (err: any) {
+      toast({
+        title: "خطأ",
+        description: err.message || 'حدث خطأ أثناء إضافة التصنيف',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCategory) return;
+
+    try {
+      await categoryService.updateCategory(selectedCategory.id, {
+        name: formData.name,
+        description: formData.description
+      });
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث التصنيف بنجاح"
+      });
+      setIsEditModalOpen(false);
+      fetchCategories();
+    } catch (err: any) {
+      toast({
+        title: "خطأ",
+        description: err.message || 'حدث خطأ أثناء تحديث التصنيف',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا التصنيف؟')) return;
+
+    try {
+      await categoryService.deleteCategory(id);
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف التصنيف بنجاح"
+      });
+      fetchCategories();
+    } catch (err: any) {
+      toast({
+        title: "خطأ",
+        description: err.message || 'حدث خطأ أثناء حذف التصنيف',
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleCategoryExpand = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  // تصميم كرت التصنيف
+  const CategoryCard = ({ category }) => (
+    <div className="relative rounded-2xl overflow-hidden shadow-md group w-80 h-48">
+      {/* صورة الخلفية */}
+      <img
+        src={category.imageUrl}
+        alt={category.name}
+        className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+      />
+      {/* طبقة شفافة */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+      {/* أزرار الأدمن */}
+      {isAdmin && (
+        <div className="absolute top-2 left-2 flex gap-2 z-20">
+          <button
+            onClick={() => {
+              setSelectedCategory(category);
+              setFormData({
+                name: category.name,
+                description: category.description,
+                imageUrl: category.imageUrl,
+                parentCategoryId: category.parentCategoryId
+              });
+              setIsEditModalOpen(true);
+            }}
+            className="bg-white/80 hover:bg-blue text-blue hover:text-white rounded-full p-2 transition"
+            title="تعديل"
+          >
+            <Edit className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => handleDeleteCategory(category.id)}
+            className="bg-white/80 hover:bg-red-500 text-red-500 hover:text-white rounded-full p-2 transition"
+            title="حذف"
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+      {/* محتوى الكرت */}
+      <div className="relative z-10 flex flex-col justify-between h-full p-4">
+        <div>
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            {category.name}
+          </h3>
+          <p className="text-sm text-gray-200 mt-1 line-clamp-2">{category.description}</p>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-xs text-gray-200">{category.count ? `${category.count} منتج` : ''}</span>
+          <button className="text-white bg-white/20 hover:bg-white/40 rounded-full p-1 transition">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const selectedCategoryObj = Array.isArray(categories) ? categories.find(c => c.id === category) : null;
 
   return (
-    <PageWrapper>
-      <div className="container mx-auto px-4">
-        {/* Breadcrumbs */}
-        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6 rtl mt-4">
-          <Link to="/" className="hover:text-blue dark:hover:text-blue-light">الرئيسية</Link>
-          <span className="mx-2">›</span>
-          {category ? (
-            <>
-              <Link to="/categories" className="hover:text-blue dark:hover:text-blue-light">التصنيفات</Link>
-              <span className="mx-2">›</span>
-              <span className="text-gray-900 dark:text-gray-100">{selectedCategory?.name || category}</span>
-            </>
-          ) : (
-            <span className="text-gray-900 dark:text-gray-100">التصنيفات</span>
-          )}
-        </div>
-        
-        {/* Page Header */}
-        <div className="mb-8 rtl">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            {category ? selectedCategory?.name || category : "تصفح جميع التصنيفات"}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
-            {category
-              ? `تصفح المزادات المتاحة ضمن تصنيف ${selectedCategory?.name || category}`
-              : "استعرض مزادات من مختلف التصنيفات واعثر على ما تبحث عنه"}
-          </p>
-        </div>
-        
-        {!category ? (
-          // Categories Grid View - Similar to the reference image
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 rtl mb-16">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/categories/${cat.id}`}
-                className="group relative rounded-2xl overflow-hidden h-72 md:h-80 shadow-lg hover:shadow-xl transition-all duration-300"
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      
+      <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">التصنيفات</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowActiveOnly(!showActiveOnly)}
+                className={`px-4 py-2 rounded-xl ${
+                  showActiveOnly
+                    ? 'bg-blue text-white dark:bg-blue-light dark:text-gray-900'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                }`}
               >
-                {/* Background Image */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/80">
-                  <img 
-                    src={cat.image} 
-                    alt={cat.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                  />
-                </div>
-                
-                {/* Category Icon */}
-                <div className="absolute top-4 right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                  <div className="text-white">
-                    {cat.icon}
-                  </div>
-                </div>
-                
-                {/* Category Info */}
-                <div className="absolute bottom-0 right-0 left-0 p-6 flex flex-col items-start">
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:translate-y-0 transition-transform duration-300">{cat.name}</h3>
-                  <p className="text-white/80 mb-3 text-sm tracking-wide line-clamp-2">
-                    {cat.description}
-                  </p>
-                  <div className="flex justify-between items-center w-full">
-                    <span className="text-white/90 text-sm font-medium">{cat.count} منتج</span>
-                    <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-full py-1 px-3 text-white text-sm">
-                      <span className="ml-1">تصفح</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          // Category Detail View with Auctions
-          <div>
-            {/* Search and Filters */}
-            <div className="mb-8 rtl">
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="relative flex-grow">
-                  <input
-                    type="text"
-                    placeholder="ابحث عن منتجات..."
-                    className="w-full py-3 px-5 pl-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-                  />
-                  <Search className="absolute top-1/2 transform -translate-y-1/2 left-4 h-5 w-5 text-gray-400" />
-                </div>
-                <div className="flex gap-2">
-                  <select 
-                    className="py-3 px-5 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base w-full md:w-48"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <option value="ending-soon">ينتهي قريباً</option>
-                    <option value="price-low">السعر: من الأقل</option>
-                    <option value="price-high">السعر: من الأعلى</option>
-                    <option value="most-bids">الأكثر مزايدة</option>
-                  </select>
-                  <button 
-                    className="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    <Filter className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              
-              {showFilters && (
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="font-medium mb-2 flex items-center gap-2">
-                        <SlidersHorizontal className="h-4 w-4" />
-                        <span>نطاق السعر</span>
-                      </h3>
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="number"
-                          value={priceRange[0]}
-                          onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                          className="w-28 py-2 px-3 rounded-lg bg-gray-100 dark:bg-gray-700 border-none text-sm"
-                          placeholder="الحد الأدنى"
-                        />
-                        <span>-</span>
-                        <input
-                          type="number"
-                          value={priceRange[1]}
-                          onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                          className="w-28 py-2 px-3 rounded-lg bg-gray-100 dark:bg-gray-700 border-none text-sm"
-                          placeholder="الحد الأقصى"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button 
-                        className="btn-primary py-2 px-4 rounded-lg text-sm"
-                        onClick={() => setShowFilters(false)}
-                      >
-                        تطبيق الفلترة
-                      </button>
-                      <button 
-                        className="btn-secondary py-2 px-4 rounded-lg text-sm"
-                        onClick={() => {
-                          setPriceRange([0, 10000]);
-                          setSortBy("ending-soon");
-                        }}
-                      >
-                        إعادة تعيين
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                {showActiveOnly ? 'عرض الكل' : 'عرض النشطة فقط'}
+              </button>
+              {user && isAdmin && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-blue text-white dark:bg-blue-light dark:text-gray-900 px-4 py-2 rounded-xl flex items-center gap-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>إضافة تصنيف</span>
+                </button>
               )}
             </div>
-            
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="neo-card animate-pulse">
-                    <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
-                    <div className="p-4">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
-                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-4"></div>
-                      <div className="flex justify-between mb-4">
-                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-                      </div>
-                      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    </div>
-                  </div>
-                ))}
+          </div>
+          
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="w-16 h-16 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400">لا توجد تصنيفات</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-6 justify-center">
+              {categories.map(category => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Create Category Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">إضافة تصنيف جديد</h2>
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">الاسم</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  required
+                />
               </div>
-            ) : auctions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {auctions.map((auction) => (
-                  <AuctionCard
-                    key={auction.id}
-                    id={auction.id}
-                    title={auction.title}
-                    description={auction.description}
-                    currentPrice={auction.currentPrice}
-                    minBidIncrement={auction.minBidIncrement}
-                    imageUrl={auction.imageUrl}
-                    endTime={auction.endTime}
-                    bidders={auction.bidders}
-                    isPopular={auction.isPopular}
-                  />
-                ))}
+              <div>
+                <label className="block text-sm font-medium mb-2">الوصف</label>
+                <textarea
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  rows={3}
+                  required
+                />
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                  <Filter className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">لم يتم العثور على مزادات</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6 text-center max-w-md">
-                  لم نتمكن من العثور على مزادات تطابق معايير البحث الخاصة بك. يرجى تجربة معايير مختلفة.
-                </p>
-                <button 
-                  className="btn-primary py-2 px-6 rounded-lg"
-                  onClick={() => {
-                    setPriceRange([0, 10000]);
-                    setSortBy("ending-soon");
-                  }}
+              <div>
+                <label className="block text-sm font-medium mb-2">رابط الصورة</label>
+                <input
+                  type="url"
+                  value={formData.imageUrl}
+                  onChange={e => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">التصنيف الأب (اختياري)</label>
+                <select
+                  value={formData.parentCategoryId || ''}
+                  onChange={e => setFormData(prev => ({ ...prev, parentCategoryId: e.target.value || null }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                 >
-                  إعادة تعيين الفلاتر
+                  <option value="">بدون تصنيف أب</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-4 mt-6">
+                <button 
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue text-white dark:bg-blue-light dark:text-gray-900"
+                >
+                  إضافة
                 </button>
               </div>
-            )}
+            </form>
           </div>
-        )}
-      </div>
-    </PageWrapper>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {isEditModalOpen && selectedCategory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">تعديل التصنيف</h2>
+            <form onSubmit={handleUpdateCategory} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">الاسم</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">الوصف</label>
+                <textarea
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue text-white dark:bg-blue-light dark:text-gray-900"
+                >
+                  حفظ التغييرات
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
   );
 };
 

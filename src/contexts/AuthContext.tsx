@@ -21,6 +21,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<any | null>(null);
 
+  // تحميل بيانات المستخدم من localStorage عند تحميل التطبيق
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr && userStr !== "undefined") {
+      setUser(JSON.parse(userStr));
+    } else if (token) {
+      fetchUserFromServer();
+    }
+  }, [token]);
+
+  async function fetchUserFromServer() {
+    try {
+      const response = await fetch('/User/current', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) return;
+      const userData = await response.json();
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch {}
+  }
+
   const login = async (data: { email: string; password: string }) => {
     const response = await authService.login(data);
     setToken(response.token);

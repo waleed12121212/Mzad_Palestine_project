@@ -186,7 +186,8 @@ export const authService = {
   // Helper method to get current user
   getCurrentUser: () => {
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr || userStr === "undefined") return null;
+    return JSON.parse(userStr);
   },
 
   // Helper method to get token
