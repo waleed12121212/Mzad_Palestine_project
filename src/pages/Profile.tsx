@@ -30,6 +30,13 @@ const Profile = () => {
     dateOfBirth: ''
   });
 
+  // Admin user management section
+  const [adminTab, setAdminTab] = useState<'profile' | 'users'>('profile');
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [roleEdit, setRoleEdit] = useState('User');
+
   // Fetch user data on component mount
   useEffect(() => {
     fetchUserData();
@@ -143,6 +150,104 @@ const Profile = () => {
     setIsEditing(!isEditing);
   };
 
+  // Fetch all users for admin
+  const fetchAllUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const users = await userService.getAllUsers();
+      setAllUsers(users);
+    } catch (error: any) {
+      toast({
+        title: 'خطأ في تحميل المستخدمين',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  // Delete user
+  const handleDeleteUser = async (id: number) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    try {
+      await userService.deleteUser(id);
+      toast({ title: 'تم حذف المستخدم بنجاح' });
+      fetchAllUsers();
+    } catch (error: any) {
+      toast({ title: 'خطأ في حذف المستخدم', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // Edit user role
+  const handleEditUserRole = async (id: number, newRole: string) => {
+    try {
+      await userService.updateUserRole(id, newRole);
+      toast({ title: 'تم تحديث الصلاحية بنجاح' });
+      fetchAllUsers();
+    } catch (error: any) {
+      toast({ title: 'خطأ في تحديث الصلاحية', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // Admin users table
+  const AdminUsersTable = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 mt-8">
+      <h2 className="text-xl font-bold mb-6">إدارة المستخدمين</h2>
+      {usersLoading ? (
+        <div className="text-center py-8">جاري التحميل...</div>
+      ) : (
+        <table className="w-full text-center">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-gray-700">
+              <th className="p-2">#</th>
+              <th className="p-2">اسم المستخدم</th>
+              <th className="p-2">البريد الإلكتروني</th>
+              <th className="p-2">الصلاحية</th>
+              <th className="p-2">الحالة</th>
+              <th className="p-2">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allUsers.map((u, idx) => (
+              <tr key={u.id} className="border-b border-gray-100 dark:border-gray-700">
+                <td className="p-2">{idx + 1}</td>
+                <td className="p-2">{u.username}</td>
+                <td className="p-2">{u.email}</td>
+                <td className="p-2">
+                  <select
+                    value={u.role}
+                    onChange={e => handleEditUserRole(u.id, e.target.value)}
+                    className="rounded px-2 py-1 border border-gray-200 dark:bg-gray-800"
+                  >
+                    <option value="User">مستخدم</option>
+                    <option value="Admin">مدير</option>
+                  </select>
+                </td>
+                <td className="p-2">{u.isActive ? 'نشط' : 'غير نشط'}</td>
+                <td className="p-2">
+                  <button
+                    className="text-red-500 hover:underline"
+                    onClick={() => handleDeleteUser(u.id)}
+                  >
+                    حذف
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+
+  // Fetch users when admin tab is opened
+  useEffect(() => {
+    if (userData?.role === 'Admin' && adminTab === 'users') {
+      fetchAllUsers();
+    }
+  }, [userData, adminTab]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -183,51 +288,49 @@ const Profile = () => {
   }
 
   const ProfileHeader = () => (
-    <div className="relative mb-8 rounded-2xl overflow-hidden">
-      <div className="h-48 md:h-64 relative">
-        <img 
-          src="/images/mountains.jpg"
-          alt="Cover"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/30" />
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col md:flex-row items-center md:items-end gap-4 transform translate-y-16 md:translate-y-12">
-        <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg group cursor-pointer">
-          {userData.profilePicture ? (
-            <img
-              src={
-                userData.profilePicture.startsWith('http')
-                  ? userData.profilePicture
-                  : `http://mazadpalestine.runasp.net${userData.profilePicture}`
-              }
-              alt={userData.username}
-              className="w-full h-full object-cover"
-              onClick={() => document.getElementById('profile-upload')?.click()}
-            />
-          ) : (
-            <span
-              className="text-5xl font-bold text-blue dark:text-blue-light select-none flex items-center justify-center w-full h-full"
-              onClick={() => document.getElementById('profile-upload')?.click()}
-            >
-              {userData.firstName?.charAt(0)?.toUpperCase() || <User className="w-16 h-16" />}
-            </span>
-          )}
-          <input
-            id="profile-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleProfilePictureUpload}
+    <div className="flex flex-col items-center mb-12">
+      <div className="relative w-36 h-36 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg group cursor-pointer mt-8">
+        {userData.profilePicture ? (
+          <img
+            src={
+              userData.profilePicture.startsWith('http')
+                ? userData.profilePicture
+                : `http://mazadpalestine.runasp.net${userData.profilePicture}`
+            }
+            alt={userData.username}
+            className="w-full h-full object-cover"
+            onClick={() => document.getElementById('profile-upload')?.click()}
           />
-        </div>
-        <div className="text-center md:text-right md:mr-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{userData.firstName + ' ' + userData.lastName}</h1>
-          <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-            <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
-            <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
-            <span className="px-3 py-1 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700">{userData.role === 'Admin' ? 'مدير' : 'مستخدم'}</span>
-          </div>
+        ) : (
+          <span
+            className="text-6xl font-bold text-blue dark:text-blue-light select-none flex items-center justify-center w-full h-full"
+            onClick={() => document.getElementById('profile-upload')?.click()}
+          >
+            {userData.username?.charAt(0)?.toUpperCase() || <User className="w-16 h-16" />}
+          </span>
+        )}
+        <button
+          className="absolute bottom-2 right-2 bg-blue text-white p-2 rounded-full shadow hover:bg-blue-600 transition"
+          onClick={() => document.getElementById('profile-upload')?.click()}
+          title="تغيير الصورة"
+          type="button"
+        >
+          <Camera className="w-5 h-5" />
+        </button>
+        <input
+          id="profile-upload"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleProfilePictureUpload}
+        />
+      </div>
+      <div className="text-center mt-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{userData.firstName + ' ' + userData.lastName}</h1>
+        <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2 justify-center">
+          <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
+          <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
+          <span className="px-3 py-1 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700">{userData.role === 'Admin' ? 'مدير' : 'مستخدم'}</span>
         </div>
       </div>
     </div>
@@ -235,16 +338,16 @@ const Profile = () => {
 
   const StatsCard = () => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-      <h3 className="font-semibold text-lg mb-4">إحصائيات النشاط</h3>
+      <h3 className="font-semibold text-lg mb-6 text-center">إحصائيات النشاط</h3>
       <div className="grid grid-cols-3 gap-4">
         {[
           { value: userData.username, label: "اسم المستخدم" },
           { value: userData.role === "Admin" ? "مدير" : "مستخدم", label: "الصلاحية" },
           { value: userData.isActive ? "نشط" : "غير نشط", label: "الحالة" }
         ].map((stat, index) => (
-          <div key={index} className="text-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50">
-            <div className="text-2xl font-bold text-blue dark:text-blue-light">{stat.value}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</div>
+          <div key={index} className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 shadow-sm">
+            <div className="text-lg font-semibold text-blue dark:text-blue-light mb-1">{stat.value}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -576,14 +679,32 @@ const Profile = () => {
         <div className="container mx-auto px-4">
           <ProfileHeader />
 
+          {/* Admin tab navigation */}
+          {userData.role === 'Admin' && (
+            <div className="flex justify-center gap-4 mt-8 mb-8">
+              <button
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'profile' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                onClick={() => setAdminTab('profile')}
+              >
+                البيانات الشخصية
+              </button>
+              <button
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'users' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                onClick={() => setAdminTab('users')}
+              >
+                إدارة المستخدمين
+              </button>
+            </div>
+          )}
+
           <div className="mt-20 md:mt-16 flex flex-col md:flex-row gap-6 md:gap-8 rtl">
             <div className="w-full md:w-1/3 lg:w-1/4 space-y-6">
               <StatsCard />
               <QuickLinks />
             </div>
-
             <div className="w-full md:w-2/3 lg:w-3/4">
-              <MainContent />
+              {/* Show admin users table if admin and tab is users */}
+              {userData.role === 'Admin' && adminTab === 'users' ? <AdminUsersTable /> : <MainContent />}
             </div>
           </div>
         </div>
