@@ -17,7 +17,8 @@ import {
   ArrowRight, 
   X,
   Upload,
-  Lightbulb
+  Lightbulb,
+  MapPin
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AIPriceSuggestion from "@/components/ui/AIPriceSuggestion";
@@ -33,13 +34,17 @@ const CreateAuction = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
   const [images, setImages] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
     startingPrice: "",
     incrementAmount: "",
+    startDate: "",
+    startTime: "",
     endDate: "",
     endTime: "",
     location: "",
@@ -64,6 +69,16 @@ const CreateAuction = () => {
 
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (formData.category) {
+      const categoryId = Number(formData.category);
+      const category = categories.find(c => c.id === categoryId);
+      setSelectedCategory(category || null);
+    } else {
+      setSelectedCategory(null);
+    }
+  }, [formData.category, categories]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -116,14 +131,14 @@ const CreateAuction = () => {
         }
 
         // Format dates to match backend requirements
+        const startDate = new Date(`${formData.startDate}T${formData.startTime}`);
         const endDate = new Date(`${formData.endDate}T${formData.endTime}`);
-        const startDate = new Date(); // Current time for start
 
         // Validate dates
         if (endDate <= startDate) {
           toast({
             title: "خطأ في التاريخ",
-            description: "تاريخ انتهاء المزاد يجب أن يكون في المستقبل",
+            description: "تاريخ انتهاء المزاد يجب أن يكون بعد تاريخ البدء",
             variant: "destructive",
           });
           return;
@@ -140,9 +155,7 @@ const CreateAuction = () => {
           userId: user?.id?.toString() || "1"
         };
 
-        console.log("Creating listing with data:", JSON.stringify(listingData, null, 2));
         const listing = await listingService.createListing(listingData);
-        console.log("Listing created:", listing);
 
         if (!listing || (!listing.id && !listing.listingId)) {
           throw new Error('Failed to create listing: No listing ID returned');
@@ -153,12 +166,10 @@ const CreateAuction = () => {
 
         // بعد إنشاء listing
         const plainListing = JSON.parse(JSON.stringify(listing));
-        console.log('plainListing:', plainListing);
         let listingId = plainListing.listingId ?? plainListing.id;
         if (typeof listingId === 'string') {
           listingId = parseInt(listingId, 10);
         }
-        console.log('Using listingId for auction:', listingId, typeof listingId);
         if (!listingId || isNaN(listingId)) {
           throw new Error('No valid listingId returned from listing creation');
         }
@@ -173,18 +184,6 @@ const CreateAuction = () => {
           bidIncrement: Number(formData.incrementAmount || 10),
           imageUrl: images[0] || "https://example.com/images/placeholder.jpg"
         };
-
-        // Log the exact data being sent
-        console.log("Creating auction with data:", JSON.stringify(auctionData, null, 2));
-        console.log("Auction data types:", {
-          listingId: typeof auctionData.listingId,
-          name: typeof auctionData.name,
-          startTime: typeof auctionData.startTime,
-          endTime: typeof auctionData.endTime,
-          reservePrice: typeof auctionData.reservePrice,
-          bidIncrement: typeof auctionData.bidIncrement,
-          imageUrl: typeof auctionData.imageUrl
-        });
 
         // Validate auction data before sending
         if (!auctionData.listingId || !auctionData.name || !auctionData.startTime || !auctionData.endTime || 
@@ -221,40 +220,30 @@ const CreateAuction = () => {
           imageUrl: auctionData.imageUrl
         };
 
-        console.log("Sending formatted auction data:", JSON.stringify(formattedAuctionData, null, 2));
-
         const auction = await auctionService.createAuction(formattedAuctionData);
-        console.log("Auction created:", auction);
 
-        if (!auction || !auction.id) {
-          throw new Error('Failed to create auction: No auction ID returned');
-        }
-
-      toast({
-        title: "تم إنشاء المزاد بنجاح",
-        description: "سيتم مراجعة المزاد من قبل الإدارة قبل نشره",
-      });
-      
-      setTimeout(() => {
-          navigate(`/auction/${auction.id}`);
-      }, 2000);
+        // On successful auction creation, show the modal
+        setShowSuccessModal(true);
       } catch (error: any) {
-        console.error("Error creating auction:", error);
-        console.error("Error response data:", error.response?.data);
-        console.error("Validation errors:", error.response?.data?.errors);
-        console.error("Error response status:", error.response?.status);
-        console.error("Error response headers:", error.response?.headers);
-        console.error("Request config:", error.config);
-        
-        const errorMessage = error.response?.data?.message 
-          || (error.response?.data?.errors && JSON.stringify(error.response.data.errors))
-          || error.message 
-          || "حدث خطأ أثناء إنشاء المزاد";
-        toast({
-          title: "خطأ",
-          description: errorMessage,
-          variant: "destructive"
-        });
+        // Only log the error if it's not a successful creation
+        if (!error.response?.data?.success) {
+          console.error("Error creating auction:", error);
+          console.error("Error response data:", error.response?.data);
+          console.error("Validation errors:", error.response?.data?.errors);
+          console.error("Error response status:", error.response?.status);
+          console.error("Error response headers:", error.response?.headers);
+          console.error("Request config:", error.config);
+          
+          const errorMessage = error.response?.data?.message 
+            || (error.response?.data?.errors && JSON.stringify(error.response.data.errors))
+            || error.message 
+            || "حدث خطأ أثناء إنشاء المزاد";
+          toast({
+            title: "خطأ",
+            description: errorMessage,
+            variant: "destructive"
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -266,8 +255,6 @@ const CreateAuction = () => {
       setActiveStep(activeStep - 1);
     }
   };
-
-  const selectedCategory = categories.find(c => c.id === formData.category);
 
   const handleAIPriceSelect = (price: number) => {
     setFormData(prev => ({
@@ -512,6 +499,45 @@ const CreateAuction = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                      <label htmlFor="startDate" className="block mb-2 text-sm font-medium">
+                        تاريخ بدء المزاد <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          id="startDate"
+                          name="startDate"
+                          value={formData.startDate}
+                          onChange={handleChange}
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          required
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                        <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="startTime" className="block mb-2 text-sm font-medium">
+                        وقت بدء المزاد <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="time"
+                          id="startTime"
+                          name="startTime"
+                          value={formData.startTime}
+                          onChange={handleChange}
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          required
+                        />
+                        <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <label htmlFor="endDate" className="block mb-2 text-sm font-medium">
                         تاريخ انتهاء المزاد <span className="text-red-500">*</span>
                       </label>
@@ -639,77 +665,93 @@ const CreateAuction = () => {
                   </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-4">ملخص المزاد</h3>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Details Section */}
+                  <div className="md:col-span-2 space-y-6">
+                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                      <Info className="h-6 w-6 text-blue-500" />
+                      ملخص المزاد
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">عنوان المزاد</h4>
-                        <p className="font-medium">{formData.title || "غير محدد"}</p>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Tag className="h-4 w-4" /> عنوان المزاد
+                        </span>
+                        <div className="font-semibold text-lg">{formData.title || "غير محدد"}</div>
                       </div>
                       <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">الفئة</h4>
-                        <p className="font-medium">
-                          {selectedCategory?.name || "غير محدد"}
-                        </p>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Building2 className="h-4 w-4" /> الفئة
+                        </span>
+                        <div className="font-semibold text-lg">{selectedCategory?.name || "غير محدد"}</div>
                       </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm text-gray-500 dark:text-gray-400">وصف المزاد</h4>
-                      <p>{formData.description || "غير محدد"}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">سعر البدء</h4>
-                        <p className="font-medium text-blue dark:text-blue-light">
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Info className="h-4 w-4" /> وصف المزاد
+                        </span>
+                        <div className="text-base">{formData.description || "غير محدد"}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Gem className="h-4 w-4" /> سعر البدء
+                        </span>
+                        <div className="font-bold text-blue-600 text-lg">
                           {formData.startingPrice ? `₪ ${parseFloat(formData.startingPrice).toLocaleString()}` : "غير محدد"}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">الحد الأدنى للمزايدة</h4>
-                        <p className="font-medium">
-                          {formData.incrementAmount ? `₪ ${parseFloat(formData.incrementAmount).toLocaleString()}` : "غير محدد"}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">تاريخ ووقت الانتهاء</h4>
-                        <p className="font-medium">
-                          {formData.endDate && formData.endTime 
-                            ? `${formData.endDate} ${formData.endTime}` 
-                            : "غير محدد"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">الموقع</h4>
-                        <p className="font-medium">{formData.location || "غير محدد"}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400">حالة العنصر</h4>
-                        <p className="font-medium">{formData.condition === "new" ? "جديد" : "مستعمل"}</p>
-                      </div>
-                    </div>
-
-                    {images.length > 0 && (
-                      <div>
-                        <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2">الصور</h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {images.map((src, index) => (
-                            <img
-                              key={index}
-                              src={src}
-                              alt={`Preview ${index + 1}`}
-                              className="h-20 w-full object-cover rounded-lg"
-                            />
-                          ))}
                         </div>
                       </div>
-                    )}
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Tag className="h-4 w-4" /> الحد الأدنى للمزايدة
+                        </span>
+                        <div className="font-semibold">
+                          {formData.incrementAmount ? `₪ ${parseFloat(formData.incrementAmount).toLocaleString()}` : "غير محدد"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" /> تاريخ ووقت البدء
+                        </span>
+                        <div className="font-semibold">
+                          {formData.startDate && formData.startTime ? `${formData.startDate} ${formData.startTime}` : "غير محدد"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" /> تاريخ ووقت الانتهاء
+                        </span>
+                        <div className="font-semibold">
+                          {formData.endDate && formData.endTime ? `${formData.endDate} ${formData.endTime}` : "غير محدد"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <Sofa className="h-4 w-4" /> حالة العنصر
+                        </span>
+                        <div className="font-semibold">{formData.condition === "new" ? "جديد" : "مستعمل"}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 flex items-center gap-2">
+                          <MapPin className="h-4 w-4" /> الموقع
+                        </span>
+                        <div className="font-semibold">{formData.location || "غير محدد"}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Images Section */}
+                  <div className="flex flex-col items-center">
+                    <h3 className="text-lg font-semibold mb-2">الصور</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.length > 0 ? images.map((src, idx) => (
+                        <img
+                          key={idx}
+                          src={src}
+                          alt={`Preview ${idx + 1}`}
+                          className="h-24 w-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:scale-105 transition-transform"
+                        />
+                      )) : (
+                        <span className="text-gray-400">لا توجد صور</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -781,6 +823,25 @@ const CreateAuction = () => {
         </div>
       </main>
       <Footer />
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-10 max-w-md w-full text-center relative animate-fade-in">
+            <div className="text-green-500 text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">تم إنشاء المزاد بنجاح!</h2>
+            <p className="mb-6 text-gray-600 dark:text-gray-300">سيتم مراجعة المزاد من قبل الإدارة قبل نشره.<br/>عند إغلاق هذه النافذة سيتم توجيهك إلى صفحة المزادات.</p>
+            <button
+              className="btn-primary w-full py-3 text-lg rounded-lg"
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate('/auctions');
+              }}
+            >
+              حسنًا، توجه إلى صفحة المزادات
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

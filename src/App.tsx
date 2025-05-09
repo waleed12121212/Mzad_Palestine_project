@@ -36,6 +36,8 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth/*" element={<AuthPage />} />
+                  <Route path="/auctions" element={<ActiveAuctions />} />
+                  <Route path="/auction/:id" element={<AuctionDetails />} />
                   <Route path="/auctions/search" element={<AuctionSearch />} />
                   <Route path="/auctions/active" element={<ActiveAuctions />} />
                   <Route path="/auctions/:id" element={<AuctionDetails />} />
