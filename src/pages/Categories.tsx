@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronRight, Search, Filter, SlidersHorizontal, Building2, Car, Smartphone, Sofa, Gem, BookOpen, Camera, Baby, Coffee, Shirt, Utensils, Dumbbell, ChevronLeft, Plus, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronRight, Search, Filter, SlidersHorizontal, Building2, Car, Smartphone, Sofa, Gem, BookOpen, Camera, Baby, Coffee, Shirt, Utensils, Dumbbell, ChevronLeft, Plus, Edit, Trash2, ChevronDown, ChevronUp, Laptop } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,19 +31,25 @@ function getCategoryIcon(name) {
     case "مركبات":
     case "سيارات":
       return <Car className="inline-block w-5 h-5 ml-1" />;
-    case "إكسسوارات":
+    case "كوزمتكس":
       return <Gem className="inline-block w-5 h-5 ml-1" />;
     case "كتب":
     case "الكتب والمجلات":
       return <BookOpen className="inline-block w-5 h-5 ml-1" />;
     case "كاميرات":
       return <Camera className="inline-block w-5 h-5 ml-1" />;
+    case "هواتف":
+      return <Smartphone className="inline-block w-5 h-5 ml-1" />;
     case "مستلزمات الأطفال":
       return <Baby className="inline-block w-5 h-5 ml-1" />;
     case "مستلزمات منزلية":
       return <Coffee className="inline-block w-5 h-5 ml-1" />;
+    case "عقارات":
+      return <Building2 className="inline-block w-5 h-5 ml-1" />;
     case "أثاث":
       return <Sofa className="inline-block w-5 h-5 ml-1" />;
+    case "لابتوبات":
+        return <Laptop className="inline-block w-5 h-5 ml-1" />;
     default:
       // أيقونة افتراضية
       return <Gem className="inline-block w-5 h-5 ml-1" />;

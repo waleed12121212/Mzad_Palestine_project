@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { useAuth } from '../contexts/AuthContext';
 import { messageService } from '@/services/messageService';
+import { userService } from '@/services/userService';
 
 interface Message {
   id: number;
@@ -293,17 +294,28 @@ const Chat: React.FC = () => {
     // لا تجلب المحادثة إلا عند اختيار جهة اتصال
   }, [tab]);
 
-  const handleOpenConversation = (contactId: number, senderName = 'مستخدم', senderAvatar = '') => {
-    setTab('conversation');
-    setActiveContact({ id: contactId, name: senderName, avatar: senderAvatar });
-    setShowConversation(true);
-    console.log('Selected conversation:', contactId);
-    messageService.getConversation(contactId)
-      .then(data => {
-        console.log('Loaded messages for conversation:', contactId);
-        setMessages(data);
-      })
-      .catch(() => setMessages([]));
+  const handleOpenConversation = async (contactId: number, senderName = 'مستخدم', senderAvatar = '') => {
+    try {
+      // Fetch user details
+      const userDetails = await userService.getUserById(contactId.toString());
+      setTab('conversation');
+      setActiveContact({ 
+        id: contactId, 
+        name: `${userDetails.firstName} ${userDetails.lastName}`, 
+        avatar: userDetails.profilePicture || '' 
+      });
+      setShowConversation(true);
+      console.log('Selected conversation:', contactId);
+      
+      // Fetch messages
+      const messages = await messageService.getConversation(contactId);
+      console.log('Loaded messages for conversation:', contactId);
+      setMessages(messages);
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      toast.error('حدث خطأ أثناء تحميل المحادثة');
+      setMessages([]);
+    }
   };
 
   const handleMarkAsRead = async (messageId: number) => {

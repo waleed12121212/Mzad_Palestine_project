@@ -26,6 +26,8 @@ import { categoryService, Category } from "@/services/categoryService";
 import { listingService } from "@/services/listingService";
 import { auctionService } from "@/services/auctionService";
 import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
+import CategorySpecificForm from "@/components/forms/CategorySpecificForm";
 
 const CreateAuction = () => {
   const { toast } = useToast();
@@ -52,10 +54,72 @@ const CreateAuction = () => {
     terms: false
   });
 
+  // Laptop specific data
+  const [laptopData, setLaptopData] = useState({
+    brand: "",
+    processorName: "",
+    displayType: "LED",
+    gpu: "",
+    ramExpandable: true,
+    processorSpeed: 0,
+    displaySize: 0,
+    ssdSize: 0,
+    hddSize: 0,
+    ramSize: 0
+  });
+
+  // Car specific data
+  const [carData, setCarData] = useState({
+    carId: 1,
+    symboling: 3,
+    fuelType: "gas",
+    aspiration: "std",
+    doorNumber: "four",
+    carBody: "sedan",
+    driveWheel: "fwd",
+    engineLocation: "front",
+    wheelBase: 0,
+    carLength: 0,
+    carWidth: 0,
+    carHeight: 0,
+    curbWeight: 0,
+    engineType: "dohc",
+    cylinderNumber: "four",
+    engineSize: 0,
+    fuelSystem: "mpfi",
+    boreRatio: 0,
+    stroke: 0,
+    compressionRatio: 0,
+    horsepower: 0,
+    peakRPM: 0,
+    cityMPG: 0,
+    highwayMPG: 0,
+    brand: "",
+    model: ""
+  });
+
+  // Mobile specific data
+  const [mobileData, setMobileData] = useState({
+    deviceName: "",
+    ramExpandable: true,
+    batteryCapacity: 0,
+    displaySize: 0,
+    storage: 0,
+    ram: 0,
+    refreshRate: 60,
+    frontCamera: "",
+    rearCamera: "",
+    chargingSpeed: 0
+  });
+
+  const [showPriceSuggestion, setShowPriceSuggestion] = useState(false);
+  const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const activeCategories = await categoryService.getActiveCategories();
+        console.log('Fetched categories:', activeCategories);
         setCategories(activeCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -74,6 +138,12 @@ const CreateAuction = () => {
     if (formData.category) {
       const categoryId = Number(formData.category);
       const category = categories.find(c => Number(c.id) === categoryId);
+      console.log('Category selected:', {
+        categoryId,
+        category,
+        formDataCategory: formData.category,
+        type: typeof formData.category
+      });
       setSelectedCategory(category || null);
     } else {
       setSelectedCategory(null);
@@ -86,8 +156,42 @@ const CreateAuction = () => {
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData({ ...formData, [name]: checked });
+    } else if (name === 'category') {
+      // Ensure category is set as a string
+      setFormData({ ...formData, [name]: value.toString() });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleLaptopDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setLaptopData({ ...laptopData, [name]: (e.target as HTMLInputElement).checked });
+    } else if (type === 'number') {
+      setLaptopData({ ...laptopData, [name]: parseFloat(value) || 0 });
+    } else {
+      setLaptopData({ ...laptopData, [name]: value });
+    }
+  };
+
+  const handleCarDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'number') {
+      setCarData({ ...carData, [name]: parseFloat(value) || 0 });
+    } else {
+      setCarData({ ...carData, [name]: value });
+    }
+  };
+
+  const handleMobileDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setMobileData({ ...mobileData, [name]: (e.target as HTMLInputElement).checked });
+    } else if (type === 'number') {
+      setMobileData({ ...mobileData, [name]: parseFloat(value) || 0 });
+    } else {
+      setMobileData({ ...mobileData, [name]: value });
     }
   };
 
@@ -256,16 +360,147 @@ const CreateAuction = () => {
     }
   };
 
-  const handleAIPriceSelect = (price: number) => {
+  const getPredictedPrice = async () => {
+    try {
+      let response;
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      };
+      
+      if (formData.category === "15") { // Laptop category
+        // Format laptop data according to API requirements
+        const formattedLaptopData = {
+          brand: laptopData.brand,
+          processorName: laptopData.processorName,
+          displayType: laptopData.displayType,
+          gpu: laptopData.gpu,
+          ramExpandable: laptopData.ramExpandable,
+          processorSpeed: Number(laptopData.processorSpeed),
+          displaySize: Number(laptopData.displaySize),
+          ssdSize: Number(laptopData.ssdSize),
+          hddSize: Number(laptopData.hddSize),
+          ramSize: Number(laptopData.ramSize)
+        };
+
+        console.log('Sending laptop data:', formattedLaptopData);
+
+        response = await axios.post(
+          "http://mazadpalestine.runasp.net/LaptopPrediction/predict",
+          formattedLaptopData,
+          config
+        );
+      } else if (formData.category === "2") { // Car category
+        // Format car data according to API requirements
+        const formattedCarData = {
+          carId: Number(carData.carId),
+          symboling: Number(carData.symboling),
+          fuelType: carData.fuelType,
+          aspiration: carData.aspiration,
+          doorNumber: carData.doorNumber,
+          carBody: carData.carBody,
+          driveWheel: carData.driveWheel,
+          engineLocation: carData.engineLocation,
+          wheelBase: Number(carData.wheelBase),
+          carLength: Number(carData.carLength),
+          carWidth: Number(carData.carWidth),
+          carHeight: Number(carData.carHeight),
+          curbWeight: Number(carData.curbWeight),
+          engineType: carData.engineType,
+          cylinderNumber: carData.cylinderNumber,
+          engineSize: Number(carData.engineSize),
+          fuelSystem: carData.fuelSystem,
+          boreRatio: Number(carData.boreRatio),
+          stroke: Number(carData.stroke),
+          compressionRatio: Number(carData.compressionRatio),
+          horsepower: Number(carData.horsepower),
+          peakRPM: Number(carData.peakRPM),
+          cityMPG: Number(carData.cityMPG),
+          highwayMPG: Number(carData.highwayMPG),
+          brand: carData.brand,
+          model: carData.model
+        };
+
+        console.log('Sending car data:', formattedCarData);
+
+        response = await axios.post(
+          "http://mazadpalestine.runasp.net/CarPrediction/predict",
+          formattedCarData,
+          config
+        );
+      } else if (formData.category === "10") { // Mobile category
+        // Format mobile data according to API requirements
+        const formattedMobileData = {
+          deviceName: mobileData.deviceName,
+          ramExpandable: mobileData.ramExpandable,
+          batteryCapacity: Number(mobileData.batteryCapacity),
+          displaySize: Number(mobileData.displaySize),
+          storage: Number(mobileData.storage),
+          ram: Number(mobileData.ram),
+          refreshRate: Number(mobileData.refreshRate),
+          frontCamera: mobileData.frontCamera,
+          rearCamera: mobileData.rearCamera,
+          chargingSpeed: Number(mobileData.chargingSpeed)
+        };
+
+        console.log('Sending mobile data:', formattedMobileData);
+
+        response = await axios.post(
+          "http://mazadpalestine.runasp.net/PhonePrediction/predict",
+          formattedMobileData,
+          config
+        );
+      } else {
+        toast({
+          title: "خطأ",
+          description: "الرجاء اختيار فئة صحيحة",
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      if (response?.data) {
+        const price = Number(response.data);
+        if (!isNaN(price)) {
+          setPredictedPrice(price);
+          setShowPriceSuggestion(true);
     setFormData(prev => ({
       ...prev,
       startingPrice: price.toString()
     }));
     
     toast({
-      title: "تم تطبيق السعر المقترح",
-      description: `تم تحديد سعر بدء المزاد تلقائياً: ₪${price.toLocaleString()}`
-    });
+            title: "تم التنبؤ بالسعر",
+            description: `السعر المقترح: ₪${price.toLocaleString()}`,
+          });
+        } else {
+          throw new Error('Invalid price received from server');
+        }
+      }
+    } catch (error: any) {
+      console.error("Error predicting price:", error);
+      let errorMessage = "حدث خطأ أثناء التنبؤ بالسعر";
+      
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+        errorMessage = error.response.data?.message || errorMessage;
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+        errorMessage = "لم نتمكن من الوصول إلى الخادم. يرجى التحقق من اتصال الإنترنت الخاص بك.";
+      } else {
+        console.error("Error message:", error.message);
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "خطأ",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -417,6 +652,33 @@ const CreateAuction = () => {
                       required
                     />
                   </div>
+
+                  {/* Category Specific Form */}
+                  {formData.category && (
+                    <CategorySpecificForm
+                      category={formData.category}
+                      laptopData={laptopData}
+                      carData={carData}
+                      mobileData={mobileData}
+                      onLaptopDataChange={handleLaptopDataChange}
+                      onCarDataChange={handleCarDataChange}
+                      onMobileDataChange={handleMobileDataChange}
+                    />
+                  )}
+
+                  {/* AI Price Prediction Button */}
+                  {(formData.category === "15" || formData.category === "2" || formData.category === "10") && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={getPredictedPrice}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white rounded-lg transition-all shadow-sm"
+                      >
+                        <Lightbulb className="h-5 w-5" />
+                        <span>تحديد السعر التلقائي باستخدام الذكاء الاصطناعي</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -445,15 +707,19 @@ const CreateAuction = () => {
                     </div>
                   </div>
 
-                  {/* AI Price Suggestion Component */}
+                  {/* Show AI Price Suggestion */}
+                  {showPriceSuggestion && predictedPrice && (
                   <AIPriceSuggestion
-                    category={formData.category}
-                    title={formData.title}
-                    description={formData.description}
-                    condition={formData.condition}
-                    location={formData.location}
-                    onPriceSelect={handleAIPriceSelect}
-                  />
+                      suggestedPrice={predictedPrice}
+                      onClose={() => setShowPriceSuggestion(false)}
+                      onPriceSelect={(price) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          startingPrice: price.toString()
+                        }));
+                      }}
+                    />
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

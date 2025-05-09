@@ -354,7 +354,7 @@ const Index = () => {
             categories={categories.map(cat => ({
               id: cat.id,
               name: cat.name,
-              icon: getCategoryIcon(cat.name),
+              imageUrl: cat.imageUrl,
               count: cat.listings?.length || 0,
               subcategories: cat.subCategories?.map(sub => ({
                 id: sub.id,
