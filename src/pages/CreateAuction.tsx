@@ -73,7 +73,7 @@ const CreateAuction = () => {
   useEffect(() => {
     if (formData.category) {
       const categoryId = Number(formData.category);
-      const category = categories.find(c => c.id === categoryId);
+      const category = categories.find(c => Number(c.id) === categoryId);
       setSelectedCategory(category || null);
     } else {
       setSelectedCategory(null);

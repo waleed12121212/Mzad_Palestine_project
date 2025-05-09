@@ -15,7 +15,7 @@ import {
 
 interface AIPriceSuggestionProps {
   category: string;
-  subcategory: string;
+  subcategory?: string;
   title: string;
   description: string;
   condition: "new" | "used";
