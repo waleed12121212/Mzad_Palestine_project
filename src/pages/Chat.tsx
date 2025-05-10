@@ -89,24 +89,54 @@ const Chat: React.FC = () => {
       try {
         console.log('Loading inbox...');
         const inboxData = await messageService.getInbox();
-        setInboxMessages(inboxData);
+        const enrichedInbox = await Promise.all(
+          inboxData.map(async (msg) => {
+            try {
+              const userDetails = await userService.getUserById(msg.senderId.toString());
+              return {
+                ...msg,
+                senderName: `${userDetails.firstName} ${userDetails.lastName}`.trim() || userDetails.username || 'مستخدم',
+                senderAvatar: userDetails.profilePicture || '',
+              };
+            } catch {
+              return {
+                ...msg,
+                senderName: msg.senderName || 'مستخدم',
+                senderAvatar: msg.senderAvatar || '',
+              };
+            }
+          })
+        );
+        setInboxMessages(enrichedInbox);
         
         // Extract unique contacts from inbox messages
-        const uniqueContacts = inboxData.reduce((acc: Contact[], message) => {
-          const existingContact = acc.find(c => c.id === message.senderId);
-          if (!existingContact) {
-            acc.push({
-              id: message.senderId,
-              name: message.senderName || 'مستخدم',
-              avatar: message.senderAvatar || '',
-              lastMessage: message.content,
-              lastMessageTime: message.timestamp,
-              unreadCount: message.isRead ? 0 : 1
-            });
+        const contactIds: number[] = Array.from(new Set(inboxData.map(message => message.senderId)));
+        const uniqueContacts: Contact[] = await Promise.all(contactIds.map(async (_senderId) => {
+          const senderId = Number(_senderId);
+          try {
+            const userDetails = await userService.getUserById(senderId.toString());
+            const lastMsg = inboxData.find(msg => msg.senderId === senderId);
+            return {
+              id: senderId,
+              name: `${userDetails.firstName} ${userDetails.lastName}`.trim() || userDetails.username || 'مستخدم',
+              avatar: userDetails.profilePicture || '',
+              lastMessage: lastMsg?.content || '',
+              lastMessageTime: lastMsg?.timestamp || '',
+              unreadCount: inboxData.filter(msg => msg.senderId === senderId && !msg.isRead).length
+            };
+          } catch (e) {
+            // fallback if user details fetch fails
+            const lastMsg = inboxData.find(msg => msg.senderId === senderId);
+            return {
+              id: senderId,
+              name: lastMsg?.senderName || 'مستخدم',
+              avatar: lastMsg?.senderAvatar || '',
+              lastMessage: lastMsg?.content || '',
+              lastMessageTime: lastMsg?.timestamp || '',
+              unreadCount: inboxData.filter(msg => msg.senderId === senderId && !msg.isRead).length
+            };
           }
-          return acc;
-        }, []);
-        
+        }));
         setContacts(uniqueContacts);
 
         // التحقق من وجود معرف جهة اتصال في الرابط
