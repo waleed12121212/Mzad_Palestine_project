@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -58,26 +57,15 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     return value < 10 ? `0${value}` : `${value}`;
   };
 
-  const getTimeDisplay = () => {
-    if (timeLeft.days > 0) {
-      return (
-        <>
-          <span>{timeLeft.days}</span>
-          <span className="text-xs mx-1">يوم</span>
-          <span>{formatTime(timeLeft.hours)}</span>:
-          <span>{formatTime(timeLeft.minutes)}</span>
-        </>
-      );
-    }
-    
-    return (
-      <>
-        <span>{formatTime(timeLeft.hours)}</span>:
-        <span>{formatTime(timeLeft.minutes)}</span>:
-        <span>{formatTime(timeLeft.seconds)}</span>
-      </>
-    );
-  };
+  const getTimeDisplay = () => (
+    <>
+      <span>{timeLeft.days}</span>
+      <span className="text-xs mx-1">يوم</span>
+      <span>{formatTime(timeLeft.hours)}</span>:
+      <span>{formatTime(timeLeft.minutes)}</span>:
+      <span>{formatTime(timeLeft.seconds)}</span>
+    </>
+  );
 
   const urgentClass = isUrgent ? "text-red-500 animate-pulse font-bold" : "";
   const responsiveClass = isMobile ? "text-sm" : "";

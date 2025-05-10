@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import PageWrapper from "@/components/layout/PageWrapper";
+import { auctionService } from "@/services/auctionService";
 
 interface Auction {
   id: number;
@@ -35,79 +35,6 @@ interface Auction {
   category?: string;
 }
 
-const fetchActiveAuctions = async (): Promise<Auction[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  
-  return [
-    {
-      id: 1,
-      title: "مزهرية خزفية تقليدية",
-      description: "مزهرية خزفية مصنوعة يدويًا بتصميم فلسطيني تقليدي",
-      currentPrice: 250,
-      minBidIncrement: 20,
-      imageUrl: "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=1000",
-      endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 12,
-      category: "ديكور منزلي"
-    },
-    {
-      id: 2,
-      title: "ساعة يد أنتيكة",
-      description: "ساعة يد أنتيكة من العصر العثماني بحالة ممتازة",
-      currentPrice: 1200,
-      minBidIncrement: 100,
-      imageUrl: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=2338",
-      endTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 8,
-      category: "مجوهرات وإكسسوارات"
-    },
-    {
-      id: 3,
-      title: "لوحة فنية أصلية",
-      description: "لوحة فنية أصلية تصور القدس القديمة بريشة فنان فلسطيني",
-      currentPrice: 850,
-      minBidIncrement: 50,
-      imageUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=990",
-      endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 15,
-      category: "فنون وتحف"
-    },
-    {
-      id: 4,
-      title: "سجادة فلسطينية مطرزة",
-      description: "سجادة يدوية مطرزة بنقوش فلسطينية تقليدية من الصوف الطبيعي",
-      currentPrice: 560,
-      minBidIncrement: 30,
-      imageUrl: "https://images.unsplash.com/photo-1576859958081-27de5c70262a?q=80&w=2340",
-      endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 7,
-      category: "ديكور منزلي"
-    },
-    {
-      id: 5,
-      title: "قلادة فضية قديمة",
-      description: "قلادة فضية تراثية من القرن التاسع عشر بتصميم فلسطيني أصيل",
-      currentPrice: 380,
-      minBidIncrement: 25,
-      imageUrl: "https://images.unsplash.com/photo-1611652022419-a9419f74343d?q=80&w=2342",
-      endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 9,
-      category: "مجوهرات وإكسسوارات"
-    },
-    {
-      id: 6,
-      title: "كتاب نادر عن تاريخ فلسطين",
-      description: "كتاب نادر يعود للعام 1920 يوثق تاريخ وجغرافية فلسطين بالصور والخرائط",
-      currentPrice: 920,
-      minBidIncrement: 50,
-      imageUrl: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2342",
-      endTime: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-      bidders: 18,
-      category: "كتب ومخطوطات"
-    }
-  ];
-};
-
 const ActiveAuctions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState([0, 2000]);
@@ -119,23 +46,25 @@ const ActiveAuctions: React.FC = () => {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["activeAuctions"],
-    queryFn: fetchActiveAuctions
+    queryFn: async () => {
+      const response = await auctionService.getActiveAuctions();
+      // الرد من الباك اند: { success: true, data: [...] }
+      // نعيد فقط data
+      return response.data;
+    }
   });
 
   const categories = data 
-    ? [...new Set(data.map(auction => auction.category))]
-        .filter(Boolean)
-        .sort() as string[]
+    ? [...new Set(data.map(auction => auction.categoryName as string).filter(Boolean))]
     : [];
 
   const filteredAuctions = data ? data.filter((auction) => {
-    const matchesQuery = auction.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        auction.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesQuery = auction.name?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesPrice = auction.currentPrice >= priceRange[0] && auction.currentPrice <= priceRange[1];
+    const matchesPrice = auction.currentBid >= priceRange[0] && auction.currentBid <= priceRange[1];
     
     const matchesCategory = selectedCategories.length === 0 || 
-                           (auction.category && selectedCategories.includes(auction.category));
+                           (auction.categoryName && selectedCategories.includes(auction.categoryName));
     
     let matchesTime = true;
     if (timeFilter === "ending-soon") {
@@ -158,9 +87,9 @@ const ActiveAuctions: React.FC = () => {
       case "newest":
         return new Date(b.endTime).getTime() - new Date(a.endTime).getTime();
       case "priceHigh":
-        return b.currentPrice - a.currentPrice;
+        return b.currentBid - a.currentBid;
       case "priceLow":
-        return a.currentPrice - b.currentPrice;
+        return a.currentBid - b.currentBid;
       case "popularity":
         return b.bidders - a.bidders;
       case "endingSoon":
@@ -251,17 +180,17 @@ const ActiveAuctions: React.FC = () => {
                     <AccordionContent>
                       <div className="space-y-2">
                         {categories.map(category => (
-                          <div key={category} className="flex items-center space-x-2 space-x-reverse">
+                          <div key={category as string} className="flex items-center space-x-2 space-x-reverse">
                             <Checkbox 
-                              id={`category-${category}`} 
-                              checked={selectedCategories.includes(category)}
-                              onCheckedChange={() => handleCategoryChange(category)}
+                              id={`category-${category as string}`} 
+                              checked={selectedCategories.includes(category as string)}
+                              onCheckedChange={() => handleCategoryChange(category as string)}
                             />
                             <label 
-                              htmlFor={`category-${category}`}
+                              htmlFor={`category-${category as string}`}
                               className="text-sm cursor-pointer select-none"
                             >
-                              {category}
+                              {category as string}
                             </label>
                           </div>
                         ))}
@@ -406,12 +335,12 @@ const ActiveAuctions: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       {categories.map(category => (
                         <Badge 
-                          key={category}
-                          variant={selectedCategories.includes(category) ? "default" : "outline"}
+                          key={category as string}
+                          variant={selectedCategories.includes(category as string) ? "default" : "outline"}
                           className="cursor-pointer"
-                          onClick={() => handleCategoryChange(category)}
+                          onClick={() => handleCategoryChange(category as string)}
                         >
-                          {category}
+                          {category as string}
                         </Badge>
                       ))}
                     </div>
@@ -476,15 +405,15 @@ const ActiveAuctions: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedAuctions.map((auction) => (
                   <AuctionCard
-                    key={auction.id}
-                    id={auction.id}
-                    title={auction.title}
-                    description={auction.description}
-                    currentPrice={auction.currentPrice}
-                    minBidIncrement={auction.minBidIncrement}
+                    key={auction.auctionId}
+                    id={auction.auctionId}
+                    title={auction.name}
+                    description={""}
+                    currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                    minBidIncrement={auction.bidIncrement}
                     imageUrl={auction.imageUrl}
                     endTime={auction.endTime}
-                    bidders={auction.bidders}
+                    bidders={auction.bidsCount}
                   />
                 ))}
               </div>

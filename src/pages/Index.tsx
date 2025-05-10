@@ -443,33 +443,6 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">منتجات للبيع الفوري</h2>
-            <Link to="/buy-now" className="text-blue dark:text-blue-light hover:underline flex items-center">
-              عرض الكل <ChevronRight className="h-5 w-5" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map(product => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                description={product.description}
-                price={product.price}
-                discountedPrice={product.discountedPrice}
-                imageUrl={product.imageUrl}
-                isNew={product.isNew}
-                isOnSale={product.isOnSale}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="py-12 bg-gray-50 dark:bg-gray-900/50 dark-mode-transition">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8 rtl">

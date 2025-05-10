@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info } from "lucide-react";
@@ -7,6 +6,8 @@ import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { auctionService } from "@/services/auctionService";
+import { listingService } from "@/services/listingService";
 
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,64 +21,47 @@ const AuctionDetails = () => {
 
   useEffect(() => {
     const fetchAuction = async () => {
-      setTimeout(() => {
-        const auctionData = {
-          id: id,
-          title: "شقة فاخرة في رام الله",
-          description: "شقة حديثة بمساحة 150 متر مربع، 3 غرف نوم، إطلالة رائعة وموقع متميز. تشطيبات فاخرة وأثاث جديد. المطبخ مجهز بالكامل مع أجهزة حديثة. يوجد تدفئة مركزية وتكييف في جميع الغرف. موقف سيارات خاص ومصعد في البناية. قريبة من الخدمات والمواصلات.",
-          currentPrice: 120000,
-          minBidIncrement: 5000,
-          startPrice: 100000,
-          images: [
-            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-          ],
-          endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
-          bidders: 5,
-          views: 128,
-          seller: {
-            id: "seller123",
-            name: "أحمد محمود",
-            rating: 4.8,
-            totalSales: 24
-          },
-          category: "العقارات",
-          subcategory: "شقق",
-          condition: "جديد",
-          location: "رام الله، فلسطين",
-          features: [
-            "مساحة 150 متر مربع",
-            "3 غرف نوم",
-            "2 حمام",
-            "مطبخ مجهز",
-            "تدفئة مركزية",
-            "موقف سيارات خاص"
-          ],
-          bids: [
-            { user: "سامر الخالدي", amount: 120000, time: "منذ يومين" },
-            { user: "ريم عبدالله", amount: 115000, time: "منذ 3 أيام" },
-            { user: "محمد عمر", amount: 110000, time: "منذ 4 أيام" },
-            { user: "ليلى أحمد", amount: 105000, time: "منذ 5 أيام" },
-            { user: "خالد وليد", amount: 100000, time: "منذ أسبوع" }
-          ]
-        };
-        setAuction(auctionData);
-        setBidAmount(auctionData.currentPrice + auctionData.minBidIncrement);
+      setLoading(true);
+      try {
+        // جلب بيانات المزاد
+        const auctionResponse = await auctionService.getAuctionById(Number(id));
+        const auctionData = auctionResponse.data;
+        console.log('auctionData', auctionData);
+        if (!auctionData.listingId) {
+          throw new Error("المزاد لا يحتوي على منتج مرتبط (listingId غير موجود)");
+        }
+        // جلب بيانات المنتج المرتبط بالمزاد
+        let listingData;
+        try {
+          listingData = await listingService.getListingById(auctionData.listingId);
+          console.log('listingData', listingData);
+        } catch (listingError) {
+          throw new Error("المنتج المرتبط بهذا المزاد غير موجود أو تم حذفه.");
+        }
+        setAuction({
+          ...listingData,
+          ...auctionData,
+        });
+        setBidAmount(auctionData.reservePrice + auctionData.bidIncrement);
+      } catch (error) {
+        setAuction(null);
+        toast({
+          title: "خطأ في جلب بيانات المزاد",
+          description: error.message || "حدث خطأ غير متوقع."
+        });
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
-
     fetchAuction();
   }, [id]);
 
   const handleBidSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (bidAmount < (auction?.currentPrice + auction?.minBidIncrement)) {
+    if (bidAmount < (auction?.reservePrice + auction?.bidIncrement)) {
       toast({
         title: "خطأ في المزايدة",
-        description: `يجب أن تكون المزايدة أكبر من ${auction?.currentPrice + auction?.minBidIncrement} $`,
+        description: `يجب أن تكون المزايدة أكبر من ${auction?.reservePrice + auction?.bidIncrement} $`,
         variant: "destructive"
       });
       return;
@@ -92,7 +76,7 @@ const AuctionDetails = () => {
     
     setAuction({
       ...auction,
-      currentPrice: bidAmount,
+      reservePrice: bidAmount,
       bidders: auction.bidders + 1,
       bids: [
         { user: "أنت", amount: bidAmount, time: "الآن" },
@@ -100,7 +84,7 @@ const AuctionDetails = () => {
       ]
     });
     
-    setBidAmount(bidAmount + auction.minBidIncrement);
+    setBidAmount(bidAmount + auction.bidIncrement);
   };
 
   const toggleLike = () => {
@@ -230,7 +214,7 @@ const AuctionDetails = () => {
               
               {/* Thumbnail gallery */}
               <div className="grid grid-cols-4 gap-4 mb-8">
-                {auction.images.map((img: string, idx: number) => (
+                {(auction.images ?? []).map((img: string, idx: number) => (
                   <div 
                     key={idx} 
                     className={`rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${currentImageIndex === idx ? 'ring-2 ring-blue dark:ring-blue-light' : 'hover:opacity-80'}`}
@@ -251,7 +235,7 @@ const AuctionDetails = () => {
                 
                 <h3 className="heading-sm mb-4">المميزات:</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-                  {auction.features.map((feature: string, idx: number) => (
+                  {(auction.features ?? []).map((feature: string, idx: number) => (
                     <li key={idx} className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue dark:bg-blue-light"></div>
                       <span>{feature}</span>
@@ -284,7 +268,7 @@ const AuctionDetails = () => {
                     <span className="font-medium">التوقيت</span>
                   </div>
                   <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {auction.bids.map((bid: any, idx: number) => (
+                    {(auction.bids ?? []).map((bid: any, idx: number) => (
                       <div key={idx} className="p-4 flex justify-between items-center">
                         <span>{bid.user}</span>
                         <span className="font-medium text-blue dark:text-blue-light">${bid.amount.toLocaleString()}</span>
@@ -305,12 +289,14 @@ const AuctionDetails = () => {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">السعر الحالي</p>
                       <p className="text-3xl font-bold text-blue dark:text-blue-light">
-                        ${auction.currentPrice.toLocaleString()}
+                        ${(auction.reservePrice ?? 0).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">بدأ من</p>
-                      <p className="text-lg font-medium">${auction.startPrice.toLocaleString()}</p>
+                      <p className="text-lg font-medium">
+                        ${(auction.startPrice ?? 0).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                   
@@ -334,7 +320,7 @@ const AuctionDetails = () => {
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">
-                        الحد الأدنى للمزايدة: ${auction.minBidIncrement.toLocaleString()}
+                        الحد الأدنى للمزايدة: ${(auction.bidIncrement ?? 0).toLocaleString()}
                       </span>
                       <span className="text-sm text-gray-600 dark:text-gray-300">
                         {auction.views} مشاهدة
@@ -384,19 +370,19 @@ const AuctionDetails = () => {
                       className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold cursor-pointer"
                       onClick={navigateToSellerProfile}
                     >
-                      {auction.seller.name.charAt(0)}
+                      {auction.seller?.name?.charAt(0) ?? "-"}
                     </div>
                     <div>
                       <h4 
                         className="text-lg font-medium hover:text-blue transition-colors cursor-pointer"
                         onClick={navigateToSellerProfile}
                       >
-                        {auction.seller.name}
+                        {auction.seller?.name ?? "غير معروف"}
                       </h4>
                       <div className="flex items-center gap-1 text-yellow-500">
-                        {'★'.repeat(Math.floor(auction.seller.rating))}
+                        {'★'.repeat(Math.floor(auction.seller?.rating ?? 0))}
                         <span className="text-gray-600 dark:text-gray-300 text-sm mr-1">
-                          ({auction.seller.rating}/5) · {auction.seller.totalSales} عملية بيع
+                          ({auction.seller?.rating ?? 0}/5) · {auction.seller?.totalSales ?? 0} عملية بيع
                         </span>
                       </div>
                     </div>

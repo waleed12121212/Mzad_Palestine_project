@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Bell, Menu, X, Heart, MessageCircle, ShoppingCart, PlusCircle } from "lucide-react";
 import DarkModeToggle from "../ui/DarkModeToggle";
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from "@/hooks/use-toast";
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -85,7 +86,7 @@ const Navbar: React.FC = () => {
             <NavLink href="/auctions" active={isActive("/auctions")}>
               {lang === "ar" ? "المزادات النشطة" : "Active Auctions"}
             </NavLink>
-            <NavLink href="/buy-now" active={isActive("/buy-now")}>
+            <NavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>هذه الميزة ستكون متوفرة قريبًا</span>, description: <span style={{ fontSize: '1rem', color: '#334155' }}>لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!</span> }); }}>
               {lang === "ar" ? "الشراء الفوري" : "Buy Now"}
             </NavLink>
             <NavLink href="/categories" active={isActive("/categories")}>
@@ -210,7 +211,7 @@ const Navbar: React.FC = () => {
               <MobileNavLink href="/auctions" active={isActive("/auctions")}>
                 {lang === "ar" ? "المزادات النشطة" : "Active Auctions"}
               </MobileNavLink>
-              <MobileNavLink href="/buy-now" active={isActive("/buy-now")}>
+              <MobileNavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>هذه الميزة ستكون متوفرة قريبًا</span>, description: <span style={{ fontSize: '1rem', color: '#334155' }}>لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!</span> }); }}>
                 {lang === "ar" ? "الشراء الفوري" : "Buy Now"}
               </MobileNavLink>
               <MobileNavLink href="/categories" active={isActive("/categories")}>
