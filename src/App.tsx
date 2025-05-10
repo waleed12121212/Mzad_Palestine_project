@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import Navbar from '@/components/layout/Navbar';
 import Index from '@/pages/Index';
@@ -22,8 +23,19 @@ import Checkout from '@/pages/Checkout';
 import UserManagement from '@/pages/Admin/UserManagement';
 import Categories from '@/pages/Categories';
 import { LogoutHandler } from '@/components/auth/LogoutHandler';
+import SellerProfile from '@/pages/SellerProfile';
 
 const queryClient = new QueryClient();
+
+const LogoutRoute = () => {
+  const { logout } = useAuth();
+  
+  React.useEffect(() => {
+    logout();
+  }, [logout]);
+
+  return <Navigate to="/" replace />;
+};
 
 function App() {
   return (
@@ -37,11 +49,13 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth/*" element={<AuthPage />} />
+                  <Route path="/logout" element={<LogoutRoute />} />
                   <Route path="/auctions" element={<ActiveAuctions />} />
                   <Route path="/auction/:id" element={<AuctionDetails />} />
                   <Route path="/auctions/search" element={<AuctionSearch />} />
                   <Route path="/auctions/active" element={<ActiveAuctions />} />
                   <Route path="/auctions/:id" element={<AuctionDetails />} />
+                  <Route path="/seller/:id" element={<SellerProfile />} />
                   <Route
                     path="/listings/create"
                     element={
