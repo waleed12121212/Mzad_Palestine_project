@@ -1,12 +1,19 @@
-
 import React from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AIPriceExplainer from "@/components/ui/AIPriceExplainer";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 const AIPriceGuide = () => {
+  const handleSellProduct = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast("هذه الميزة ستكون متوفرة قريبًا", {
+      description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -26,7 +33,11 @@ const AIPriceGuide = () => {
             <span>إنشاء مزاد جديد</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/sell-product" className="btn-secondary flex items-center gap-2 mx-2">
+          <Link 
+            to="/sell-product" 
+            onClick={handleSellProduct}
+            className="btn-secondary flex items-center gap-2 mx-2"
+          >
             <span>بيع منتج</span>
             <ArrowRight className="h-4 w-4" />
           </Link>

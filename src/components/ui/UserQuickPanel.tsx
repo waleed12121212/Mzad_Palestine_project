@@ -3,6 +3,7 @@ import { Package, PlusCircle, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { userService, UserProfile } from "../../services/userService";
+import { toast } from "sonner";
 
 interface UserQuickPanelProps {
   userName?: string;
@@ -30,6 +31,13 @@ const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName }) => {
   }, [isAuthenticated]);
 
   const displayName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : userName || "المستخدم";
+
+  const handleSellProduct = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast("هذه الميزة ستكون متوفرة قريبًا", {
+      description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
+    });
+  };
 
   return (
     <div className="flex flex-wrap justify-end gap-4 mb-6 rtl">
@@ -61,6 +69,7 @@ const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName }) => {
 
       <Link 
         to="/sell-product" 
+        onClick={handleSellProduct}
         className="flex items-center bg-white dark:bg-gray-800 rounded-full px-4 py-3 shadow-sm hover:shadow-md transition-shadow"
       >
         <div className="mr-3 text-right">

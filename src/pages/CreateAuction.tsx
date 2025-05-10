@@ -28,6 +28,7 @@ import { auctionService } from "@/services/auctionService";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import CategorySpecificForm from "@/components/forms/CategorySpecificForm";
+import { predictionService } from '@/services/predictionService';
 
 const CreateAuction = () => {
   const { toast } = useToast();
@@ -362,14 +363,8 @@ const CreateAuction = () => {
 
   const getPredictedPrice = async () => {
     try {
-      let response;
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      };
-      
+      let price: number;
+
       if (formData.category === "15") { // Laptop category
         // Format laptop data according to API requirements
         const formattedLaptopData = {
@@ -386,12 +381,7 @@ const CreateAuction = () => {
         };
 
         console.log('Sending laptop data:', formattedLaptopData);
-
-        response = await axios.post(
-          "http://mazadpalestine.runasp.net/LaptopPrediction/predict",
-          formattedLaptopData,
-          config
-        );
+        price = await predictionService.predictLaptopPrice(formattedLaptopData);
       } else if (formData.category === "2") { // Car category
         // Format car data according to API requirements
         const formattedCarData = {
@@ -424,12 +414,7 @@ const CreateAuction = () => {
         };
 
         console.log('Sending car data:', formattedCarData);
-
-        response = await axios.post(
-          "http://mazadpalestine.runasp.net/CarPrediction/predict",
-          formattedCarData,
-          config
-        );
+        price = await predictionService.predictCarPrice(formattedCarData);
       } else if (formData.category === "10") { // Mobile category
         // Format mobile data according to API requirements
         const formattedMobileData = {
@@ -446,12 +431,7 @@ const CreateAuction = () => {
         };
 
         console.log('Sending mobile data:', formattedMobileData);
-
-        response = await axios.post(
-          "http://mazadpalestine.runasp.net/PhonePrediction/predict",
-          formattedMobileData,
-          config
-        );
+        price = await predictionService.predictMobilePrice(formattedMobileData);
       } else {
         toast({
           title: "خطأ",
@@ -461,43 +441,26 @@ const CreateAuction = () => {
         return null;
       }
 
-      if (response?.data) {
-        const price = Number(response.data);
-        if (!isNaN(price)) {
-          setPredictedPrice(price);
-          setShowPriceSuggestion(true);
-    setFormData(prev => ({
-      ...prev,
-      startingPrice: price.toString()
-    }));
-    
-    toast({
-            title: "تم التنبؤ بالسعر",
-            description: `السعر المقترح: ₪${price.toLocaleString()}`,
-          });
-        } else {
-          throw new Error('Invalid price received from server');
-        }
-      }
-    } catch (error: any) {
-      console.error("Error predicting price:", error);
-      let errorMessage = "حدث خطأ أثناء التنبؤ بالسعر";
-      
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-        errorMessage = error.response.data?.message || errorMessage;
-      } else if (error.request) {
-        console.error("Error request:", error.request);
-        errorMessage = "لم نتمكن من الوصول إلى الخادم. يرجى التحقق من اتصال الإنترنت الخاص بك.";
-      } else {
-        console.error("Error message:", error.message);
-        errorMessage = error.message;
+      if (!price || isNaN(price)) {
+        throw new Error('Invalid price received from server');
       }
 
+      setPredictedPrice(price);
+      setShowPriceSuggestion(true);
+      setFormData(prev => ({
+        ...prev,
+        startingPrice: price.toString()
+      }));
+
       toast({
-        title: "خطأ",
-        description: errorMessage,
+        title: "تم التنبؤ بالسعر",
+        description: `السعر المقترح: ₪${price.toLocaleString()}`,
+      });
+    } catch (error: any) {
+      console.error('Prediction error:', error);
+      toast({
+        title: "خطأ في التنبؤ بالسعر",
+        description: error.message || "حدث خطأ أثناء التنبؤ بالسعر",
         variant: "destructive"
       });
     }

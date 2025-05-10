@@ -375,7 +375,14 @@ const Categories = () => {
       const data = showActiveOnly 
         ? await categoryService.getActiveCategories()
         : await categoryService.getAllCategories();
-      setCategories(Array.isArray(data) ? data : []);
+      
+      // Transform the data to ensure proper image handling
+      const transformedData = Array.isArray(data) ? data.map(category => ({
+        ...category,
+        imageUrl: category.imageUrl || category.image || 'https://placehold.co/600x400?text=No+Image'
+      })) : [];
+      
+      setCategories(transformedData);
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء تحميل التصنيفات');
       setCategories([]);
@@ -474,9 +481,12 @@ const Categories = () => {
     <div className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0">
       {/* صورة الخلفية */}
       <img
-        src={category.imageUrl}
+        src={category.imageUrl || category.image || 'https://placehold.co/600x400?text=No+Image'}
         alt={category.name}
         className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+        onError={(e) => {
+          e.currentTarget.src = 'https://placehold.co/600x400?text=Error+Loading+Image';
+        }}
       />
       {/* طبقة شفافة */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />

@@ -21,6 +21,7 @@ import Chat from '@/pages/Chat';
 import Checkout from '@/pages/Checkout';
 import UserManagement from '@/pages/Admin/UserManagement';
 import Categories from '@/pages/Categories';
+import { LogoutHandler } from '@/components/auth/LogoutHandler';
 
 const queryClient = new QueryClient();
 
@@ -30,7 +31,7 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <Router>
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
               <Navbar />
               <main className="pt-16">
                 <Routes>
@@ -123,10 +124,35 @@ function App() {
                   />
                   <Route path="/categories" element={<Categories />} />
                   <Route path="/categories/:category" element={<Categories />} />
+                  <Route
+                    path="/logout"
+                    element={
+                      <ProtectedRoute>
+                        <LogoutHandler />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
-              <Toaster position="top-center" />
+              <Toaster 
+                position="bottom-right"
+                toastOptions={{
+                  style: {
+                    background: 'white',
+                    color: '#334155',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    direction: 'rtl'
+                  },
+                  duration: 4000,
+                }}
+                richColors
+              />
             </div>
           </Router>
         </TooltipProvider>
