@@ -31,12 +31,14 @@ import {
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
 import { categoryService, Category } from "@/services/categoryService";
+import { auctionService } from "@/services/auctionService";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [auctions, setAuctions] = useState([]);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -47,12 +49,25 @@ const Index = () => {
         setCategories(activeCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await auctionService.getActiveAuctions();
+        setAuctions(response.data);
+      } catch {
+        setAuctions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAuctions();
   }, []);
 
   const handleCategorySelect = (categoryId: string) => {
@@ -98,108 +113,6 @@ const Index = () => {
         return <Gem className="h-5 w-5" />;
     }
   };
-
-  const auctions = [
-    {
-      id: 1,
-      title: "شقة فاخرة في رام الله",
-      description: "شقة حديثة بمساحة 150 متر مربع، 3 غرف نوم، إطلالة رائعة وموقع متميز",
-      currentPrice: 120000,
-      minBidIncrement: 5000,
-      imageUrl: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
-      bidders: 5,
-      isPopular: true,
-      category: "real-estate",
-      sellerId: "seller123",
-    },
-    {
-      id: 2,
-      title: "سيارة مرسيدس E200 موديل 2019",
-      description: "بحالة ممتازة، ماشية 45,000 كم، صيانة دورية بالوكالة، لون أسود",
-      currentPrice: 38000,
-      minBidIncrement: 1000,
-      imageUrl: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(),
-      bidders: 8,
-      isPopular: true,
-      category: "vehicles",
-      sellerId: 2,
-    },
-    {
-      id: 3,
-      title: "iPhone 13 Pro Max - 256GB",
-      description: "جهاز بحالة ممتازة، مع جميع الملحقات الأصلية والضمان",
-      currentPrice: 3200,
-      minBidIncrement: 100,
-      imageUrl: "https://images.unsplash.com/photo-1606041011872-596597976b25?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
-      bidders: 12,
-      category: "electronics",
-      sellerId: 3,
-    },
-    {
-      id: 4,
-      title: "طقم كنب مودERN",
-      description: "قماش مستورد فاخر، لون رمادي، يتضمن 3 مقاعد و 2 فردي",
-      currentPrice: 1800,
-      minBidIncrement: 100,
-      imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
-      bidders: 3,
-      category: "furniture",
-      sellerId: 4,
-    },
-    {
-      id: 5,
-      title: "ساعة رولكس قديمة (1980)",
-      description: "قطعة نادرة للهواة، حالة ممتازة، تعمل بدقة",
-      currentPrice: 7500,
-      minBidIncrement: 500,
-      imageUrl: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
-      bidders: 7,
-      isPopular: true,
-      category: "watches",
-      sellerId: 5,
-    },
-    {
-      id: 6,
-      title: "قطعة أرض في بيت لحم",
-      description: "مساحة 500 متر مربع، طابو، تصلها جميع الخدمات",
-      currentPrice: 85000,
-      minBidIncrement: 5000,
-      imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString(),
-      bidders: 4,
-      category: "real-estate",
-      sellerId: 6,
-    },
-    {
-      id: 7,
-      title: "لابتوب ماك بوك برو 16 بوصة",
-      description: "معالج M1 Pro، رام 16GB، تخزين 512GB SSD",
-      currentPrice: 4800,
-      minBidIncrement: 200,
-      imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 8).toISOString(),
-      bidders: 9,
-      category: "computers",
-      sellerId: 7,
-    },
-    {
-      id: 8,
-      title: "طاولة طعام خشب زان",
-      description: "صناعة يدوية فلسطينية، تتسع لـ 8 أشخاص، مع 8 كراسي",
-      currentPrice: 1500,
-      minBidIncrement: 100,
-      imageUrl: "https://images.unsplash.com/photo-1594224457860-23f361ca2128?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60",
-      endTime: new Date(Date.now() + 1000 * 60 * 60 * 36).toISOString(),
-      bidders: 2,
-      category: "furniture",
-      sellerId: 8,
-    },
-  ];
 
   const products = [
     {
@@ -265,7 +178,10 @@ const Index = () => {
     },
   ];
 
-  const featuredAuctions = auctions.filter(auction => auction.isPopular);
+  const featuredAuctions = [...auctions]
+    .filter(auction => auction.bidders && auction.bidders > 0)
+    .sort((a, b) => b.bidders - a.bidders)
+    .slice(0, 10);
   const filteredAuctions = getFilteredAuctions();
 
   console.log("user from AuthContext:", user);
@@ -378,8 +294,8 @@ const Index = () => {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
                 <div key={i} className="neo-card animate-pulse">
                   <div className="w-full h-56 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
                   <div className="p-4">
@@ -396,19 +312,18 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredAuctions.map((auction) => (
                 <AuctionCard
-                  key={auction.id}
-                  id={auction.id}
-                  title={auction.title}
-                  description={auction.description}
-                  currentPrice={auction.currentPrice}
-                  minBidIncrement={auction.minBidIncrement}
+                  key={auction.auctionId ?? auction.id}
+                  id={auction.auctionId ?? auction.id}
+                  title={auction.name ?? auction.title}
+                  description={auction.description ?? ""}
+                  currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                  minBidIncrement={auction.bidIncrement}
                   imageUrl={auction.imageUrl}
                   endTime={auction.endTime}
-                  bidders={auction.bidders}
-                  isPopular={auction.isPopular}
+                  bidders={auction.bidsCount ?? auction.bidders}
                 />
               ))}
             </div>

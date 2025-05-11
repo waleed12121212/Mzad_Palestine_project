@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Heart, Users, ArrowUpRight } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
@@ -112,14 +111,14 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">السعر الحالي</p>
             <p className="text-lg font-bold text-blue dark:text-blue-light">
-              {currency} {currentPrice.toLocaleString()}
+              {currency} {(currentPrice ?? 0).toLocaleString()}
             </p>
           </div>
           
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">الحد الأدنى للمزايدة</p>
             <p className="text-sm font-semibold text-green">
-              + {currency} {minBidIncrement.toLocaleString()}
+              + {currency} {(minBidIncrement ?? 0).toLocaleString()}
             </p>
           </div>
         </div>

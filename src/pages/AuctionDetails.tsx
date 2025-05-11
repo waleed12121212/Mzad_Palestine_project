@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { auctionService } from "@/services/auctionService";
 import { listingService } from "@/services/listingService";
+import { userService } from "@/services/userService";
 
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,19 +19,18 @@ const AuctionDetails = () => {
   const [liked, setLiked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const isMobile = useIsMobile();
+  const [seller, setSeller] = useState<any>(null);
 
   useEffect(() => {
     const fetchAuction = async () => {
       setLoading(true);
       try {
-        // جلب بيانات المزاد
         const auctionResponse = await auctionService.getAuctionById(Number(id));
         const auctionData = auctionResponse.data;
         console.log('auctionData', auctionData);
         if (!auctionData.listingId) {
           throw new Error("المزاد لا يحتوي على منتج مرتبط (listingId غير موجود)");
         }
-        // جلب بيانات المنتج المرتبط بالمزاد
         let listingData;
         try {
           listingData = await listingService.getListingById(auctionData.listingId);
@@ -43,8 +43,20 @@ const AuctionDetails = () => {
           ...auctionData,
         });
         setBidAmount(auctionData.reservePrice + auctionData.bidIncrement);
+        // جلب معلومات البائع
+        if (auctionData.userId) {
+          try {
+            const sellerData = await userService.getUserById(auctionData.userId.toString());
+            setSeller(sellerData);
+          } catch {
+            setSeller(null);
+          }
+        } else {
+          setSeller(null);
+        }
       } catch (error) {
         setAuction(null);
+        setSeller(null);
         toast({
           title: "خطأ في جلب بيانات المزاد",
           description: error.message || "حدث خطأ غير متوقع."
@@ -110,8 +122,8 @@ const AuctionDetails = () => {
   };
   
   const navigateToChat = () => {
-    if (auction?.seller?.id) {
-      navigate(`/chat/${auction.seller.id}`);
+    if (seller?.id) {
+      navigate(`/conversations/${seller.id}`);
     }
   };
 
@@ -179,9 +191,7 @@ const AuctionDetails = () => {
               <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
                 <Link to="/" className="hover:text-blue dark:hover:text-blue-light">الرئيسية</Link>
                 <span className="mx-2">›</span>
-                <Link to="/categories" className="hover:text-blue dark:hover:text-blue-light">{auction.category}</Link>
-                <span className="mx-2">›</span>
-                <Link to={`/categories/${auction.subcategory}`} className="hover:text-blue dark:hover:text-blue-light">{auction.subcategory}</Link>
+                <span className="text-gray-900 dark:text-gray-100">{auction.category ?? "الفئة"}</span>
                 <span className="mx-2">›</span>
                 <span className="text-gray-900 dark:text-gray-100">{auction.title}</span>
               </div>
@@ -189,7 +199,7 @@ const AuctionDetails = () => {
               {/* Main image display with navigation arrows */}
               <div className="mb-4 rounded-xl overflow-hidden relative group">
                 <img
-                  src={auction.images[currentImageIndex]}
+                  src={(auction.images && auction.images[currentImageIndex]) || auction.imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
                   alt={auction.title}
                   className="w-full h-[400px] object-cover transition-all duration-500"
                 />
@@ -271,7 +281,7 @@ const AuctionDetails = () => {
                     {(auction.bids ?? []).map((bid: any, idx: number) => (
                       <div key={idx} className="p-4 flex justify-between items-center">
                         <span>{bid.user}</span>
-                        <span className="font-medium text-blue dark:text-blue-light">${bid.amount.toLocaleString()}</span>
+                        <span className="font-medium text-blue dark:text-blue-light">₪{bid.amount.toLocaleString()}</span>
                         <span className="text-gray-500">{bid.time}</span>
                       </div>
                     ))}
@@ -289,13 +299,13 @@ const AuctionDetails = () => {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">السعر الحالي</p>
                       <p className="text-3xl font-bold text-blue dark:text-blue-light">
-                        ${(auction.reservePrice ?? 0).toLocaleString()}
+                        ₪{(auction.reservePrice ?? 0).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">بدأ من</p>
                       <p className="text-lg font-medium">
-                        ${(auction.startPrice ?? 0).toLocaleString()}
+                        ₪{(auction.startPrice ?? 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -320,7 +330,7 @@ const AuctionDetails = () => {
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">
-                        الحد الأدنى للمزايدة: ${(auction.bidIncrement ?? 0).toLocaleString()}
+                        الحد الأدنى للمزايدة: ₪{(auction.bidIncrement ?? 0).toLocaleString()}
                       </span>
                       <span className="text-sm text-gray-600 dark:text-gray-300">
                         {auction.views} مشاهدة
@@ -370,19 +380,19 @@ const AuctionDetails = () => {
                       className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold cursor-pointer"
                       onClick={navigateToSellerProfile}
                     >
-                      {auction.seller?.name?.charAt(0) ?? "-"}
+                      {seller?.firstName?.charAt(0) ?? "-"}
                     </div>
                     <div>
                       <h4 
                         className="text-lg font-medium hover:text-blue transition-colors cursor-pointer"
                         onClick={navigateToSellerProfile}
                       >
-                        {auction.seller?.name ?? "غير معروف"}
+                        {seller ? `${seller.firstName} ${seller.lastName}` : "غير معروف"}
                       </h4>
                       <div className="flex items-center gap-1 text-yellow-500">
-                        {'★'.repeat(Math.floor(auction.seller?.rating ?? 0))}
+                        {'★'.repeat(Math.floor(seller?.rating ?? 0))}
                         <span className="text-gray-600 dark:text-gray-300 text-sm mr-1">
-                          ({auction.seller?.rating ?? 0}/5) · {auction.seller?.totalSales ?? 0} عملية بيع
+                          ({seller?.rating ?? 0}/5) · {seller?.totalSales ?? 0} عملية بيع
                         </span>
                       </div>
                     </div>
