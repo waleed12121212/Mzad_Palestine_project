@@ -55,12 +55,12 @@ const Chat: React.FC = () => {
   const [showContactsList, setShowContactsList] = useState(!id);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<'inbox' | 'sent' | 'conversation'>('inbox');
   const [inboxMessages, setInboxMessages] = useState([]);
   const [sentMessages, setSentMessages] = useState([]);
   const [showConversation, setShowConversation] = useState(false);
   const [markedAsReadIds, setMarkedAsReadIds] = useState<Set<number>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Responsive handler
   useEffect(() => {
@@ -92,11 +92,20 @@ const Chat: React.FC = () => {
         const enrichedInbox = await Promise.all(
           inboxData.map(async (msg) => {
             try {
-              const userDetails = await userService.getUserById(msg.senderId.toString());
+              const response = await userService.getUserById(msg.senderId.toString());
+              const userDetails = response.data;
+              const name = (userDetails.firstName && userDetails.lastName)
+                ? `${userDetails.firstName} ${userDetails.lastName}`.trim()
+                : userDetails.username || 'مستخدم';
+              const avatar = userDetails.profilePicture
+                ? (userDetails.profilePicture.startsWith('http')
+                    ? userDetails.profilePicture
+                    : `http://mazadpalestine.runasp.net${userDetails.profilePicture}`)
+                : '';
               return {
                 ...msg,
-                senderName: `${userDetails.firstName} ${userDetails.lastName}`.trim() || userDetails.username || 'مستخدم',
-                senderAvatar: userDetails.profilePicture || '',
+                senderName: name,
+                senderAvatar: avatar,
               };
             } catch {
               return {
@@ -114,18 +123,26 @@ const Chat: React.FC = () => {
         const uniqueContacts: Contact[] = await Promise.all(contactIds.map(async (_senderId) => {
           const senderId = Number(_senderId);
           try {
-            const userDetails = await userService.getUserById(senderId.toString());
+            const response = await userService.getUserById(senderId.toString());
+            const userDetails = response.data;
+            const name = (userDetails.firstName && userDetails.lastName)
+              ? `${userDetails.firstName} ${userDetails.lastName}`.trim()
+              : userDetails.username || 'مستخدم';
+            const avatar = userDetails.profilePicture
+              ? (userDetails.profilePicture.startsWith('http')
+                  ? userDetails.profilePicture
+                  : `http://mazadpalestine.runasp.net${userDetails.profilePicture}`)
+              : '';
             const lastMsg = inboxData.find(msg => msg.senderId === senderId);
             return {
               id: senderId,
-              name: `${userDetails.firstName} ${userDetails.lastName}`.trim() || userDetails.username || 'مستخدم',
-              avatar: userDetails.profilePicture || '',
+              name,
+              avatar,
               lastMessage: lastMsg?.content || '',
               lastMessageTime: lastMsg?.timestamp || '',
               unreadCount: inboxData.filter(msg => msg.senderId === senderId && !msg.isRead).length
             };
           } catch (e) {
-            // fallback if user details fetch fails
             const lastMsg = inboxData.find(msg => msg.senderId === senderId);
             return {
               id: senderId,
@@ -327,12 +344,19 @@ const Chat: React.FC = () => {
   const handleOpenConversation = async (contactId: number, senderName = 'مستخدم', senderAvatar = '') => {
     try {
       // Fetch user details
-      const userDetails = await userService.getUserById(contactId.toString());
+      const response = await userService.getUserById(contactId.toString());
+      const userDetails = response.data;
       setTab('conversation');
       setActiveContact({ 
         id: contactId, 
-        name: `${userDetails.firstName} ${userDetails.lastName}`, 
-        avatar: userDetails.profilePicture || '' 
+        name: (userDetails.firstName && userDetails.lastName)
+          ? `${userDetails.firstName} ${userDetails.lastName}`.trim()
+          : userDetails.username || 'مستخدم',
+        avatar: userDetails.profilePicture
+          ? (userDetails.profilePicture.startsWith('http')
+              ? userDetails.profilePicture
+              : `http://mazadpalestine.runasp.net${userDetails.profilePicture}`)
+          : ''
       });
       setShowConversation(true);
       console.log('Selected conversation:', contactId);
@@ -454,7 +478,7 @@ const Chat: React.FC = () => {
                         </div>
                         <div className="flex items-center mb-1">
                           {msg.senderAvatar && (
-                            <img src={msg.senderAvatar} alt={msg.senderName} className="w-7 h-7 rounded-full ml-2" />
+                            <img src={msg.senderAvatar.startsWith('http') ? msg.senderAvatar : `http://mazadpalestine.runasp.net${msg.senderAvatar}`} alt={msg.senderName} className="w-7 h-7 rounded-full ml-2" />
                           )}
                           <span className="text-sm text-blue-700 font-medium">{msg.senderName || 'مستخدم'}</span>
                         </div>
@@ -483,9 +507,9 @@ const Chat: React.FC = () => {
                       <div className="relative">
                         <Avatar className="h-12 w-12">
                           {contact.avatar ? (
-                            <img src={contact.avatar} alt={contact.name} />
+                            <img src={contact.avatar.startsWith('http') ? contact.avatar : `http://mazadpalestine.runasp.net${contact.avatar}`} alt={contact.name} className="object-cover rounded-full w-full h-full" />
                           ) : (
-                            <div className="bg-blue text-white h-full w-full flex items-center justify-center">
+                            <div className="bg-blue text-white h-full w-full flex items-center justify-center rounded-full">
                               <User className="h-6 w-6" />
                             </div>
                           )}
@@ -561,9 +585,9 @@ const Chat: React.FC = () => {
                   )}
                   <Avatar className="h-10 w-10 ml-3">
                     {activeContact.avatar ? (
-                      <img src={activeContact.avatar} alt={activeContact.name} />
+                      <img src={activeContact.avatar.startsWith('http') ? activeContact.avatar : `http://mazadpalestine.runasp.net${activeContact.avatar}`} alt={activeContact.name} className="object-cover rounded-full w-full h-full" />
                     ) : (
-                      <div className="bg-blue text-white h-full w-full flex items-center justify-center">
+                      <div className="bg-blue text-white h-full w-full flex items-center justify-center rounded-full">
                         <User className="h-5 w-5" />
                       </div>
                     )}

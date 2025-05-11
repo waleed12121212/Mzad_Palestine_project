@@ -298,8 +298,9 @@ const Profile = () => {
                 : `http://mazadpalestine.runasp.net${userData.profilePicture}`
             }
             alt={userData.username}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-full"
             onClick={() => document.getElementById('profile-upload')?.click()}
+            onError={(e) => { e.currentTarget.src = '/default-avatar.png'; }}
           />
         ) : (
           <span
@@ -325,13 +326,11 @@ const Profile = () => {
           onChange={handleProfilePictureUpload}
         />
       </div>
-      <div className="text-center mt-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{userData.firstName + ' ' + userData.lastName}</h1>
-        <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2 justify-center">
-          <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
-          <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
-          <span className="px-3 py-1 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700">{userData.role === 'Admin' ? 'مدير' : 'مستخدم'}</span>
-        </div>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{userData.firstName + ' ' + userData.lastName}</h1>
+      <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2 justify-center">
+        <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
+        <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
+        <span className="px-3 py-1 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700">{userData.role === 'Admin' ? 'مدير' : 'مستخدم'}</span>
       </div>
     </div>
   );

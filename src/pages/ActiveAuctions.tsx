@@ -33,6 +33,7 @@ interface Auction {
   endTime: string;
   bidders: number;
   category?: string;
+  userId: number;
 }
 
 const ActiveAuctions: React.FC = () => {
@@ -408,12 +409,13 @@ const ActiveAuctions: React.FC = () => {
                     key={auction.auctionId}
                     id={auction.auctionId}
                     title={auction.name}
-                    description={""}
+                    description={auction.description || ""}
                     currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
                     minBidIncrement={auction.bidIncrement}
                     imageUrl={auction.imageUrl}
                     endTime={auction.endTime}
                     bidders={auction.bidsCount}
+                    userId={auction.userId}
                   />
                 ))}
               </div>

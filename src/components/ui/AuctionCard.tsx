@@ -3,6 +3,8 @@ import { Heart, Users, ArrowUpRight } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { auctionService } from "@/services/auctionService";
 
 interface AuctionCardProps {
   id: number | string;
@@ -13,6 +15,7 @@ interface AuctionCardProps {
   imageUrl: string;
   endTime: string;
   bidders: number;
+  userId?: number;
   currency?: string;
   isPopular?: boolean;
   isFavorite?: boolean;
@@ -28,6 +31,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   imageUrl,
   endTime,
   bidders,
+  userId,
   currency = "₪",
   isPopular = false,
   isFavorite = false,
@@ -36,6 +40,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   const [isLiked, setIsLiked] = useState(isFavorite);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,6 +62,24 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
     navigate(`/auction/${id}`);
   };
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("هل أنت متأكد أنك تريد حذف هذا المزاد؟")) {
+      try {
+        await auctionService.deleteAuction(Number(id));
+        toast({
+          title: "تم حذف المزاد بنجاح",
+        });
+        window.location.reload(); // أو يمكنك إزالة العنصر من القائمة مباشرة حسب السياق
+      } catch {
+        toast({
+          title: "حدث خطأ أثناء حذف المزاد",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <div
       className="neo-card overflow-hidden transition-all duration-300 relative cursor-pointer"
@@ -71,6 +94,24 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
       )}
       
       <div className="relative overflow-hidden" style={{ height: "220px" }}>
+        {user && userId && user.id === userId && (
+          <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, display: 'flex', gap: '8px' }}>
+            <button
+              title="تعديل المزاد"
+              onClick={e => { e.stopPropagation(); navigate(`/auction/${id}/edit`); }}
+              className="bg-white/80 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow"
+            >
+              <i className="fa fa-edit" />
+            </button>
+            <button
+              title="حذف المزاد"
+              onClick={handleDelete}
+              className="bg-white/80 hover:bg-red-100 text-red-600 p-2 rounded-full shadow"
+            >
+              <i className="fa fa-trash" />
+            </button>
+          </div>
+        )}
         <img
           src={imageUrl}
           alt={title}

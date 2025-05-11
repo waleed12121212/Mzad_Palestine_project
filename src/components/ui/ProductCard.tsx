@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Heart, ShoppingCart, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -55,7 +54,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/checkout?productId=${id}`);
+    toast({
+      title: "هذه الميزة ستكون متوفرة قريبًا",
+      description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
+    });
   };
 
   const handleCardClick = () => {

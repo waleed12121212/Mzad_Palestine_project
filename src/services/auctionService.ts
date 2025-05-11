@@ -139,6 +139,31 @@ class AuctionService {
       headers: getAuthHeader()
     });
   }
+
+  async updateAuction(auctionId: number, data: any): Promise<Auction> {
+    try {
+      const response = await axios.put(
+        `${API_URL}/${auctionId}`,
+        data,
+        {
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Auction update error:', error);
+      throw error;
+    }
+  }
+
+  async deleteAuction(auctionId: number): Promise<void> {
+    await axios.delete(`${API_URL}/${auctionId}`, {
+      headers: getAuthHeader(),
+    });
+  }
 }
 
 export const auctionService = new AuctionService(); 

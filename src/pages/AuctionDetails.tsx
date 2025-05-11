@@ -9,6 +9,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { auctionService } from "@/services/auctionService";
 import { listingService } from "@/services/listingService";
 import { userService } from "@/services/userService";
+import { useAuth } from "@/contexts/AuthContext";
+import { bidService } from "@/services/bidService";
 
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,7 @@ const AuctionDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const isMobile = useIsMobile();
   const [seller, setSeller] = useState<any>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchAuction = async () => {
@@ -68,35 +71,50 @@ const AuctionDetails = () => {
     fetchAuction();
   }, [id]);
 
-  const handleBidSubmit = (e: React.FormEvent) => {
+  const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (bidAmount < (auction?.reservePrice + auction?.bidIncrement)) {
+    
+    if (!bidAmount || isNaN(bidAmount)) {
       toast({
         title: "خطأ في المزايدة",
-        description: `يجب أن تكون المزايدة أكبر من ${auction?.reservePrice + auction?.bidIncrement} $`,
+        description: "يرجى إدخال قيمة صحيحة للمزايدة",
         variant: "destructive"
       });
       return;
     }
-    
-    toast({
-      title: "تم تقديم المزايدة بنجاح",
-      description: `قدمت مزايدة بقيمة ${bidAmount} $`,
-    });
-    
-    console.log("Bid submitted:", bidAmount);
-    
-    setAuction({
-      ...auction,
-      reservePrice: bidAmount,
-      bidders: auction.bidders + 1,
-      bids: [
-        { user: "أنت", amount: bidAmount, time: "الآن" },
-        ...auction.bids
-      ]
-    });
-    
-    setBidAmount(bidAmount + auction.bidIncrement);
+
+    if (bidAmount < (auction?.reservePrice + auction?.bidIncrement)) {
+      toast({
+        title: "خطأ في المزايدة",
+        description: `يجب أن تكون المزايدة أكبر من ${auction?.reservePrice + auction?.bidIncrement} ₪`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await bidService.createBid({
+        auctionId: Number(id),
+        bidAmount: bidAmount
+      });
+
+      toast({
+        title: "تم تقديم المزايدة بنجاح",
+        description: `قدمت مزايدة بقيمة ${bidAmount} ₪`,
+      });
+
+      // Refresh auction data
+      const updatedAuction = await auctionService.getAuctionById(Number(id));
+      setAuction(updatedAuction.data);
+      setBidAmount(updatedAuction.data.reservePrice + updatedAuction.data.bidIncrement);
+    } catch (error) {
+      console.error('Bid error:', error);
+      toast({
+        title: "خطأ في تقديم المزايدة",
+        description: "حدث خطأ أثناء تقديم المزايدة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive"
+      });
+    }
   };
 
   const toggleLike = () => {
@@ -198,6 +216,24 @@ const AuctionDetails = () => {
               
               {/* Main image display with navigation arrows */}
               <div className="mb-4 rounded-xl overflow-hidden relative group">
+                {user && auction && user.id === auction.userId && (
+                  <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: '8px' }}>
+                    <button
+                      title="تعديل المزاد"
+                      onClick={() => navigate(`/auction/${auction.id}/edit`)}
+                      className="bg-white/80 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow"
+                    >
+                      <i className="fa fa-edit" />
+                    </button>
+                    <button
+                      title="حذف المزاد"
+                      onClick={() => {/* TODO: handle delete logic */}}
+                      className="bg-white/80 hover:bg-red-100 text-red-600 p-2 rounded-full shadow"
+                    >
+                      <i className="fa fa-trash" />
+                    </button>
+                  </div>
+                )}
                 <img
                   src={(auction.images && auction.images[currentImageIndex]) || auction.imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
                   alt={auction.title}
@@ -299,13 +335,13 @@ const AuctionDetails = () => {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">السعر الحالي</p>
                       <p className="text-3xl font-bold text-blue dark:text-blue-light">
-                        ₪{(auction.reservePrice ?? 0).toLocaleString()}
+                        ₪{(auction?.reservePrice || 0).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">بدأ من</p>
                       <p className="text-lg font-medium">
-                        ₪{(auction.startPrice ?? 0).toLocaleString()}
+                        ₪{(auction?.startPrice || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -342,13 +378,22 @@ const AuctionDetails = () => {
                         <div className="relative flex-grow">
                           <input
                             type="number"
-                            value={bidAmount}
-                            onChange={(e) => setBidAmount(Number(e.target.value))}
+                            value={bidAmount || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setBidAmount(value ? Number(value) : 0);
+                            }}
                             className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+                            min={auction?.reservePrice + auction?.bidIncrement}
+                            step={auction?.bidIncrement || 1}
                           />
                           <BadgeDollarSign className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
                         </div>
-                        <button type="submit" className="btn-primary rounded-xl py-3 px-6">
+                        <button 
+                          type="submit" 
+                          className="btn-primary rounded-xl py-3 px-6"
+                          disabled={!bidAmount || isNaN(bidAmount)}
+                        >
                           قدم عرض
                         </button>
                       </div>
