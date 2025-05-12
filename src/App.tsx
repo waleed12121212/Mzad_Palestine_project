@@ -124,6 +124,14 @@ function App() {
                     />
                     <Route path="/categories" element={<Categories />} />
                     <Route path="/conversations" element={<Navigate to="/chat" replace />} />
+                    <Route
+                      path="/create-auction"
+                      element={
+                        <ProtectedRoute>
+                          <CreateAuction />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster />
