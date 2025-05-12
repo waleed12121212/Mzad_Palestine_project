@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
 import ReportDialog from '@/components/ReportDialog';
+import DisputeDialog from '@/components/DisputeDialog';
 
 interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   title?: string;
@@ -51,6 +52,7 @@ const AuctionDetails = () => {
   const queryClient = useQueryClient();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [isLiked, setIsLiked] = useState(false);
+  const [showDisputeDialog, setShowDisputeDialog] = useState(false);
 
   useEffect(() => {
     if (auction?.listingId) {
@@ -254,11 +256,6 @@ const AuctionDetails = () => {
       });
       return;
     }
-    // TODO: Implement dispute functionality
-    toast({
-      title: "تم فتح النزاع",
-      description: "سيتم مراجعة النزاع من قبل فريق العمل",
-    });
   };
 
   if (loading) {
@@ -431,14 +428,36 @@ const AuctionDetails = () => {
               <div className="sticky top-24">
                 {/* Dispute button in top left of card */}
                 <button
-                  onClick={handleDispute}
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: "يجب تسجيل الدخول أولاً",
+                        description: "قم بتسجيل الدخول لفتح نزاع",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setShowDisputeDialog(true);
+                  }}
                   title="فتح نزاع"
-                  className="absolute top-2 left-2 z-20 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 p-2 rounded-full shadow flex items-center justify-center"
+                  className="absolute top-2 left-2 z-20 bg-blue-50 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow flex items-center justify-center"
                   style={{ minWidth: '44px', minHeight: '44px' }}
                 >
                   <AlertTriangle className="h-5 w-5" />
                   <span className="sr-only">نزاع</span>
                 </button>
+                <DisputeDialog
+                  auctionId={auction.id}
+                  open={showDisputeDialog}
+                  onOpenChange={setShowDisputeDialog}
+                  onDisputeSubmitted={() => {
+                    setShowDisputeDialog(false);
+                    toast({
+                      title: "تم فتح النزاع بنجاح",
+                      description: "سيتم مراجعة النزاع من قبل فريق العمل",
+                    });
+                  }}
+                />
                 <div className="neo-card p-6 mb-6">
                   <h1 className="heading-md mb-4">{auction.title}</h1>
                   
@@ -511,7 +530,6 @@ const AuctionDetails = () => {
                         <ReportDialog 
                           listingId={auction.listingId} 
                           onReportSubmitted={() => {
-                            // Optionally refresh data or show success message
                             toast({
                               title: "تم الإبلاغ بنجاح",
                               description: "سيتم مراجعة البلاغ من قبل فريق العمل",

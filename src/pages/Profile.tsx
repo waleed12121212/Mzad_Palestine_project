@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import AuctionCard from "@/components/ui/AuctionCard";
 import ReportTable from './Admin/ReportManagement';
+import DisputeManagement from './Admin/DisputeManagement';
+import UserDisputes from "@/components/profile/UserDisputes";
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -38,7 +40,7 @@ const Profile = () => {
   });
 
   // Admin user management section
-  const [adminTab, setAdminTab] = useState<'profile' | 'users' | 'reports'>('profile');
+  const [adminTab, setAdminTab] = useState<'profile' | 'users' | 'reports' | 'disputes'>('profile');
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -375,6 +377,7 @@ const Profile = () => {
           { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
           { id: 'bids', to: "#", label: "مزايداتي", icon: ArrowLeft },
           { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
+          { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
           { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
         ].map((link) => (
           <button
@@ -394,7 +397,10 @@ const Profile = () => {
             <span>{link.label}</span>
           </button>
         ))}
-        <button className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
           <LogOut className="h-5 w-5" />
           <span>تسجيل الخروج</span>
         </button>
@@ -662,37 +668,41 @@ const Profile = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : error ? (
-                <div className="py-12 text-center">
-                  <p className="text-red-500">حدث خطأ في تحميل المفضلة</p>
+                <div className="text-center py-12">
+                  <p className="text-red-500">حدث خطأ أثناء تحميل المفضلة</p>
                 </div>
-              ) : !favoriteItems || favoriteItems.length === 0 ? (
-                <EmptyState message="لا يوجد مزادات في المفضلة" icon={Heart} />
+              ) : favoriteItems.length === 0 ? (
+                <EmptyState message="لا توجد عناصر في المفضلة" icon={Heart} />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {favoriteItems
-                    .filter(item => item && item.listing)
-                    .slice(0, 4)
-                    .map((item) => (
-                      <AuctionCard
-                        key={item.listingId}
-                        id={item.listing.id.toString()}
-                        listingId={item.listingId}
-                        title={item.listing.title}
-                        description={item.listing.description}
-                        currentPrice={item.listing.currentPrice}
-                        minBidIncrement={1000}
-                        imageUrl={item.listing.images[0] || "/placeholder.svg"}
-                        endTime={item.listing.endDate}
-                        bidders={0}
-                        currency="₪"
-                        isPopular={false}
-                        isFavorite={true}
-                        onFavoriteToggle={() => handleRemoveFavorite(item.listingId.toString())}
-                      />
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favoriteItems.map((item) => (
+                    <AuctionCard
+                      key={item.listingId}
+                      id={String(item.listing.id)}
+                      listingId={item.listingId}
+                      title={item.listing.title}
+                      description={item.listing.description}
+                      currentPrice={item.listing.currentPrice}
+                      minBidIncrement={1000}
+                      imageUrl={item.listing.images[0] || "/placeholder.svg"}
+                      endTime={item.listing.endDate}
+                      bidders={0}
+                      currency="₪"
+                      isPopular={false}
+                      isFavorite={true}
+                      onFavoriteToggle={() => handleRemoveFavorite(String(item.listingId))}
+                    />
+                  ))}
                 </div>
               )}
             </div>
+          </ContentWrapper>
+        );
+      
+      case 'disputes':
+        return (
+          <ContentWrapper title="نزاعاتي">
+            <UserDisputes />
           </ContentWrapper>
         );
       
@@ -746,6 +756,12 @@ const Profile = () => {
               >
                 إدارة البلاغات
               </button>
+              <button
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'disputes' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                onClick={() => setAdminTab('disputes')}
+              >
+                إدارة النزاعات
+              </button>
             </div>
           )}
 
@@ -761,6 +777,10 @@ const Profile = () => {
               ) : userData.role === 'Admin' && adminTab === 'reports' ? (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
                   <ReportTable />
+                </div>
+              ) : userData.role === 'Admin' && adminTab === 'disputes' ? (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                  <DisputeManagement />
                 </div>
               ) : (
                 <MainContent />
