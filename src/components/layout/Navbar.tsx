@@ -1,25 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Bell, Menu, X, Heart, MessageCircle, ShoppingCart, PlusCircle } from "lucide-react";
-import DarkModeToggle from "../ui/DarkModeToggle";
-import { useAuth } from '../../contexts/AuthContext';
+import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [lang, setLang] = useState<"ar" | "en">("ar");
+  const { t } = useTranslation();
+  const { dir } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Update document direction based on language
   useEffect(() => {
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = lang;
-  }, [lang]);
+    document.documentElement.dir = dir === "rtl" ? "rtl" : "ltr";
+    document.documentElement.lang = dir;
+  }, [dir]);
 
   // Handle scroll effect
   useEffect(() => {
@@ -35,25 +38,19 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleLanguage = () => {
-    setLang(lang === "ar" ? "en" : "ar");
-  };
-
-  // Check if a path is active
-  const isActive = (path: string) => {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/auctions?search=${encodeURIComponent(searchQuery)}`);
       setMobileMenuOpen(false);
     }
+  };
+
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -70,32 +67,42 @@ const Navbar: React.FC = () => {
           <Link to="/" className="flex items-center">
             <img 
               src="/lovable-uploads/9d68d225-811b-46be-a62c-123042182c3c.png" 
-              alt="مزاد فلسطين" 
-              className="h-10 rtl:ml-2 ltr:mr-2" 
+              alt={t('nav.logoAlt')} 
+              className={`h-10 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`}
             />
             <span className="font-bold text-blue dark:text-white text-xl tracking-tight hidden md:block">
-              {lang === "ar" ? "مزاد فلسطين" : "MzadPalestine"}
+              مزاد فلسطين
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <NavLink href="/" active={isActive("/")}>
-              {lang === "ar" ? "الرئيسية" : "Home"}
-            </NavLink>
-            <NavLink href="/auctions" active={isActive("/auctions")}>
-              {lang === "ar" ? "المزادات النشطة" : "Active Auctions"}
-            </NavLink>
-            <NavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>هذه الميزة ستكون متوفرة قريبًا</span>, description: <span style={{ fontSize: '1rem', color: '#334155' }}>لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!</span> }); }}>
-              {lang === "ar" ? "الشراء الفوري" : "Buy Now"}
-            </NavLink>
-            <NavLink href="/categories" active={isActive("/categories")}>
-              {lang === "ar" ? "تصفح الفئات" : "Browse Categories"}
-            </NavLink>
+          <nav className={`hidden md:flex items-center space-x-4 ${dir === 'rtl' ? 'space-x-reverse' : ''}`}>
+            <DesktopNavLink href="/" active={isActive("/")}>
+              الرئيسية
+            </DesktopNavLink>
+            <DesktopNavLink href="/auctions" active={isActive("/auctions")}>
+              المزادات النشطة
+            </DesktopNavLink>
+            <DesktopNavLink 
+              href="#" 
+              active={isActive("/buy-now")} 
+              onClick={e => { 
+                e.preventDefault(); 
+                toast({ 
+                  title: "هذه الميزة ستكون متوفرة قريبًا",
+                  description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
+                }); 
+              }}
+            >
+              الشراء الفوري
+            </DesktopNavLink>
+            <DesktopNavLink href="/categories" active={isActive("/categories")}>
+              تصفح الفئات
+            </DesktopNavLink>
           </nav>
 
           {/* Search, User Actions */}
-          <div className="hidden md:flex items-center gap-3 rtl:mr-auto ltr:ml-auto">
+          <div className={`hidden md:flex items-center space-x-4 ${dir === 'rtl' ? 'space-x-reverse' : ''}`}>
             <form
               onSubmit={handleSearchSubmit}
               className={`relative transition-all duration-300 ${
@@ -104,8 +111,8 @@ const Navbar: React.FC = () => {
             >
               <input
                 type="text"
-                placeholder={lang === "ar" ? "ابحث عن مزادات..." : "Search auctions..."}
-                className={`w-full py-2 px-4 rtl:pl-10 rtl:pr-4 ltr:pr-10 ltr:pl-4 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm transition-all duration-300 ${
+                placeholder={t('nav.search')}
+                className={`w-full py-2 px-4 ${dir === 'rtl' ? 'pr-4 pl-10' : 'pl-4 pr-10'} rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm transition-all duration-300 ${
                   isSearchFocused
                     ? "ring-2 ring-blue/50"
                     : "focus:ring-2 focus:ring-blue/50"
@@ -117,11 +124,13 @@ const Navbar: React.FC = () => {
               />
               <button
                 type="submit"
-                className="absolute top-1/2 transform -translate-y-1/2 rtl:left-3 ltr:right-3 p-1"
+                className={`absolute top-1/2 transform -translate-y-1/2 ${dir === 'rtl' ? 'left-3' : 'right-3'}`}
               >
                 <Search className="h-4 w-4 text-gray-400" />
               </button>
             </form>
+
+            <LanguageSwitcher />
 
             <div className="flex items-center gap-2">
               <Link to="/favorites" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -138,22 +147,13 @@ const Navbar: React.FC = () => {
                 <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-red-500 rounded-full"></span>
               </Link>
 
-              <DarkModeToggle />
-
-              <button
-                onClick={toggleLanguage}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
-              >
-                {lang === "ar" ? "EN" : "عربي"}
-              </button>
-
               {isAuthenticated ? (
                 <Link to="/logout" className="btn-primary">
-                  {lang === "ar" ? "تسجيل الخروج" : "Logout"}
+                  تسجيل الخروج
                 </Link>
               ) : (
                 <Link to="/auth" className="btn-primary">
-                  {lang === "ar" ? "تسجيل الدخول" : "Login"}
+                  تسجيل الدخول
                 </Link>
               )}
             </div>
@@ -164,8 +164,6 @@ const Navbar: React.FC = () => {
             <Link to="/create-auction" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
               <PlusCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </Link>
-            
-            <DarkModeToggle />
             
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -191,14 +189,14 @@ const Navbar: React.FC = () => {
             >
               <input
                 type="text"
-                placeholder={lang === "ar" ? "ابحث عن مزادات..." : "Search auctions..."}
-                className="w-full py-2 px-4 rtl:pl-10 rtl:pr-4 ltr:pr-10 ltr:pl-4 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm"
+                placeholder={t('nav.search')}
+                className={`w-full py-2 px-4 ${dir === 'rtl' ? 'pr-4 pl-10' : 'pl-4 pr-10'} rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button
                 type="submit"
-                className="absolute top-1/2 transform -translate-y-1/2 rtl:left-3 ltr:right-3 p-1"
+                className={`absolute top-1/2 transform -translate-y-1/2 ${dir === 'rtl' ? 'left-3' : 'right-3'}`}
               >
                 <Search className="h-4 w-4 text-gray-400" />
               </button>
@@ -206,44 +204,41 @@ const Navbar: React.FC = () => {
 
             <nav className="flex flex-col space-y-1 text-right rtl:text-right ltr:text-left">
               <MobileNavLink href="/" active={isActive("/")}>
-                {lang === "ar" ? "الرئيسية" : "Home"}
+                الرئيسية
               </MobileNavLink>
               <MobileNavLink href="/auctions" active={isActive("/auctions")}>
-                {lang === "ar" ? "المزادات النشطة" : "Active Auctions"}
+                المزادات النشطة
               </MobileNavLink>
-              <MobileNavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>هذه الميزة ستكون متوفرة قريبًا</span>, description: <span style={{ fontSize: '1rem', color: '#334155' }}>لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!</span> }); }}>
-                {lang === "ar" ? "الشراء الفوري" : "Buy Now"}
+              <MobileNavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: "هذه الميزة ستكون متوفرة قريبًا", description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!" }); }}>
+                الشراء الفوري
               </MobileNavLink>
               <MobileNavLink href="/categories" active={isActive("/categories")}>
-                {lang === "ar" ? "تصفح الفئات" : "Browse Categories"}
+                تصفح الفئات
               </MobileNavLink>
               <MobileNavLink href="/favorites" active={isActive("/favorites")}>
-                {lang === "ar" ? "المفضلة" : "Favorites"}
+                {t('nav.favorites')}
               </MobileNavLink>
               <MobileNavLink href="/conversations" active={isActive("/conversations")}>
-                {lang === "ar" ? "الدردشة" : "Chat"}
+                {t('nav.chat')}
               </MobileNavLink>
               <MobileNavLink href="/notifications" active={isActive("/notifications")}>
-                {lang === "ar" ? "الإشعارات" : "Notifications"}
+                {t('nav.notifications')}
               </MobileNavLink>
             </nav>
 
             <div className="mt-4 flex flex-col space-y-2">
               {isAuthenticated ? (
                 <Link to="/logout" className="btn-primary w-full text-center">
-                  {lang === "ar" ? "تسجيل الخروج" : "Logout"}
+                  تسجيل الخروج
                 </Link>
               ) : (
                 <Link to="/auth" className="btn-primary w-full text-center">
-                  {lang === "ar" ? "تسجيل الدخول" : "Login"}
+                  تسجيل الدخول
                 </Link>
               )}
-              <button
-                onClick={toggleLanguage}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium border border-gray-200 dark:border-gray-700 w-full"
-              >
-                {lang === "ar" ? "EN" : "عربي"}
-              </button>
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                <LanguageSwitcher />
+              </div>
             </div>
           </div>
         </div>
@@ -253,18 +248,20 @@ const Navbar: React.FC = () => {
 };
 
 // Desktop Navigation Link
-const NavLink: React.FC<{
+const DesktopNavLink: React.FC<{
   href: string;
   active?: boolean;
   children: React.ReactNode;
-}> = ({ href, active = false, children }) => {
+  onClick?: (e: React.MouseEvent) => void;
+}> = ({ href, active, children, onClick }) => {
   return (
     <Link
       to={href}
-      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
+      onClick={onClick}
+      className={`px-3 py-2 rounded-lg transition-colors ${
         active
-          ? "text-blue dark:text-blue-light"
-          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          ? "text-blue dark:text-blue-light font-medium"
+          : "text-gray-600 dark:text-gray-300 hover:text-blue dark:hover:text-blue-light"
       }`}
     >
       {children}
@@ -277,14 +274,16 @@ const MobileNavLink: React.FC<{
   href: string;
   active?: boolean;
   children: React.ReactNode;
-}> = ({ href, active = false, children }) => {
+  onClick?: (e: React.MouseEvent) => void;
+}> = ({ href, active, children, onClick }) => {
   return (
     <Link
       to={href}
-      className={`py-3 px-4 rounded-lg text-base font-medium transition-colors duration-200 ${
+      onClick={onClick}
+      className={`block px-4 py-2 rounded-lg transition-colors ${
         active
-          ? "bg-blue/10 text-blue dark:text-blue-light"
-          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          ? "bg-blue/10 dark:bg-blue-dark/20 text-blue dark:text-blue-light font-medium"
+          : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
       }`}
     >
       {children}

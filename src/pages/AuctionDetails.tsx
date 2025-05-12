@@ -14,6 +14,8 @@ import { bidService, Bid } from "@/services/bidService";
 import { BidForm } from '@/components/bidding/BidForm';
 import { BidHistory } from '@/components/bidding/BidHistory';
 import { useQueryClient } from '@tanstack/react-query';
+import ReviewForm from '@/components/ReviewForm';
+import ListingReviews from '@/components/ListingReviews';
 
 interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   title?: string;
@@ -103,14 +105,27 @@ const AuctionDetails = () => {
         setOriginalStartPrice(auctionData.ReservePrice);
 
         // جلب معلومات البائع
-        if (auctionData.UserId) {
+        if (auctionData.UserId || auctionData.userId) {
           try {
-            const sellerData = await userService.getUserById(auctionData.UserId.toString());
-            setSeller(sellerData);
-          } catch {
+            const sellerId = (auctionData.UserId || auctionData.userId).toString();
+            const sellerData = await userService.getUserById(sellerId);
+            if (sellerData) {
+              setSeller({
+                ...sellerData,
+                rating: sellerData.rating || 0,
+                totalSales: sellerData.totalSales || 0
+              });
+            } else {
+              setSeller(null);
+              console.error('No seller data returned for ID:', sellerId);
+            }
+          } catch (error) {
+            console.error('Error fetching seller data:', error);
             setSeller(null);
+            // Don't show error toast for seller data - just handle gracefully
           }
         } else {
+          console.error('No seller ID found in auction data');
           setSeller(null);
         }
       } catch (error) {
@@ -313,6 +328,27 @@ const AuctionDetails = () => {
                     <p>{auction.category} - {auction.subcategory}</p>
                   </div>
                 </div>
+
+                {/* التقييمات والمراجعات */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <h2 className="text-2xl font-bold mb-6">التقييمات والمراجعات</h2>
+                  
+                  {user && auction && user.id !== auction.userId && (
+                    <div className="mb-8">
+                      <ReviewForm 
+                        listingId={auction.listingId.toString()} 
+                        onReviewSubmitted={() => {
+                          // Refresh reviews after submission
+                          queryClient.invalidateQueries({
+                            queryKey: ['reviews', auction.listingId]
+                          });
+                        }} 
+                      />
+                    </div>
+                  )}
+
+                  <ListingReviews listingId={auction.listingId.toString()} />
+                </div>
               </div>
             </div>
             
@@ -401,31 +437,49 @@ const AuctionDetails = () => {
                   <h3 className="heading-sm mb-4">معلومات البائع</h3>
                   <div className="flex items-center gap-4 mb-4">
                     <div 
-                      className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold cursor-pointer"
+                      className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold cursor-pointer overflow-hidden"
                       onClick={navigateToSellerProfile}
                     >
-                      {seller?.firstName?.charAt(0) ?? "-"}
+                      {seller?.profilePicture ? (
+                        <img 
+                          src={seller.profilePicture} 
+                          alt={`${seller.firstName} ${seller.lastName}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{seller?.firstName?.charAt(0) ?? "؟"}</span>
+                      )}
                     </div>
                     <div>
                       <h4 
                         className="text-lg font-medium hover:text-blue transition-colors cursor-pointer"
                         onClick={navigateToSellerProfile}
                       >
-                        {seller ? `${seller.firstName} ${seller.lastName}` : "غير معروف"}
+                        {seller ? (
+                          `${seller.firstName} ${seller.lastName}`
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-t-transparent border-blue rounded-full animate-spin"></div>
+                            <span>جاري تحميل معلومات البائع...</span>
+                          </div>
+                        )}
                       </h4>
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        {'★'.repeat(Math.floor(seller?.rating ?? 0))}
-                        <span className="text-gray-600 dark:text-gray-300 text-sm mr-1">
-                          ({seller?.rating ?? 0}/5) · {seller?.totalSales ?? 0} عملية بيع
-                        </span>
-                      </div>
+                      {seller && (
+                        <div className="flex items-center gap-1 text-yellow-500">
+                          {'★'.repeat(Math.floor(seller?.rating ?? 0))}
+                          <span className="text-gray-600 dark:text-gray-300 text-sm mr-1">
+                            ({seller?.rating ?? 0}/5) · {seller?.totalSales ?? 0} عملية بيع
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button 
                     className="w-full btn-secondary"
                     onClick={navigateToChat}
+                    disabled={!seller}
                   >
-                    الاتصال بالبائع
+                    {seller ? "الاتصال بالبائع" : "جاري التحميل..."}
                   </button>
                 </div>
                 

@@ -82,6 +82,8 @@ export interface UserProfile {
   address: string;
   dateOfBirth: string | null;
   bio: string | null;
+  rating?: number;
+  totalSales?: number;
 }
 
 export interface UpdateProfileData {

@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "home": "Home",
+    "activeAuctions": "Active Auctions",
+    "buyNow": "Buy Now",
+    "categories": "Browse Categories",
+    "search": "Search auctions...",
+    "favorites": "Favorites",
+    "chat": "Chat",
+    "notifications": "Notifications",
+    "login": "Login",
+    "logout": "Logout",
+    "createAuction": "Create Auction"
+  },
+  "auth": {
+    "welcome": "Welcome to Mzad Palestine",
+    "loginDesc": "Sign in to access your account",
+    "signupDesc": "Create your new account to participate in auctions",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create Account",
+    "hasAccount": "Already have an account?",
+    "name": "Name",
+    "phone": "Phone Number",
+    "confirmPassword": "Confirm Password",
+    "accountType": "Account Type",
+    "buyer": "Buyer",
+    "seller": "Seller"
+  },
+  "profile": {
+    "personalInfo": "Personal Information",
+    "myAuctions": "My Auctions",
+    "myBids": "My Bids",
+    "settings": "Settings",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Operation completed successfully",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "passwordMismatch": "Passwords do not match",
+    "minLength": "Must be at least {{length}} characters",
+    "maxLength": "Must not exceed {{length}} characters"
+  },
+  "seo": {
+    "title": "Mzad Palestine - Online Auction Platform",
+    "description": "Mzad Palestine online auction platform - Buy and sell with ease"
+  }
+} 
