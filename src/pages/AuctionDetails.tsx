@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
@@ -17,6 +17,7 @@ import { BidHistory } from '@/components/bidding/BidHistory';
 import { useQueryClient } from '@tanstack/react-query';
 import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
+import ReportDialog from '@/components/ReportDialog';
 
 interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   title?: string;
@@ -227,6 +228,39 @@ const AuctionDetails = () => {
     }
   };
 
+  const handleReport = () => {
+    if (!user) {
+      toast({
+        title: "يجب تسجيل الدخول أولاً",
+        description: "قم بتسجيل الدخول للإبلاغ عن المزاد",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // TODO: Implement report functionality
+    toast({
+      title: "تم الإبلاغ عن المزاد",
+      description: "سيتم مراجعة البلاغ من قبل فريق العمل",
+    });
+  };
+
+  const handleDispute = () => {
+    if (!user) {
+      toast({
+        title: "يجب تسجيل الدخول أولاً",
+        description: "قم بتسجيل الدخول لفتح نزاع",
+        variant: "destructive",
+      });
+      return;
+    }
+    // TODO: Implement dispute functionality
+    toast({
+      title: "تم فتح النزاع",
+      description: "سيتم مراجعة النزاع من قبل فريق العمل",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -279,24 +313,27 @@ const AuctionDetails = () => {
               
               {/* Main image display with navigation arrows */}
               <div className="mb-4 rounded-xl overflow-hidden relative group">
-                {user && auction && user.id === auction.userId && (
-                  <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: '8px' }}>
-                    <button
-                      title="تعديل المزاد"
-                      onClick={() => navigate(`/auction/${auction.id}/edit`)}
-                      className="bg-white/80 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow"
-                    >
-                      <i className="fa fa-edit" />
-                    </button>
-                    <button
-                      title="حذف المزاد"
-                      onClick={() => {/* TODO: handle delete logic */}}
-                      className="bg-white/80 hover:bg-red-100 text-red-600 p-2 rounded-full shadow"
-                    >
-                      <i className="fa fa-trash" />
-                    </button>
-                  </div>
-                )}
+                {/* Top left action buttons */}
+                <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: '8px' }}>
+                  {user && auction && user.id === auction.userId && (
+                    <>
+                      <button
+                        title="تعديل المزاد"
+                        onClick={() => navigate(`/auction/${auction.id}/edit`)}
+                        className="bg-white/80 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow"
+                      >
+                        <i className="fa fa-edit" />
+                      </button>
+                      <button
+                        title="حذف المزاد"
+                        onClick={() => {/* TODO: handle delete logic */}}
+                        className="bg-white/80 hover:bg-red-100 text-red-600 p-2 rounded-full shadow"
+                      >
+                        <i className="fa fa-trash" />
+                      </button>
+                    </>
+                  )}
+                </div>
                 <img
                   src={(auction.images && auction.images[currentImageIndex]) || auction.imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
                   alt={auction.title}
@@ -392,6 +429,16 @@ const AuctionDetails = () => {
             
             <div className="lg:w-4/12">
               <div className="sticky top-24">
+                {/* Dispute button in top left of card */}
+                <button
+                  onClick={handleDispute}
+                  title="فتح نزاع"
+                  className="absolute top-2 left-2 z-20 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 p-2 rounded-full shadow flex items-center justify-center"
+                  style={{ minWidth: '44px', minHeight: '44px' }}
+                >
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="sr-only">نزاع</span>
+                </button>
                 <div className="neo-card p-6 mb-6">
                   <h1 className="heading-md mb-4">{auction.title}</h1>
                   
@@ -460,6 +507,18 @@ const AuctionDetails = () => {
                         <Share2 className="h-5 w-5" />
                         <span>مشاركة</span>
                       </button>
+                      {auction && (
+                        <ReportDialog 
+                          listingId={auction.listingId} 
+                          onReportSubmitted={() => {
+                            // Optionally refresh data or show success message
+                            toast({
+                              title: "تم الإبلاغ بنجاح",
+                              description: "سيتم مراجعة البلاغ من قبل فريق العمل",
+                            });
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

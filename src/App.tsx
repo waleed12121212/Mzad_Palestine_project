@@ -23,6 +23,7 @@ import CreateAuction from '@/pages/CreateAuction';
 import Chat from '@/pages/Chat';
 import Checkout from '@/pages/Checkout';
 import UserManagement from '@/pages/Admin/UserManagement';
+import ReportManagement from '@/pages/Admin/ReportManagement';
 import Categories from '@/pages/Categories';
 import { LogoutHandler } from '@/components/auth/LogoutHandler';
 import SellerProfile from '@/pages/SellerProfile';
@@ -122,7 +123,14 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
-                    <Route path="/categories" element={<Categories />} />
+                    <Route
+                      path="/categories"
+                      element={
+                        <ProtectedRoute>
+                          <Categories />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/conversations" element={<Navigate to="/chat" replace />} />
                     <Route
                       path="/create-auction"

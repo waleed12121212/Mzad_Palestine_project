@@ -72,7 +72,7 @@ const Favorites = () => {
             {favoriteItems.map((item) => (
               <AuctionCard
                 key={item.listingId}
-                id={item.listing.id}
+                id={String(item.listing.id)}
                 listingId={item.listingId}
                 title={item.listing.title}
                 description={item.listing.description}

@@ -14,6 +14,7 @@ import { userService, UserProfile, UpdateProfileData } from "@/services/userServ
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import AuctionCard from "@/components/ui/AuctionCard";
+import ReportTable from './Admin/ReportManagement';
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -37,7 +38,7 @@ const Profile = () => {
   });
 
   // Admin user management section
-  const [adminTab, setAdminTab] = useState<'profile' | 'users'>('profile');
+  const [adminTab, setAdminTab] = useState<'profile' | 'users' | 'reports'>('profile');
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -177,10 +178,10 @@ const Profile = () => {
   };
 
   // Delete user
-  const handleDeleteUser = async (id: number) => {
+  const handleDeleteUser = async (id: string | number) => {
     if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
     try {
-      await userService.deleteUser(id);
+      await userService.deleteUser(id.toString());
       toast({ title: 'تم حذف المستخدم بنجاح' });
       fetchAllUsers();
     } catch (error: any) {
@@ -189,9 +190,9 @@ const Profile = () => {
   };
 
   // Edit user role
-  const handleEditUserRole = async (id: number, newRole: string) => {
+  const handleEditUserRole = async (id: string | number, newRole: 'User' | 'Admin') => {
     try {
-      await userService.updateUserRole(id, newRole);
+      await userService.updateUserRole(id.toString(), newRole);
       toast({ title: 'تم تحديث الصلاحية بنجاح' });
       fetchAllUsers();
     } catch (error: any) {
@@ -226,7 +227,7 @@ const Profile = () => {
                 <td className="p-2">
                   <select
                     value={u.role}
-                    onChange={e => handleEditUserRole(u.id, e.target.value)}
+                    onChange={e => handleEditUserRole(u.id, e.target.value as 'User' | 'Admin')}
                     className="rounded px-2 py-1 border border-gray-200 dark:bg-gray-800"
                   >
                     <option value="User">مستخدم</option>
@@ -739,6 +740,12 @@ const Profile = () => {
               >
                 إدارة المستخدمين
               </button>
+              <button
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'reports' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                onClick={() => setAdminTab('reports')}
+              >
+                إدارة البلاغات
+              </button>
             </div>
           )}
 
@@ -749,7 +756,15 @@ const Profile = () => {
             </div>
             <div className="w-full md:w-2/3 lg:w-3/4">
               {/* Show admin users table if admin and tab is users */}
-              {userData.role === 'Admin' && adminTab === 'users' ? <AdminUsersTable /> : <MainContent />}
+              {userData.role === 'Admin' && adminTab === 'users' ? (
+                <AdminUsersTable />
+              ) : userData.role === 'Admin' && adminTab === 'reports' ? (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                  <ReportTable />
+                </div>
+              ) : (
+                <MainContent />
+              )}
             </div>
           </div>
         </div>

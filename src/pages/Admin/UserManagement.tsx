@@ -58,7 +58,7 @@ const UserManagement = () => {
   const handleRoleChange = async (userId: string, newRole: 'User' | 'Admin') => {
     try {
       const updatedUser = await userService.updateUserRole(userId, newRole);
-      setUsers(users.map(user => user.id === userId ? updatedUser : user));
+      setUsers(users.map(user => user.id.toString() === userId ? updatedUser : user));
       toast({
         title: "تم تحديث الصلاحية",
         description: "تم تغيير صلاحية المستخدم بنجاح"
@@ -82,7 +82,7 @@ const UserManagement = () => {
 
     try {
       await userService.deleteUser(userToDelete);
-      setUsers(users.filter(user => user.id !== userToDelete));
+      setUsers(users.filter(user => user.id.toString() !== userToDelete));
       toast({
         title: "تم حذف المستخدم",
         description: "تم حذف المستخدم بنجاح"
@@ -162,24 +162,24 @@ const UserManagement = () => {
                       <td className="py-3 px-4">
                         <select
                           value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value as 'User' | 'Admin')}
+                          onChange={(e) => handleRoleChange(user.id.toString(), e.target.value as 'User' | 'Admin')}
                           className="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue focus:border-transparent"
                         >
                           <option value="User">مستخدم</option>
                           <option value="Admin">مدير</option>
                         </select>
                       </td>
-                      <td className="py-3 px-4">{user.dateJoined}</td>
+                      <td className="py-3 px-4">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-EG') : ''}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleViewUser(user.id)}
+                            onClick={() => handleViewUser(user.id.toString())}
                             className="p-2 text-blue hover:bg-blue/10 rounded-lg transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(user.id)}
+                            onClick={() => handleDeleteClick(user.id.toString())}
                             className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -233,7 +233,7 @@ const UserManagement = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">تاريخ الانضمام</p>
-                  <p>{selectedUser.dateJoined}</p>
+                  <p>{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('ar-EG') : ''}</p>
                 </div>
               </div>
             </div>
