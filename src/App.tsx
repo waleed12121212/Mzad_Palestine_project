@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { WishlistProvider } from '@/contexts/WishlistContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import PageWrapper from '@/components/layout/PageWrapper';
 import Index from '@/pages/Index';
@@ -42,92 +43,95 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LanguageProvider>
-          <TooltipProvider>
-            <Router>
-              <PageWrapper>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth/*" element={<AuthPage />} />
-                  <Route path="/logout" element={<LogoutRoute />} />
-                  <Route path="/auctions" element={<ActiveAuctions />} />
-                  <Route path="/auction/:id" element={<AuctionDetails />} />
-                  <Route path="/auctions/search" element={<AuctionSearch />} />
-                  <Route path="/auctions/active" element={<ActiveAuctions />} />
-                  <Route path="/auctions/:id" element={<AuctionDetails />} />
-                  <Route path="/seller/:id" element={<SellerProfile />} />
-                  <Route
-                    path="/listings/create"
-                    element={
-                      <ProtectedRoute>
-                        <CreateListing />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/listings/my"
-                    element={
-                      <ProtectedRoute>
-                        <MyListings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/favorites"
-                    element={
-                      <ProtectedRoute>
-                        <Favorites />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/notifications"
-                    element={
-                      <ProtectedRoute>
-                        <Notifications />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/chat"
-                    element={
-                      <ProtectedRoute>
-                        <Chat />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/checkout/:id"
-                    element={
-                      <ProtectedRoute>
-                        <Checkout />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/users"
-                    element={
-                      <ProtectedRoute adminOnly>
-                        <UserManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-              </PageWrapper>
-            </Router>
-          </TooltipProvider>
-        </LanguageProvider>
+        <WishlistProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Router>
+                <PageWrapper>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth/*" element={<AuthPage />} />
+                    <Route path="/logout" element={<LogoutRoute />} />
+                    <Route path="/auctions" element={<ActiveAuctions />} />
+                    <Route path="/auction/:id" element={<AuctionDetails />} />
+                    <Route path="/auctions/search" element={<AuctionSearch />} />
+                    <Route path="/auctions/active" element={<ActiveAuctions />} />
+                    <Route path="/auctions/:id" element={<AuctionDetails />} />
+                    <Route path="/seller/:id" element={<SellerProfile />} />
+                    <Route
+                      path="/listings/create"
+                      element={
+                        <ProtectedRoute>
+                          <CreateListing />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/listings/my"
+                      element={
+                        <ProtectedRoute>
+                          <MyListings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/favorites"
+                      element={
+                        <ProtectedRoute>
+                          <Favorites />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/notifications"
+                      element={
+                        <ProtectedRoute>
+                          <Notifications />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/chat"
+                      element={
+                        <ProtectedRoute>
+                          <Chat />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/checkout/:id"
+                      element={
+                        <ProtectedRoute>
+                          <Checkout />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/users"
+                      element={
+                        <ProtectedRoute adminOnly>
+                          <UserManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/conversations" element={<Navigate to="/chat" replace />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <Toaster />
+                </PageWrapper>
+              </Router>
+            </TooltipProvider>
+          </LanguageProvider>
+        </WishlistProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

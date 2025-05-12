@@ -10,6 +10,7 @@ import { auctionService, Auction } from "@/services/auctionService";
 import { listingService } from "@/services/listingService";
 import { userService } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { bidService, Bid } from "@/services/bidService";
 import { BidForm } from '@/components/bidding/BidForm';
 import { BidHistory } from '@/components/bidding/BidHistory';
@@ -42,12 +43,19 @@ const AuctionDetails = () => {
   const [auction, setAuction] = useState<ExtendedAuction>(null);
   const [originalStartPrice, setOriginalStartPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const isMobile = useIsMobile();
   const [seller, setSeller] = useState<any>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (auction?.listingId) {
+      setIsLiked(isInWishlist(auction.listingId));
+    }
+  }, [auction?.listingId, isInWishlist]);
 
   const handleBidSuccess = (newBid: Bid) => {
     // Optimistically update the auction data
@@ -80,7 +88,7 @@ const AuctionDetails = () => {
           listingId: auctionData.ListingId,
           name: auctionData.Name,
           title: auctionData.Name,
-          description: auctionData.Listing.Description || '',
+          description: auctionData.Listing?.Description || '',
           imageUrl: auctionData.ImageUrl,
           startTime: auctionData.StartTime,
           endTime: auctionData.EndTime,
@@ -91,11 +99,11 @@ const AuctionDetails = () => {
           userId: auctionData.UserId,
           bidders: auctionData.Bids?.length || 0,
           bids: auctionData.Bids || [],
-          category: typeof auctionData.Listing.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing.Category || '',
-          subcategory: typeof auctionData.Listing.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing.Subcategory || '',
-          condition: auctionData.Listing.Condition || '',
-          location: auctionData.Listing.Location || '',
-          features: auctionData.Listing.Features || [],
+          category: typeof auctionData.Listing?.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing?.Category || '',
+          subcategory: typeof auctionData.Listing?.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing?.Subcategory || '',
+          condition: auctionData.Listing?.Condition || '',
+          location: auctionData.Listing?.Location || '',
+          features: auctionData.Listing?.Features || [],
           views: 0,
         };
 
@@ -142,12 +150,42 @@ const AuctionDetails = () => {
     fetchAuction();
   }, [id]);
 
-  const toggleLike = () => {
-    setLiked(!liked);
-    toast({
-      title: liked ? "تمت إزالة المزاد من المفضلة" : "تمت إضافة المزاد للمفضلة",
-      description: liked ? "يمكنك إضافته مرة أخرى في أي وقت" : "يمكنك الوصول للمفضلة من حسابك الشخصي",
-    });
+  const toggleLike = async () => {
+    if (!user) {
+      toast({
+        title: "يجب تسجيل الدخول أولاً",
+        description: "قم بتسجيل الدخول لإضافة العناصر إلى المفضلة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!auction?.listingId) {
+      toast({
+        title: "خطأ في إضافة المزاد للمفضلة",
+        description: "لم يتم العثور على معرف المنتج",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isLiked) {
+        await removeFromWishlist(auction.listingId);
+      } else {
+        await addToWishlist(auction.listingId);
+      }
+      setIsLiked(!isLiked);
+      toast({
+        title: isLiked ? "تمت إزالة المزاد من المفضلة" : "تمت إضافة المزاد للمفضلة",
+        description: isLiked ? "يمكنك إضافته مرة أخرى في أي وقت" : "يمكنك الوصول للمفضلة من حسابك الشخصي",
+      });
+    } catch (error) {
+      toast({
+        title: "فشل في تحديث المفضلة",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShareClick = () => {
@@ -410,9 +448,9 @@ const AuctionDetails = () => {
                     <div className="flex gap-2">
                       <button 
                         onClick={toggleLike}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border ${liked ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border ${isLiked ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
                       >
-                        <Heart className={`h-5 w-5 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+                        <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                         <span>المفضلة</span>
                       </button>
                       <button 

@@ -73,14 +73,15 @@ const ActiveAuctions: React.FC = () => {
         .map(auction => {
           const normalized = {
             ...auction,
-            id: Number(auction.id ?? auction.auctionId ?? auction.listingId),
-            title: auction.title ?? auction.name ?? "",
-            currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? 0,
-            reservePrice: auction.reservePrice ?? 0,
-            currentBid: auction.currentBid ?? 0,
-            bidIncrement: auction.bidIncrement ?? 0,
+            id: Number(auction.id ?? auction.auctionId ?? auction.AuctionId),
+            listingId: Number(auction.listingId ?? auction.ListingId),
+            title: auction.title ?? auction.name ?? auction.Name ?? "",
+            currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? auction.ReservePrice ?? 0,
+            reservePrice: auction.reservePrice ?? auction.ReservePrice ?? 0,
+            currentBid: auction.currentBid ?? auction.CurrentBid ?? 0,
+            bidIncrement: auction.bidIncrement ?? auction.BidIncrement ?? 0,
             Bids: auction.Bids || [],
-            bidsCount: auction.bidsCount ?? 0,
+            bidsCount: auction.bidsCount ?? auction.BidsCount ?? 0,
             userId: auction.userId ?? auction.UserId,
             imageUrl: auction.imageUrl ?? auction.ImageUrl,
             endTime: auction.endTime ?? auction.EndTime,
@@ -398,6 +399,7 @@ const ActiveAuctions: React.FC = () => {
                     <AuctionCard
                       key={auction.id}
                       id={auction.id}
+                      listingId={auction.listingId}
                       title={auction.title}
                       description={""}
                       currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}

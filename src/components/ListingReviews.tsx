@@ -246,9 +246,9 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">
-                        {format(new Date(review.createdAt), 'dd MMMM yyyy', { locale: ar })}
-                      </span>
+                <span className="text-sm text-gray-500">
+                  {format(new Date(review.createdAt), 'dd MMMM yyyy', { locale: ar })}
+                </span>
                       {user && review.reviewerId === user.id && (
                         <div className="flex gap-2 mr-4">
                           <button
@@ -268,8 +268,8 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
                         </div>
                       )}
                     </div>
-                  </div>
-                  {review.comment && (
+              </div>
+              {review.comment && (
                     <p className="mt-3 text-gray-700 dark:text-gray-300 mr-13">{review.comment}</p>
                   )}
                 </>

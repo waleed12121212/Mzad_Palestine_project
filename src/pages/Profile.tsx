@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LogOut, Heart, Bell, Package } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ContentWrapper } from "@/components/ui/content-wrapper";
 import { userService, UserProfile, UpdateProfileData } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWishlist } from "@/contexts/WishlistContext";
+import AuctionCard from "@/components/ui/AuctionCard";
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -34,6 +42,9 @@ const Profile = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [roleEdit, setRoleEdit] = useState('User');
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const { wishlistItems: favoriteItems, isLoading, error, removeFromWishlist } = useWishlist();
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -245,6 +256,21 @@ const Profile = () => {
       fetchAllUsers();
     }
   }, [userData, adminTab]);
+
+  const handleRemoveFavorite = async (id: string) => {
+    try {
+      await removeFromWishlist(Number(id));
+      toast({
+        title: "تمت إزالة المزاد من المفضلة",
+        description: "يمكنك إضافته مرة أخرى في أي وقت",
+      });
+    } catch (error) {
+      toast({
+        title: "فشل في إزالة العنصر من المفضلة",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -618,17 +644,53 @@ const Profile = () => {
         return (
           <ContentWrapper title="المفضلة">
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-6">
                 <input
                   type="text"
                   placeholder="البحث في المفضلة..."
                   className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 w-64"
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button className="text-gray-500 hover:text-red-500">
-                  <Heart className="h-5 w-5" />
-                </button>
+                <Link to="/favorites" className="text-blue hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                  عرض الكل
+                </Link>
               </div>
-              <EmptyState message="لا يوجد مزادات في المفضلة" icon={Heart} />
+              
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : error ? (
+                <div className="py-12 text-center">
+                  <p className="text-red-500">حدث خطأ في تحميل المفضلة</p>
+                </div>
+              ) : !favoriteItems || favoriteItems.length === 0 ? (
+                <EmptyState message="لا يوجد مزادات في المفضلة" icon={Heart} />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {favoriteItems
+                    .filter(item => item && item.listing)
+                    .slice(0, 4)
+                    .map((item) => (
+                      <AuctionCard
+                        key={item.listingId}
+                        id={item.listing.id.toString()}
+                        listingId={item.listingId}
+                        title={item.listing.title}
+                        description={item.listing.description}
+                        currentPrice={item.listing.currentPrice}
+                        minBidIncrement={1000}
+                        imageUrl={item.listing.images[0] || "/placeholder.svg"}
+                        endTime={item.listing.endDate}
+                        bidders={0}
+                        currency="₪"
+                        isPopular={false}
+                        isFavorite={true}
+                        onFavoriteToggle={() => handleRemoveFavorite(item.listingId.toString())}
+                      />
+                    ))}
+                </div>
+              )}
             </div>
           </ContentWrapper>
         );

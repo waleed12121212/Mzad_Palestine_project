@@ -56,6 +56,12 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/Review/, '/Review')
       },
+      '/Wishlist': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Wishlist/, '/Wishlist')
+      },
       '/LaptopPrediction': {
         target: 'http://mazadpalestine.runasp.net',
         changeOrigin: true,

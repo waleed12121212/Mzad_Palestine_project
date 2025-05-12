@@ -1,90 +1,42 @@
-
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { Heart, Loader2 } from "lucide-react";
-
-// Define interface for Auction
-interface Auction {
-  id: number;
-  title: string;
-  description?: string;
-  currentPrice: number;
-  imageUrl: string;
-  endTime: string;
-  bidders: number;
-  minBidIncrement: number;
-  location?: string;
-  isFavorite?: boolean;
-}
+import { wishlistService, WishlistItem } from "@/services/wishlistService";
+import { toast } from "@/hooks/use-toast";
 
 const Favorites = () => {
-  const [favorites, setFavorites] = useState<Auction[]>([]);
+  const queryClient = useQueryClient();
 
-  // Mock API call to fetch favorites
-  const fetchFavorites = async (): Promise<Auction[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: 1,
-            title: "شقة فاخرة في وسط المدينة",
-            description: "شقة حديثة بمساحة 150 متر مربع، 3 غرف نوم، إطلالة رائعة",
-            currentPrice: 150000,
-            minBidIncrement: 5000,
-            imageUrl: "/placeholder.svg",
-            endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(),
-            bidders: 7,
-            location: "رام الله",
-            isFavorite: true
-          },
-          {
-            id: 2,
-            title: "أرض زراعية مساحة 5 دونم",
-            description: "أرض خصبة صالحة للزراعة قريبة من الطريق الرئيسي",
-            currentPrice: 120000,
-            minBidIncrement: 3000,
-            imageUrl: "/placeholder.svg",
-            endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1).toISOString(),
-            bidders: 5,
-            location: "الخليل",
-            isFavorite: true
-          },
-          {
-            id: 3,
-            title: "سيارة مرسيدس 2020",
-            description: "سيارة بحالة ممتازة، ماشية 45,000 كم، صيانة دورية",
-            currentPrice: 65000,
-            minBidIncrement: 1000,
-            imageUrl: "/placeholder.svg",
-            endTime: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
-            bidders: 15,
-            location: "نابلس",
-            isFavorite: true
-          }
-        ]);
-      }, 1000);
-    });
-  };
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["favorites"],
-    queryFn: fetchFavorites
+  const { data: favorites = [], isLoading, error } = useQuery<WishlistItem[]>({
+    queryKey: ["wishlist"],
+    queryFn: wishlistService.getWishlist,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Update favorites when data is loaded
-  React.useEffect(() => {
-    if (data) {
-      setFavorites(data);
+  const handleRemoveFavorite = async (id: number) => {
+    try {
+      await wishlistService.removeFromWishlist(id);
+      queryClient.setQueryData(["wishlist"], (oldData: WishlistItem[] | undefined) => 
+        oldData ? oldData.filter(item => item.listingId !== id) : []
+      );
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      toast({
+        title: "تمت إزالة المزاد من المفضلة",
+        description: "يمكنك إضافته مرة أخرى في أي وقت",
+      });
+    } catch (error) {
+      toast({
+        title: "فشل في إزالة العنصر من المفضلة",
+        variant: "destructive",
+      });
     }
-  }, [data]);
-
-  const handleRemoveFavorite = (id: number) => {
-    setFavorites(prevFavorites => prevFavorites.filter(fav => fav.id !== id));
   };
+
+  // Ensure favorites is always an array and has valid listing data
+  const favoriteItems = Array.isArray(favorites) ? favorites.filter(item => item && item.listing) : [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -104,7 +56,7 @@ const Favorites = () => {
           <div className="py-12 text-center">
             <p className="text-red-500">حدث خطأ في تحميل المفضلة</p>
           </div>
-        ) : favorites.length === 0 ? (
+        ) : favoriteItems.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <Heart className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
             <h2 className="text-xl font-semibold mb-2">لا توجد عناصر في المفضلة</h2>
@@ -117,20 +69,22 @@ const Favorites = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((auction) => (
+            {favoriteItems.map((item) => (
               <AuctionCard
-                key={auction.id}
-                id={auction.id}
-                title={auction.title}
-                description={auction.description || ""}
-                currentPrice={auction.currentPrice}
-                minBidIncrement={auction.minBidIncrement}
-                imageUrl={auction.imageUrl}
-                endTime={auction.endTime}
-                bidders={auction.bidders}
+                key={item.listingId}
+                id={item.listing.id}
+                listingId={item.listingId}
+                title={item.listing.title}
+                description={item.listing.description}
+                currentPrice={item.listing.currentPrice}
+                minBidIncrement={1000}
+                imageUrl={item.listing.images[0] || "/placeholder.svg"}
+                endTime={item.listing.endDate}
+                bidders={0}
+                currency="₪"
                 isPopular={false}
                 isFavorite={true}
-                onFavoriteToggle={() => handleRemoveFavorite(auction.id)}
+                onFavoriteToggle={() => handleRemoveFavorite(item.listingId)}
               />
             ))}
           </div>
