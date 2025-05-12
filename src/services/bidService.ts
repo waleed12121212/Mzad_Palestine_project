@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { API_URL } from '@/config/constants';
+import { getAuthHeader } from '@/utils/auth';
+const API_URL = '/Bid';
 
 export interface Bid {
   id: number;
@@ -16,47 +17,36 @@ export interface CreateBidDto {
 }
 
 class BidService {
-  private getAuthHeader() {
-    const token = localStorage.getItem('token');
-    return {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
-  }
-
-  async createBid(bidData: CreateBidDto): Promise<boolean> {
+  async createBid(bidData: CreateBidDto): Promise<Bid> {
     try {
-      const response = await axios.post(`${API_URL}/Bid`, bidData, {
-        headers: this.getAuthHeader(),
-        withCredentials: true
+      const response = await axios.post(`${API_URL}`, bidData, {
+        headers: getAuthHeader()
       });
-      return response.status === 200 || response.status === 201;
+      return response.data;
     } catch (error) {
       console.error('Create bid error:', error);
       throw error;
     }
   }
 
-  async getAuctionBids(auctionId: number): Promise<boolean> {
+  async getAuctionBids(auctionId: number): Promise<Bid[]> {
     try {
-      const response = await axios.get(`${API_URL}/Bid/auction/${auctionId}`, {
-        headers: this.getAuthHeader(),
-        withCredentials: true
+      const response = await axios.get(`${API_URL}/auction/${auctionId}`, {
+        headers: getAuthHeader()
       });
-      return response.status === 200;
+      return response.data.data;
     } catch (error) {
       console.error('Get auction bids error:', error);
       throw error;
     }
   }
 
-  async getUserBids(): Promise<boolean> {
+  async getUserBids(): Promise<Bid[]> {
     try {
-      const response = await axios.get(`${API_URL}/Bid/user`, {
-        headers: this.getAuthHeader(),
-        withCredentials: true
+      const response = await axios.get(`${API_URL}/user`, {
+        headers: getAuthHeader()
       });
-      return response.status === 200;
+      return response.data;
     } catch (error) {
       console.error('Get user bids error:', error);
       throw error;
@@ -65,9 +55,8 @@ class BidService {
 
   async deleteBid(bidId: number): Promise<boolean> {
     try {
-      const response = await axios.delete(`${API_URL}/Bid/${bidId}`, {
-        headers: this.getAuthHeader(),
-        withCredentials: true
+      const response = await axios.delete(`${API_URL}/${bidId}`, {
+        headers: getAuthHeader()
       });
       return response.status === 200;
     } catch (error) {

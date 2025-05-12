@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { bidService } from '@/services/bidService';
+import { bidService, Bid } from '@/services/bidService';
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
 
@@ -12,6 +12,7 @@ interface BidFormProps {
   currentPrice: number;
   bidIncrement: number;
   isAuctionActive: boolean;
+  onBidSuccess?: (bid: Bid) => void;
 }
 
 interface BidFormData {
@@ -23,17 +24,20 @@ export const BidForm: React.FC<BidFormProps> = ({
   currentPrice,
   bidIncrement,
   isAuctionActive,
+  onBidSuccess,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<BidFormData>();
 
+  const minBidAmount = currentPrice + bidIncrement;
+  console.log(currentPrice);
+  console.log(bidIncrement);
   const onSubmit = async (data: BidFormData) => {
     if (!isAuctionActive) {
       toast.error('المزاد غير نشط حالياً');
       return;
     }
 
-    const minBidAmount = currentPrice + bidIncrement;
     if (data.bidAmount < minBidAmount) {
       toast.error(`يجب أن تكون المزايدة على الأقل ${minBidAmount} ₪`);
       return;
@@ -41,22 +45,26 @@ export const BidForm: React.FC<BidFormProps> = ({
 
     try {
       setIsSubmitting(true);
-      await bidService.createBid({
+      const newBid = await bidService.createBid({
         auctionId,
         bidAmount: data.bidAmount,
       });
       toast.success('تم تقديم المزايدة بنجاح');
       reset();
+      onBidSuccess?.(newBid);
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message;
         if (error.response?.status === 401) {
           toast.error('يرجى تسجيل الدخول أولاً');
         } else if (error.response?.status === 400) {
-          toast.error(error.response.data.message || 'قيمة المزايدة غير صالحة');
+          toast.error(errorMessage || 'قيمة المزايدة غير صالحة');
         } else if (error.response?.status === 403) {
           toast.error('لا يمكنك المزايدة على مزادك الخاص');
+        } else if (error.response?.status === 409) {
+          toast.error('تم تجاوزك بمزايدة أعلى');
         } else {
-          toast.error('حدث خطأ أثناء تقديم المزايدة');
+          toast.error(errorMessage || 'حدث خطأ أثناء تقديم المزايدة');
         }
       } else {
         toast.error('حدث خطأ غير متوقع');
@@ -77,9 +85,15 @@ export const BidForm: React.FC<BidFormProps> = ({
           {...register('bidAmount', {
             required: 'هذا الحقل مطلوب',
             min: {
-              value: currentPrice + bidIncrement,
-              message: `يجب أن تكون المزايدة على الأقل ${currentPrice + bidIncrement} ₪`,
+              value: minBidAmount,
+              message: `يجب أن تكون المزايدة على الأقل ${minBidAmount} ₪`,
             },
+            validate: (value) => {
+              if (value <= currentPrice) {
+                return 'يجب أن تكون المزايدة أعلى من السعر الحالي';
+              }
+              return true;
+            }
           })}
           disabled={!isAuctionActive || isSubmitting}
         />
@@ -102,10 +116,6 @@ export const BidForm: React.FC<BidFormProps> = ({
           'قدم مزايدة'
         )}
       </Button>
-
-      <p className="text-sm text-gray-500 text-center">
-        الحد الأدنى للمزايدة: {currentPrice + bidIncrement} ₪
-      </p>
     </form>
   );
 }; 

@@ -6,7 +6,6 @@ import AuctionCard from "@/components/ui/AuctionCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -38,35 +37,52 @@ interface Auction {
 
 const ActiveAuctions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(1000000);
+  const [priceError, setPriceError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [auctionView, setAuctionView] = useState<"grid" | "list">("grid");
   const [timeFilter, setTimeFilter] = useState<"all" | "ending-soon" | "new">("all");
 
+  const priceOptions = [
+    { label: "كل الأسعار", value: [0, 1000000] },
+    { label: "0 - 1,000 ₪", value: [0, 1000] },
+    { label: "1,000 - 5,000 ₪", value: [1000, 5000] },
+    { label: "5,000 - 20,000 ₪", value: [5000, 20000] },
+    { label: "20,000 - 100,000 ₪", value: [20000, 100000] },
+    { label: "100,000+ ₪", value: [100000, 1000000] },
+  ];
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["activeAuctions"],
     queryFn: async () => {
-      const response = await auctionService.getActiveAuctions();
-      // الرد من الباك اند: { success: true, data: [...] }
-      // نعيد فقط data
-      return response.data;
+      const response: any = await auctionService.getActiveAuctions();
+      if (Array.isArray(response)) return response;
+      if (response && typeof response === 'object' && Array.isArray(response.data)) return response.data;
+      console.error("Expected array or { data: array } from getActiveAuctions, got:", response);
+      return [];
     }
   });
 
-  const categories = data 
-    ? [...new Set(data.map(auction => auction.categoryName as string).filter(Boolean))]
+  console.log("Raw auctions data:", data);
+  const normalizedData = Array.isArray(data)
+    ? data
+        .map(auction => ({
+          ...auction,
+          id: Number(auction.id ?? auction.auctionId ?? auction.listingId),
+          title: auction.title ?? auction.name ?? "",
+          currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? 0,
+        }))
+        .filter(auction => Number.isFinite(auction.id) && auction.id > 0)
     : [];
 
-  const filteredAuctions = data ? data.filter((auction) => {
-    const matchesQuery = auction.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesPrice = auction.currentBid >= priceRange[0] && auction.currentBid <= priceRange[1];
-    
-    const matchesCategory = selectedCategories.length === 0 || 
-                           (auction.categoryName && selectedCategories.includes(auction.categoryName));
-    
+  const filteredAuctions = normalizedData.filter((auction) => {
+    const matchesQuery = auction.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const price = auction.currentPrice ?? 0;
+    const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     let matchesTime = true;
     if (timeFilter === "ending-soon") {
       const endTime = new Date(auction.endTime);
@@ -79,20 +95,19 @@ const ActiveAuctions: React.FC = () => {
       const diffHours = (endTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       matchesTime = diffHours >= 72;
     }
-    
-    return matchesQuery && matchesPrice && matchesCategory && matchesTime;
-  }) : [];
+    return matchesQuery && matchesPrice && matchesTime;
+  });
+  console.log("Filtered auctions:", filteredAuctions);
 
   const sortedAuctions = [...filteredAuctions].sort((a, b) => {
     switch (sortBy) {
       case "newest":
         return new Date(b.endTime).getTime() - new Date(a.endTime).getTime();
       case "priceHigh":
-        return b.currentBid - a.currentBid;
+        return b.currentPrice - a.currentPrice;
       case "priceLow":
-        return a.currentBid - b.currentBid;
-      case "popularity":
-        return b.bidders - a.bidders;
+        return a.currentPrice - b.currentPrice;
+      // Remove popularity and bidders sort if not available
       case "endingSoon":
         return new Date(a.endTime).getTime() - new Date(b.endTime).getTime();
       default:
@@ -100,27 +115,48 @@ const ActiveAuctions: React.FC = () => {
     }
   });
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+  const handlePriceChange = (type: 'min' | 'max', value: string) => {
+    const num = Number(value);
+    if (type === 'min') setMinPrice(num);
+    else setMaxPrice(num);
+  };
+
+  const validatePrices = () => {
+    if (minPrice < 0 || maxPrice < 0) {
+      setPriceError('يجب أن تكون القيم أكبر من أو تساوي صفر');
+      return false;
+    }
+    if (minPrice > maxPrice) {
+      setPriceError('يجب أن يكون الحد الأدنى أقل من أو يساوي الحد الأقصى');
+      return false;
+    }
+    setPriceError(null);
+    return true;
+  };
+
+  const handleApplyPrice = () => {
+    if (validatePrices()) {
+      // Filtering is reactive, so just validate
+    }
+  };
+
+  const handleResetPrice = () => {
+    setMinPrice(0);
+    setMaxPrice(1000000);
+    setPriceError(null);
   };
 
   const handleResetFilters = () => {
     setSearchQuery("");
-    setPriceRange([0, 2000]);
-    setSortBy("newest");
-    setSelectedCategories([]);
+    setMinPrice(0);
+    setMaxPrice(1000000);
     setTimeFilter("all");
   };
 
   const hasActiveFilters = () => {
     return searchQuery !== "" || 
-           priceRange[0] !== 0 || 
-           priceRange[1] !== 2000 || 
-           selectedCategories.length > 0 ||
+           minPrice !== 0 || 
+           maxPrice !== 1000000 || 
            timeFilter !== "all";
   };
 
@@ -175,51 +211,23 @@ const ActiveAuctions: React.FC = () => {
                   )}
                 </div>
                 
-                <Accordion type="multiple" defaultValue={["category", "price", "time"]}>
-                  <AccordionItem value="category">
-                    <AccordionTrigger className="py-3 text-sm hover:no-underline">الفئات</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-2">
-                        {categories.map(category => (
-                          <div key={category as string} className="flex items-center space-x-2 space-x-reverse">
-                            <Checkbox 
-                              id={`category-${category as string}`} 
-                              checked={selectedCategories.includes(category as string)}
-                              onCheckedChange={() => handleCategoryChange(category as string)}
-                            />
-                            <label 
-                              htmlFor={`category-${category as string}`}
-                              className="text-sm cursor-pointer select-none"
-                            >
-                              {category as string}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
+                <Accordion type="multiple" defaultValue={["price", "time"]}>
                   <AccordionItem value="price">
                     <AccordionTrigger className="py-3 text-sm hover:no-underline">نطاق السعر</AccordionTrigger>
                     <AccordionContent>
                       <div className="px-1">
-                        <Slider 
-                          value={priceRange} 
-                          min={0} 
-                          max={2000} 
-                          step={50} 
-                          onValueChange={setPriceRange}
-                          className="mb-4"
-                        />
-                        <div className="flex justify-between items-center">
-                          <div className="bg-gray-100 dark:bg-gray-800 rounded px-2 py-1 text-xs">
-                            {priceRange[0]} ₪
-                          </div>
-                          <div className="text-gray-500 text-xs">إلى</div>
-                          <div className="bg-gray-100 dark:bg-gray-800 rounded px-2 py-1 text-xs">
-                            {priceRange[1]} ₪
-                          </div>
-                        </div>
+                        <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="اختر نطاق السعر" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {priceOptions.map(opt => (
+                              <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -228,50 +236,31 @@ const ActiveAuctions: React.FC = () => {
                     <AccordionTrigger className="py-3 text-sm hover:no-underline">الوقت المتبقي</AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-1">
-                        {/* Fix: Wrap TabsTrigger components in Tabs and TabsList */}
-                        <div className="space-y-1">
-                          <Button 
-                            variant={timeFilter === "all" ? "default" : "outline"}
-                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
-                            onClick={() => setTimeFilter("all")}
-                          >
-                            جميع المزادات
-                          </Button>
-                          <Button 
-                            variant={timeFilter === "ending-soon" ? "default" : "outline"}
-                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
-                            onClick={() => setTimeFilter("ending-soon")}
-                          >
-                            تنتهي قريبًا (خلال 24 ساعة)
-                          </Button>
-                          <Button 
-                            variant={timeFilter === "new" ? "default" : "outline"}
-                            className="w-full justify-start text-right px-2 py-1.5 h-auto"
-                            onClick={() => setTimeFilter("new")}
-                          >
-                            مضافة حديثًا
-                          </Button>
-                        </div>
+                        <Button 
+                          variant={timeFilter === "all" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          onClick={() => setTimeFilter("all")}
+                        >
+                          جميع المزادات
+                        </Button>
+                        <Button 
+                          variant={timeFilter === "ending-soon" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          onClick={() => setTimeFilter("ending-soon")}
+                        >
+                          تنتهي قريبًا (خلال 24 ساعة)
+                        </Button>
+                        <Button 
+                          variant={timeFilter === "new" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto"
+                          onClick={() => setTimeFilter("new")}
+                        >
+                          مضافة حديثًا
+                        </Button>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold mb-2">ترتيب حسب</h3>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="اختر الترتيب" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">الأحدث</SelectItem>
-                      <SelectItem value="priceHigh">السعر: من الأعلى للأدنى</SelectItem>
-                      <SelectItem value="priceLow">السعر: من الأدنى للأعلى</SelectItem>
-                      <SelectItem value="popularity">الأكثر شعبية</SelectItem>
-                      <SelectItem value="endingSoon">تنتهي قريبًا</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -298,7 +287,6 @@ const ActiveAuctions: React.FC = () => {
                     <SelectItem value="newest">الأحدث</SelectItem>
                     <SelectItem value="priceHigh">السعر: من الأعلى للأدنى</SelectItem>
                     <SelectItem value="priceLow">السعر: من الأدنى للأعلى</SelectItem>
-                    <SelectItem value="popularity">الأكثر شعبية</SelectItem>
                     <SelectItem value="endingSoon">تنتهي قريبًا</SelectItem>
                   </SelectContent>
                 </Select>
@@ -332,34 +320,20 @@ const ActiveAuctions: React.FC = () => {
                 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium mb-2">الفئات</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map(category => (
-                        <Badge 
-                          key={category as string}
-                          variant={selectedCategories.includes(category as string) ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => handleCategoryChange(category as string)}
-                        >
-                          {category as string}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
                     <h4 className="text-sm font-medium mb-2">نطاق السعر</h4>
-                    <Slider 
-                      value={priceRange} 
-                      min={0} 
-                      max={2000} 
-                      step={50} 
-                      onValueChange={setPriceRange}
-                      className="mb-1"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{priceRange[0]} ₪</span>
-                      <span>{priceRange[1]} ₪</span>
+                    <div className="px-1">
+                      <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="اختر نطاق السعر" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priceOptions.map(opt => (
+                            <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   
@@ -406,16 +380,16 @@ const ActiveAuctions: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedAuctions.map((auction) => (
                   <AuctionCard
-                    key={auction.auctionId}
-                    id={auction.auctionId}
-                    title={auction.name}
-                    description={auction.description || ""}
-                    currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                    key={auction.id}
+                    id={auction.id}
+                    title={auction.title}
+                    description={""}
+                    currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
                     minBidIncrement={auction.bidIncrement}
                     imageUrl={auction.imageUrl}
                     endTime={auction.endTime}
-                    bidders={auction.bidsCount}
-                    userId={auction.userId}
+                    bidders={0}
+                    userId={undefined}
                   />
                 ))}
               </div>

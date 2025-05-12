@@ -6,31 +6,66 @@ import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { auctionService } from "@/services/auctionService";
+import { auctionService, Auction } from "@/services/auctionService";
 import { listingService } from "@/services/listingService";
 import { userService } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
-import { bidService } from "@/services/bidService";
+import { bidService, Bid } from "@/services/bidService";
+import { BidForm } from '@/components/bidding/BidForm';
+import { BidHistory } from '@/components/bidding/BidHistory';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
+  title?: string;
+  description?: string;
+  category?: string;
+  subcategory?: string;
+  condition?: string;
+  location?: string;
+  features?: string[];
+  images?: string[];
+  imageUrl?: string;
+  userId?: number;
+  seller?: any;
+  bids?: Bid[];
+  startPrice?: number;
+  bidders?: number;
+  views?: number;
+  endTime: string;
+}
 
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [auction, setAuction] = useState<any>(null);
+  const [auction, setAuction] = useState<ExtendedAuction>(null);
+  const [originalStartPrice, setOriginalStartPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bidAmount, setBidAmount] = useState<number>(0);
   const [liked, setLiked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const isMobile = useIsMobile();
   const [seller, setSeller] = useState<any>(null);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const handleBidSuccess = (newBid: Bid) => {
+    // Optimistically update the auction data
+    setAuction(prev => ({
+      ...prev,
+      reservePrice: newBid.bidAmount,
+      bids: [newBid, ...(prev.bids || [])]
+    }));
+    
+    // Refetch auction data
+    queryClient.invalidateQueries({ queryKey: ['auction', id] });
+  };
 
   useEffect(() => {
     const fetchAuction = async () => {
       setLoading(true);
       try {
-        const auctionResponse = await auctionService.getAuctionById(Number(id));
+        const auctionResponse: any = await auctionService.getAuctionById(Number(id));
+        console.log('auctionData', auctionResponse);
         const auctionData = auctionResponse.data;
-        console.log('auctionData', auctionData);
         if (!auctionData.listingId) {
           throw new Error("المزاد لا يحتوي على منتج مرتبط (listingId غير موجود)");
         }
@@ -44,12 +79,13 @@ const AuctionDetails = () => {
         setAuction({
           ...listingData,
           ...auctionData,
+          bidders: (auctionData as any).bidsCount ?? 0,
         });
-        setBidAmount(auctionData.reservePrice + auctionData.bidIncrement);
+        setOriginalStartPrice(auctionData.reservePrice);
         // جلب معلومات البائع
-        if (auctionData.userId) {
+        if (listingData.userId) {
           try {
-            const sellerData = await userService.getUserById(auctionData.userId.toString());
+            const sellerData = await userService.getUserById(listingData.userId.toString());
             setSeller(sellerData);
           } catch {
             setSeller(null);
@@ -70,52 +106,6 @@ const AuctionDetails = () => {
     };
     fetchAuction();
   }, [id]);
-
-  const handleBidSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!bidAmount || isNaN(bidAmount)) {
-      toast({
-        title: "خطأ في المزايدة",
-        description: "يرجى إدخال قيمة صحيحة للمزايدة",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (bidAmount < (auction?.reservePrice + auction?.bidIncrement)) {
-      toast({
-        title: "خطأ في المزايدة",
-        description: `يجب أن تكون المزايدة أكبر من ${auction?.reservePrice + auction?.bidIncrement} ₪`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await bidService.createBid({
-        auctionId: Number(id),
-        bidAmount: bidAmount
-      });
-
-      toast({
-        title: "تم تقديم المزايدة بنجاح",
-        description: `قدمت مزايدة بقيمة ${bidAmount} ₪`,
-      });
-
-      // Refresh auction data
-      const updatedAuction = await auctionService.getAuctionById(Number(id));
-      setAuction(updatedAuction.data);
-      setBidAmount(updatedAuction.data.reservePrice + updatedAuction.data.bidIncrement);
-    } catch (error) {
-      console.error('Bid error:', error);
-      toast({
-        title: "خطأ في تقديم المزايدة",
-        description: "حدث خطأ أثناء تقديم المزايدة. يرجى المحاولة مرة أخرى.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const toggleLike = () => {
     setLiked(!liked);
@@ -304,26 +294,6 @@ const AuctionDetails = () => {
                   </div>
                 </div>
               </div>
-              
-              <div>
-                <h2 className="heading-md mb-6">سجل المزايدات</h2>
-                <div className="neo-card overflow-hidden">
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex justify-between">
-                    <span className="font-medium">المزايد</span>
-                    <span className="font-medium">المبلغ</span>
-                    <span className="font-medium">التوقيت</span>
-                  </div>
-                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {(auction.bids ?? []).map((bid: any, idx: number) => (
-                      <div key={idx} className="p-4 flex justify-between items-center">
-                        <span>{bid.user}</span>
-                        <span className="font-medium text-blue dark:text-blue-light">₪{bid.amount.toLocaleString()}</span>
-                        <span className="text-gray-500">{bid.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
             
             <div className="lg:w-4/12">
@@ -335,13 +305,13 @@ const AuctionDetails = () => {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">السعر الحالي</p>
                       <p className="text-3xl font-bold text-blue dark:text-blue-light">
-                        ₪{(auction?.reservePrice || 0).toLocaleString()}
+                        ₪{(((auction as any).currentBid && (auction as any).currentBid > 0) ? (auction as any).currentBid : (originalStartPrice ?? 0)).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">بدأ من</p>
                       <p className="text-lg font-medium">
-                        ₪{(auction?.startPrice || 0).toLocaleString()}
+                        ₪{(originalStartPrice || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -351,7 +321,7 @@ const AuctionDetails = () => {
                       <Clock className="w-5 h-5 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">ينتهي بعد</p>
-                        <CountdownTimer endTime={auction.endTime} />
+                        <CountdownTimer endTime={new Date(auction.endTime)} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -363,43 +333,25 @@ const AuctionDetails = () => {
                     </div>
                   </div>
                   
-                  <div className="mb-6">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">
-                        الحد الأدنى للمزايدة: ₪{(auction.bidIncrement ?? 0).toLocaleString()}
+                        الحد الأدنى للمزايدة: ₪{(((auction as any).currentBid ?? originalStartPrice ?? 0) + (auction.bidIncrement ?? 0)).toLocaleString()}
                       </span>
                       <span className="text-sm text-gray-600 dark:text-gray-300">
                         {auction.views} مشاهدة
                       </span>
                     </div>
                     
-                    <form onSubmit={handleBidSubmit}>
-                      <div className="flex gap-4 mb-4">
-                        <div className="relative flex-grow">
-                          <input
-                            type="number"
-                            value={bidAmount || ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setBidAmount(value ? Number(value) : 0);
-                            }}
-                            className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-                            min={auction?.reservePrice + auction?.bidIncrement}
-                            step={auction?.bidIncrement || 1}
-                          />
-                          <BadgeDollarSign className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
-                        </div>
-                        <button 
-                          type="submit" 
-                          className="btn-primary rounded-xl py-3 px-6"
-                          disabled={!bidAmount || isNaN(bidAmount)}
-                        >
-                          قدم عرض
-                        </button>
-                      </div>
-                    </form>
+                    <BidForm
+                      auctionId={Number(id)}
+                      currentPrice={auction.reservePrice}
+                      bidIncrement={auction.bidIncrement}
+                      isAuctionActive={new Date(auction.endTime) > new Date()}
+                      onBidSuccess={handleBidSuccess}
+                    />
                     
-                    <div className="flex justify-between gap-4">
+                    <div className="flex gap-2">
                       <button 
                         onClick={toggleLike}
                         className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border ${liked ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
@@ -416,6 +368,13 @@ const AuctionDetails = () => {
                       </button>
                     </div>
                   </div>
+                </div>
+                
+                <div className="neo-card p-6">
+                  <BidHistory 
+                    auctionId={Number(id)}
+                    currentUserId={user?.id}
+                  />
                 </div>
                 
                 <div className="neo-card p-6 mb-6">

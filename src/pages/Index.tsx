@@ -59,8 +59,14 @@ const Index = () => {
     const fetchAuctions = async () => {
       setIsLoading(true);
       try {
-        const response = await auctionService.getActiveAuctions();
-        setAuctions(response.data);
+        const response: any = await auctionService.getActiveAuctions();
+        if (Array.isArray(response)) {
+          setAuctions(response);
+        } else if (response && Array.isArray(response.data)) {
+          setAuctions(response.data);
+        } else {
+          setAuctions([]);
+        }
       } catch {
         setAuctions([]);
       } finally {
@@ -403,15 +409,15 @@ const Index = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredAuctions.map((auction) => (
                     <AuctionCard
-                      key={auction.id}
-                      id={auction.id}
-                      title={auction.title}
-                      description={auction.description}
-                      currentPrice={auction.currentPrice}
-                      minBidIncrement={auction.minBidIncrement}
+                      key={auction.auctionId ?? auction.id}
+                      id={auction.auctionId ?? auction.id}
+                      title={auction.name ?? auction.title}
+                      description={auction.description ?? ""}
+                      currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                      minBidIncrement={auction.bidIncrement}
                       imageUrl={auction.imageUrl}
                       endTime={auction.endTime}
-                      bidders={auction.bidders}
+                      bidders={auction.bidsCount ?? auction.bidders}
                     />
                   ))}
                 </div>
