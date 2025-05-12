@@ -45,11 +45,17 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
       const reviewsWithUsers = await Promise.all(
         reviewsData.map(async (review) => {
           try {
-            const userData = await userService.getUserById(review.reviewerId.toString());
+            const userDataResponse = await userService.getUserById(review.reviewerId.toString());
+            // @ts-expect-error: userService.getUserById returns an object with a 'data' property
+            const userData = userDataResponse.data || userDataResponse || {};
             return {
               ...review,
-              userName: userData ? `${userData.firstName} ${userData.lastName}` : 'مستخدم',
-              userImage: userData?.profilePicture
+              userName: userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username || 'مستخدم' : 'مستخدم',
+              userImage: userData.profilePicture
+                ? userData.profilePicture.startsWith('http')
+                  ? userData.profilePicture
+                  : `http://mazadpalestine.runasp.net${userData.profilePicture}`
+                : undefined
             };
           } catch (error) {
             console.error('Error fetching user data:', error);

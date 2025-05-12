@@ -80,6 +80,9 @@ const AuctionDetails = () => {
         console.log('auctionData', auctionResponse);
         const auctionData = auctionResponse.data;
         
+        // Debug: log the Listing object
+        console.log('Listing data:', auctionData.Listing);
+        
         // التحقق من وجود المنتج المرتبط
         if (!auctionData.Listing) {
           throw new Error("المزاد لا يحتوي على منتج مرتبط");
@@ -104,8 +107,8 @@ const AuctionDetails = () => {
           bids: auctionData.Bids || [],
           category: typeof auctionData.Listing?.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing?.Category || '',
           subcategory: typeof auctionData.Listing?.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing?.Subcategory || '',
-          condition: auctionData.Listing?.Condition || '',
-          location: auctionData.Listing?.Location || '',
+          condition: auctionData.Listing?.Condition || auctionData.Listing?.condition || '',
+          location: auctionData.Listing?.Location || auctionData.Listing?.location || '',
           features: auctionData.Listing?.Features || [],
           views: 0,
         };
@@ -120,11 +123,18 @@ const AuctionDetails = () => {
           try {
             const sellerId = (auctionData.UserId || auctionData.userId).toString();
             const sellerData = await userService.getUserById(sellerId);
+            // Debug: log the full sellerData and its keys
+            console.log('Fetched sellerData:', sellerData);
+            console.log('sellerData keys:', Object.keys(sellerData));
             if (sellerData) {
+              // @ts-expect-error: sellerData is not a UserProfile, it has a 'data' property
+              const sellerInfo = sellerData.data || sellerData || {};
               setSeller({
-                ...sellerData,
-                rating: sellerData.rating || 0,
-                totalSales: sellerData.totalSales || 0
+                ...sellerInfo,
+                firstName: sellerInfo.firstName || '',
+                lastName: sellerInfo.lastName || '',
+                rating: sellerInfo.rating || 0,
+                totalSales: sellerInfo.totalSales || 0
               });
             } else {
               setSeller(null);
@@ -557,7 +567,11 @@ const AuctionDetails = () => {
                     >
                       {seller?.profilePicture ? (
                         <img 
-                          src={seller.profilePicture} 
+                          src={
+                            seller.profilePicture.startsWith('http')
+                              ? seller.profilePicture
+                              : `http://mazadpalestine.runasp.net${seller.profilePicture}`
+                          } 
                           alt={`${seller.firstName} ${seller.lastName}`}
                           className="w-full h-full object-cover"
                         />
@@ -571,7 +585,7 @@ const AuctionDetails = () => {
                         onClick={navigateToSellerProfile}
                       >
                         {seller ? (
-                          `${seller.firstName} ${seller.lastName}`
+                          `${seller.firstName || ''} ${seller.lastName || ''}`.trim() || seller.username || 'مستخدم'
                         ) : (
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 border-2 border-t-transparent border-blue rounded-full animate-spin"></div>
