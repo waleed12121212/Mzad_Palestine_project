@@ -75,13 +75,15 @@ const ActiveAuctions: React.FC = () => {
           id: Number(auction.id ?? auction.auctionId ?? auction.listingId),
           title: auction.title ?? auction.name ?? "",
           currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? 0,
+          reservePrice: auction.reservePrice ?? 0,
+          currentBid: auction.currentBid ?? 0,
         }))
         .filter(auction => Number.isFinite(auction.id) && auction.id > 0)
     : [];
 
   const filteredAuctions = normalizedData.filter((auction) => {
     const matchesQuery = auction.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    const price = auction.currentPrice ?? 0;
+    const price = (auction.reservePrice && auction.reservePrice > 0) ? auction.reservePrice : auction.currentBid;
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     let matchesTime = true;
     if (timeFilter === "ending-soon") {
