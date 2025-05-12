@@ -71,7 +71,7 @@ const Navbar: React.FC = () => {
             <img 
               src="/lovable-uploads/9d68d225-811b-46be-a62c-123042182c3c.png" 
               alt="مزاد فلسطين" 
-              className="h-10 mr-2" 
+              className="h-10 rtl:ml-2 ltr:mr-2" 
             />
             <span className="font-bold text-blue dark:text-white text-xl tracking-tight hidden md:block">
               {lang === "ar" ? "مزاد فلسطين" : "MzadPalestine"}
@@ -79,7 +79,7 @@ const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 rtl:ml-4 ltr:mr-4">
+          <nav className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
             <NavLink href="/" active={isActive("/")}>
               {lang === "ar" ? "الرئيسية" : "Home"}
             </NavLink>
@@ -95,7 +95,7 @@ const Navbar: React.FC = () => {
           </nav>
 
           {/* Search, User Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 rtl:mr-auto ltr:ml-auto">
             <form
               onSubmit={handleSearchSubmit}
               className={`relative transition-all duration-300 ${
@@ -105,7 +105,7 @@ const Navbar: React.FC = () => {
               <input
                 type="text"
                 placeholder={lang === "ar" ? "ابحث عن مزادات..." : "Search auctions..."}
-                className={`w-full py-2 px-4 pr-10 rtl:pl-10 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm transition-all duration-300 ${
+                className={`w-full py-2 px-4 rtl:pl-10 rtl:pr-4 ltr:pr-10 ltr:pl-4 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm transition-all duration-300 ${
                   isSearchFocused
                     ? "ring-2 ring-blue/50"
                     : "focus:ring-2 focus:ring-blue/50"
@@ -123,30 +123,30 @@ const Navbar: React.FC = () => {
               </button>
             </form>
 
-            <Link to="/favorites" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Heart className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/favorites" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <Heart className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Link>
 
-            <Link to="/conversations" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <MessageCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-blue rounded-full"></span>
-            </Link>
+              <Link to="/conversations" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <MessageCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-blue rounded-full"></span>
+              </Link>
 
-            <Link to="/notifications" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-            </Link>
+              <Link to="/notifications" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              </Link>
 
-            <DarkModeToggle />
+              <DarkModeToggle />
 
-            <button
-              onClick={toggleLanguage}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
-            >
-              {lang === "ar" ? "EN" : "عربي"}
-            </button>
+              <button
+                onClick={toggleLanguage}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                {lang === "ar" ? "EN" : "عربي"}
+              </button>
 
-            <div className="flex items-center gap-1">
               {isAuthenticated ? (
                 <Link to="/logout" className="btn-primary">
                   {lang === "ar" ? "تسجيل الخروج" : "Logout"}
@@ -183,7 +183,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg animate-fade-in rtl">
+        <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg animate-fade-in">
           <div className="container mx-auto px-4 py-4">
             <form 
               onSubmit={handleSearchSubmit}
@@ -192,19 +192,19 @@ const Navbar: React.FC = () => {
               <input
                 type="text"
                 placeholder={lang === "ar" ? "ابحث عن مزادات..." : "Search auctions..."}
-                className="w-full py-2 px-4 pr-10 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm"
+                className="w-full py-2 px-4 rtl:pl-10 rtl:pr-4 ltr:pr-10 ltr:pl-4 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button
                 type="submit"
-                className="absolute top-1/2 transform -translate-y-1/2 right-3 p-1"
+                className="absolute top-1/2 transform -translate-y-1/2 rtl:left-3 ltr:right-3 p-1"
               >
                 <Search className="h-4 w-4 text-gray-400" />
               </button>
             </form>
 
-            <nav className="flex flex-col gap-3">
+            <nav className="flex flex-col space-y-1 text-right rtl:text-right ltr:text-left">
               <MobileNavLink href="/" active={isActive("/")}>
                 {lang === "ar" ? "الرئيسية" : "Home"}
               </MobileNavLink>
@@ -228,21 +228,19 @@ const Navbar: React.FC = () => {
               </MobileNavLink>
             </nav>
 
-            <div className="flex gap-2 mt-6">
-              <div className="flex items-center gap-1">
-                {isAuthenticated ? (
-                  <Link to="/logout" className="btn-primary">
-                    {lang === "ar" ? "تسجيل الخروج" : "Logout"}
-                  </Link>
-                ) : (
-                  <Link to="/auth" className="btn-primary">
-                    {lang === "ar" ? "تسجيل الدخول" : "Login"}
-                  </Link>
-                )}
-              </div>
+            <div className="mt-4 flex flex-col space-y-2">
+              {isAuthenticated ? (
+                <Link to="/logout" className="btn-primary w-full text-center">
+                  {lang === "ar" ? "تسجيل الخروج" : "Logout"}
+                </Link>
+              ) : (
+                <Link to="/auth" className="btn-primary w-full text-center">
+                  {lang === "ar" ? "تسجيل الدخول" : "Login"}
+                </Link>
+              )}
               <button
                 onClick={toggleLanguage}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium border border-gray-200 dark:border-gray-700"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium border border-gray-200 dark:border-gray-700 w-full"
               >
                 {lang === "ar" ? "EN" : "عربي"}
               </button>

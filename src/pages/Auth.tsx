@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, User, Phone, ArrowRight } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from '../contexts/AuthContext';
 
@@ -86,8 +84,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
       <div className="flex-grow pt-28 pb-16 bg-gradient-to-b from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent">
         <div className="container mx-auto px-4">
           <div className="max-w-md mx-auto">
@@ -369,8 +365,6 @@ const Auth = () => {
           </div>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };

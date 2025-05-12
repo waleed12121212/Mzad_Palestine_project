@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { toast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LogOut, Heart, Bell, Package } from 'lucide-react';
@@ -251,15 +249,9 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center h-[50vh]">
-              <div className="w-16 h-16 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </div>
-        </main>
-        <Footer />
+        <div className="flex items-center justify-center h-[50vh]">
+          <div className="w-16 h-16 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </div>
     );
   }
@@ -267,22 +259,16 @@ const Profile = () => {
   if (!userData) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col items-center justify-center h-[50vh]">
-              <h2 className="text-2xl font-bold mb-4">لم يتم العثور على البيانات</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                عذراً، لا يمكن العثور على بيانات المستخدم
-              </p>
-              <Link to="/" className="btn-primary flex items-center gap-2">
-                <span>العودة للرئيسية</span>
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
+        <div className="flex flex-col items-center justify-center h-[50vh]">
+          <h2 className="text-2xl font-bold mb-4">لم يتم العثور على البيانات</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            عذراً، لا يمكن العثور على بيانات المستخدم
+          </p>
+          <Link to="/" className="btn-primary flex items-center gap-2">
+            <span>العودة للرئيسية</span>
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </div>
       </div>
     );
   }
@@ -672,8 +658,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
       <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <ProfileHeader />
@@ -708,8 +692,6 @@ const Profile = () => {
           </div>
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 };

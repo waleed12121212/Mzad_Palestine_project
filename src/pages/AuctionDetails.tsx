@@ -66,26 +66,46 @@ const AuctionDetails = () => {
         const auctionResponse: any = await auctionService.getAuctionById(Number(id));
         console.log('auctionData', auctionResponse);
         const auctionData = auctionResponse.data;
-        if (!auctionData.listingId) {
-          throw new Error("المزاد لا يحتوي على منتج مرتبط (listingId غير موجود)");
+        
+        // التحقق من وجود المنتج المرتبط
+        if (!auctionData.Listing) {
+          throw new Error("المزاد لا يحتوي على منتج مرتبط");
         }
-        let listingData;
-        try {
-          listingData = await listingService.getListingById(auctionData.listingId);
-          console.log('listingData', listingData);
-        } catch (listingError) {
-          throw new Error("المنتج المرتبط بهذا المزاد غير موجود أو تم حذفه.");
-        }
-        setAuction({
-          ...listingData,
-          ...auctionData,
-          bidders: (auctionData as any).bidsCount ?? 0,
-        });
-        setOriginalStartPrice(auctionData.reservePrice);
+
+        // تحويل البيانات إلى الشكل المتوقع في الواجهة
+        const normalizedAuction = {
+          id: auctionData.AuctionId,
+          listingId: auctionData.ListingId,
+          name: auctionData.Name,
+          title: auctionData.Name,
+          description: auctionData.Listing.Description || '',
+          imageUrl: auctionData.ImageUrl,
+          startTime: auctionData.StartTime,
+          endTime: auctionData.EndTime,
+          reservePrice: auctionData.ReservePrice,
+          currentBid: auctionData.CurrentBid,
+          bidIncrement: auctionData.BidIncrement,
+          status: auctionData.Status,
+          userId: auctionData.UserId,
+          bidders: auctionData.Bids?.length || 0,
+          bids: auctionData.Bids || [],
+          category: typeof auctionData.Listing.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing.Category || '',
+          subcategory: typeof auctionData.Listing.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing.Subcategory || '',
+          condition: auctionData.Listing.Condition || '',
+          location: auctionData.Listing.Location || '',
+          features: auctionData.Listing.Features || [],
+          views: 0,
+        };
+
+        console.log('Normalized auction data:', normalizedAuction); // للتأكد من البيانات
+
+        setAuction(normalizedAuction);
+        setOriginalStartPrice(auctionData.ReservePrice);
+
         // جلب معلومات البائع
-        if (listingData.userId) {
+        if (auctionData.UserId) {
           try {
-            const sellerData = await userService.getUserById(listingData.userId.toString());
+            const sellerData = await userService.getUserById(auctionData.UserId.toString());
             setSeller(sellerData);
           } catch {
             setSeller(null);
@@ -327,8 +347,8 @@ const AuctionDetails = () => {
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-gray-500" />
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">عدد المزايدين</p>
-                        <p className="font-medium">{auction.bidders}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">عدد المزايدات</p>
+                        <p className="font-medium">{(auction as any).Bids?.length || auction.bids?.length || 0}</p>
                       </div>
                     </div>
                   </div>

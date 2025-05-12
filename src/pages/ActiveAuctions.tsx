@@ -70,16 +70,28 @@ const ActiveAuctions: React.FC = () => {
   console.log("Raw auctions data:", data);
   const normalizedData = Array.isArray(data)
     ? data
-        .map(auction => ({
-          ...auction,
-          id: Number(auction.id ?? auction.auctionId ?? auction.listingId),
-          title: auction.title ?? auction.name ?? "",
-          currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? 0,
-          reservePrice: auction.reservePrice ?? 0,
-          currentBid: auction.currentBid ?? 0,
-        }))
+        .map(auction => {
+          const normalized = {
+            ...auction,
+            id: Number(auction.id ?? auction.auctionId ?? auction.listingId),
+            title: auction.title ?? auction.name ?? "",
+            currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? 0,
+            reservePrice: auction.reservePrice ?? 0,
+            currentBid: auction.currentBid ?? 0,
+            bidIncrement: auction.bidIncrement ?? 0,
+            Bids: auction.Bids || [],
+            bidsCount: auction.bidsCount ?? 0,
+            userId: auction.userId ?? auction.UserId,
+            imageUrl: auction.imageUrl ?? auction.ImageUrl,
+            endTime: auction.endTime ?? auction.EndTime,
+          };
+          console.log('Normalized auction:', normalized);
+          return normalized;
+        })
         .filter(auction => Number.isFinite(auction.id) && auction.id > 0)
     : [];
+
+  console.log('All normalized auctions:', normalizedData);
 
   const filteredAuctions = normalizedData.filter((auction) => {
     const matchesQuery = auction.title?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -380,20 +392,23 @@ const ActiveAuctions: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedAuctions.map((auction) => (
-                  <AuctionCard
-                    key={auction.id}
-                    id={auction.id}
-                    title={auction.title}
-                    description={""}
-                    currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
-                    minBidIncrement={auction.bidIncrement}
-                    imageUrl={auction.imageUrl}
-                    endTime={auction.endTime}
-                    bidders={0}
-                    userId={undefined}
-                  />
-                ))}
+                {sortedAuctions.map((auction) => {
+                  console.log('Rendering auction:', auction); // للتأكد من البيانات قبل تمريرها للمكون
+                  return (
+                    <AuctionCard
+                      key={auction.id}
+                      id={auction.id}
+                      title={auction.title}
+                      description={""}
+                      currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
+                      minBidIncrement={auction.bidIncrement}
+                      imageUrl={auction.imageUrl}
+                      endTime={auction.endTime}
+                      bidders={auction.bidsCount ?? 0}
+                      userId={auction.userId}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
