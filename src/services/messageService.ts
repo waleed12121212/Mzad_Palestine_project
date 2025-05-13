@@ -1,6 +1,7 @@
 // messageService.ts
 
 import axios, { AxiosError } from 'axios';
+import { auctionNotificationService } from './auctionNotificationService';
 
 const API_URL = '/Message';
 
@@ -72,6 +73,12 @@ export const messageService = {
   // إرسال رسالة جديدة
   async sendMessage(payload: MessagePayload) {
     const response = await axiosInstance.post('/', payload);
+    // Create notification for the receiver with subject if available
+    await auctionNotificationService.notifyNewMessage(
+      payload.receiverId,
+      'مستخدم جديد', // You might want to pass the sender's name here
+      payload.subject
+    );
     return response.data.data;
   },
 

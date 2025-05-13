@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
+import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -151,7 +151,23 @@ function App() {
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                  <Toaster />
+                  <Toaster
+                    position="top-center"
+                    reverseOrder={false}
+                    toastOptions={{
+                      duration: 3000,
+                      style: {
+                        background: '#363636',
+                        color: '#fff',
+                      },
+                      success: {
+                        duration: 3000,
+                        theme: {
+                          primary: '#4aed88',
+                        },
+                      },
+                    }}
+                  />
                 </PageWrapper>
               </Router>
             </TooltipProvider>

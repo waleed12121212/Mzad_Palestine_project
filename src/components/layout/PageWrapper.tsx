@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -15,15 +14,51 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
       const style = document.createElement('style');
       style.id = 'theme-transition-style';
       style.innerHTML = `
+        /* Theme transition for all elements */
+        *, *::before, *::after {
+          transition: background-color 0.8s ease,
+                      color 0.8s ease,
+                      border-color 0.8s ease,
+                      fill 0.8s ease,
+                      stroke 0.8s ease,
+                      opacity 0.8s ease,
+                      box-shadow 0.8s ease,
+                      transform 0.8s ease !important;
+        }
+
+        /* Special transitions for specific elements */
         .theme-transition {
-          transition: background-color 0.5s ease, color 0.5s ease;
+          transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .theme-transition * {
-          transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-        }
+
+        /* Smooth transition for background overlays */
         .dark-mode-transition {
-          transition: all 0.5s ease;
+          transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                      backdrop-filter 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* Enhanced transitions for interactive elements */
+        button, a, input, select, textarea {
+          transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* Smooth icon transitions */
+        svg {
+          transition: transform 0.6s ease,
+                      fill 0.6s ease,
+                      stroke 0.6s ease,
+                      opacity 0.6s ease !important;
+        }
+
+        /* Theme toggle icon rotation */
+        .dark-mode-toggle svg {
+          transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        .dark-mode-toggle:hover svg {
+          transform: rotate(180deg);
+        }
+
+        /* Rest of your existing styles */
         .swiper-pagination-bullet {
           background: rgba(128, 128, 128, 0.8);
           opacity: 0.7;

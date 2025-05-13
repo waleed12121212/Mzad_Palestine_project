@@ -15,6 +15,19 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/Auth/, '/Auth')
       },
+      '/Notification': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Notification/, '/Notification'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
+      },
       '/User': {
         target: 'http://mazadpalestine.runasp.net',
         changeOrigin: true,
@@ -114,5 +127,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify('http://mazadpalestine.runasp.net'),
   },
 }));

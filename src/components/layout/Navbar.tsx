@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar: React.FC = () => {
@@ -131,6 +132,7 @@ const Navbar: React.FC = () => {
             </form>
 
             <LanguageSwitcher />
+            <DarkModeToggle />
 
             <div className="flex items-center gap-2">
               <Link to="/favorites" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -245,7 +247,10 @@ const Navbar: React.FC = () => {
                 </Link>
               )}
               <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                <LanguageSwitcher />
+                <div className="flex items-center justify-between">
+                  <LanguageSwitcher />
+                  <DarkModeToggle />
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { getAuthHeader } from '@/utils/auth';
+import { auctionNotificationService } from './auctionNotificationService';
+
 const API_URL = '/Bid';
 
 export interface Bid {
@@ -22,6 +24,25 @@ class BidService {
       const response = await axios.post(`${API_URL}`, bidData, {
         headers: getAuthHeader()
       });
+      
+      // Notify the bidder
+      await auctionNotificationService.notifyBidPlaced(
+        response.data.userId,
+        `المزاد رقم ${bidData.auctionId}`
+      );
+      
+      // Get the previous highest bidder if exists
+      const previousBids = await this.getAuctionBids(bidData.auctionId);
+      const previousHighestBid = previousBids.length > 1 ? previousBids[previousBids.length - 2] : null;
+      
+      // If there was a previous bidder, notify them that they've been outbid
+      if (previousHighestBid && previousHighestBid.userId !== response.data.userId) {
+        await auctionNotificationService.notifyBidOutbid(
+          previousHighestBid.userId,
+          `المزاد رقم ${bidData.auctionId}`
+        );
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Create bid error:', error);

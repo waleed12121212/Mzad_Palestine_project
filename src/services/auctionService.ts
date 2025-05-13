@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { getAuthHeader } from '@/utils/auth';
+import { auctionNotificationService } from './auctionNotificationService';
+import { Bid } from './bidService';
 
 const API_URL = '/Auction';
 
@@ -135,9 +137,40 @@ class AuctionService {
   }
 
   async closeAuction(auctionId: number): Promise<void> {
-    await axios.post(`${API_URL}/${auctionId}/close`, {}, {
-      headers: getAuthHeader()
-    });
+    try {
+      const auction = await this.getAuctionById(auctionId);
+      const response = await axios.get<Bid[]>(`/Bid/auction/${auctionId}`, {
+        headers: getAuthHeader()
+      });
+      const bids = response.data;
+      
+      await axios.post(`${API_URL}/${auctionId}/close`, {}, {
+        headers: getAuthHeader()
+      });
+
+      // Get all unique bidders
+      const uniqueBidders = Array.from(new Set(bids.map(bid => bid.userId)));
+      
+      // Notify all participants that the auction has ended
+      for (const bidderId of uniqueBidders) {
+        await auctionNotificationService.notifyAuctionEnded(
+          bidderId,
+          auction.name
+        );
+      }
+
+      // If there's a winner (highest bidder), notify them
+      if (bids.length > 0) {
+        const highestBid = bids[bids.length - 1];
+        await auctionNotificationService.notifyAuctionWon(
+          highestBid.userId,
+          auction.name
+        );
+      }
+    } catch (error) {
+      console.error('Close auction error:', error);
+      throw error;
+    }
   }
 
   async updateAuction(auctionId: number, data: any): Promise<Auction> {
@@ -160,9 +193,31 @@ class AuctionService {
   }
 
   async deleteAuction(auctionId: number): Promise<void> {
-    await axios.delete(`${API_URL}/${auctionId}`, {
-      headers: getAuthHeader(),
-    });
+    try {
+      const auction = await this.getAuctionById(auctionId);
+      const response = await axios.get<Bid[]>(`/Bid/auction/${auctionId}`, {
+        headers: getAuthHeader()
+      });
+      const bids = response.data;
+
+      await axios.delete(`${API_URL}/${auctionId}`, {
+        headers: getAuthHeader(),
+      });
+
+      // Get all unique bidders
+      const uniqueBidders = Array.from(new Set(bids.map(bid => bid.userId)));
+      
+      // Notify all participants that the auction has been cancelled
+      for (const bidderId of uniqueBidders) {
+        await auctionNotificationService.notifyAuctionCancelled(
+          bidderId,
+          auction.name
+        );
+      }
+    } catch (error) {
+      console.error('Delete auction error:', error);
+      throw error;
+    }
   }
 }
 

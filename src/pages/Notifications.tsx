@@ -1,98 +1,81 @@
-
 import React, { useState, useEffect } from "react";
-import { Bell, CheckCheck, Clock, Award, Tag, AlertCircle, ArrowUpRight } from "lucide-react";
+import { BellRing, CheckCheck, Clock, Award, Tag, AlertCircle, ArrowUpRight, Trash2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PageWrapper from "@/components/layout/PageWrapper";
-
-type NotificationType = "bid" | "win" | "outbid" | "ending" | "system";
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  time: Date;
-  read: boolean;
-  type: NotificationType;
-  link?: string;
-}
+import { notificationService, NotificationType, Notification } from "@/services/notificationService";
+import { toast } from "sonner";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<NotificationType | "all">("all");
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Sample notifications data
-      const sampleNotifications: Notification[] = [
-        {
-          id: "1",
-          title: "تهانينا! لقد فزت بالمزاد",
-          message: "لقد فزت بالمزاد على سيارة مرسيدس E200 موديل 2019. يرجى إتمام عملية الدفع في غضون 24 ساعة.",
-          time: new Date(Date.now() - 1000 * 60 * 30),
-          read: false,
-          type: "win",
-          link: "/auction/2",
-        },
-        {
-          id: "2",
-          title: "تمت المزايدة على عنصر من قبل مستخدم آخر",
-          message: "تمت مزايدة أعلى من مزايدتك على iPhone 13 Pro Max. الآن السعر الحالي هو 3300 ₪.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 2),
-          read: false,
-          type: "outbid",
-          link: "/auction/3",
-        },
-        {
-          id: "3",
-          title: "مزاد ينتهي قريباً",
-          message: "المزاد على طاولة طعام خشب زان سينتهي خلال ساعة واحدة. تأكد من وضع مزايدتك الأخيرة.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 5),
-          read: true,
-          type: "ending",
-          link: "/auction/8",
-        },
-        {
-          id: "4",
-          title: "مزايدة ناجحة",
-          message: "لقد قمت بالمزايدة بنجاح على قطعة أرض في بيت لحم. المزايدة الحالية هي 90,000 ₪.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 24),
-          read: true,
-          type: "bid",
-          link: "/auction/6",
-        },
-        {
-          id: "5",
-          title: "تحديث سياسة الخصوصية",
-          message: "لقد قمنا بتحديث سياسة الخصوصية وشروط الاستخدام. يرجى مراجعتها في أقرب وقت ممكن.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-          read: true,
-          type: "system",
-        },
-      ];
-      
-      setNotifications(sampleNotifications);
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationService.getAllNotifications();
+      console.log('Notifications response:', response);
+      setNotifications(response);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      setNotifications([]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
     
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    fetchNotifications();
   }, []);
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notification => ({
-      ...notification,
-      read: true
-    })));
+  const markAllAsRead = async () => {
+    try {
+      const success = await notificationService.markAllAsRead();
+      if (success) {
+        setNotifications(notifications.map(notification => ({
+          ...notification,
+          isRead: true
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id ? { ...notification, read: true } : notification
-    ));
+  const markAsRead = async (id: string) => {
+    try {
+      const success = await notificationService.markAsRead(id);
+      if (success) {
+        setNotifications(notifications.map(notification => 
+          notification.id === id ? { ...notification, isRead: true } : notification
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(notifications.filter(notification => notification.id !== id));
+  const deleteNotification = async (id: string) => {
+    try {
+      const success = await notificationService.deleteNotification(id);
+      if (success) {
+        setNotifications(notifications.filter(notification => notification.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    if (window.confirm('هل أنت متأكد من حذف جميع الإشعارات؟')) {
+      try {
+        const success = await notificationService.clearAllNotifications();
+        if (success) {
+          setNotifications([]);
+        }
+      } catch (error) {
+        console.error('Failed to clear all notifications:', error);
+      }
+    }
   };
 
   const filteredNotifications = filter === "all" 
@@ -101,39 +84,157 @@ const Notifications = () => {
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
-      case "win":
-        return <Award className="h-5 w-5 text-green" />;
-      case "outbid":
+      case "AuctionWon":
+        return <Award className="h-5 w-5 text-green-500" />;
+      case "BidOutbid":
         return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case "ending":
+      case "AuctionEnded":
         return <Clock className="h-5 w-5 text-orange-500" />;
-      case "bid":
-        return <Tag className="h-5 w-5 text-blue" />;
-      case "system":
-        return <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+      case "BidPlaced":
+        return <Tag className="h-5 w-5 text-blue-500" />;
+      case "AuctionCancelled":
+        return <BellRing className="h-5 w-5 text-red-500" />;
+      case "MassageReceived":
+        return <MessageCircle className="h-5 w-5 text-purple-500" />;
+      case "General":
+        return <BellRing className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+      default:
+        return <BellRing className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
     }
+  };
+
+  const NotificationItem = ({ notification }: { notification: Notification }) => {
+    const getNotificationContent = (type: NotificationType) => {
+      switch (type) {
+        case 'AuctionWon':
+          return {
+            icon: <Award className="h-5 w-5 text-green-500" />,
+            bgColor: 'bg-green-500/10',
+            title: 'تهانينا! لقد فزت بالمزاد'
+          };
+        case 'BidOutbid':
+          return {
+            icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+            bgColor: 'bg-red-500/10',
+            title: 'تم تجاوز مزايدتك'
+          };
+        case 'AuctionEnded':
+          return {
+            icon: <Clock className="h-5 w-5 text-orange-500" />,
+            bgColor: 'bg-orange-500/10',
+            title: 'المزاد انتهى'
+          };
+        case 'BidPlaced':
+          return {
+            icon: <Tag className="h-5 w-5 text-blue-500" />,
+            bgColor: 'bg-blue-500/10',
+            title: 'تمت مزايدة جديدة'
+          };
+        case 'MassageReceived':
+          return {
+            icon: <MessageCircle className="h-5 w-5 text-purple-500" />,
+            bgColor: 'bg-purple-500/10',
+            title: 'رسالة جديدة'
+          };
+        case 'AuctionCancelled':
+          return {
+            icon: <BellRing className="h-5 w-5 text-red-500" />,
+            bgColor: 'bg-red-500/10',
+            title: 'تم إلغاء المزاد'
+          };
+        default:
+          return {
+            icon: <BellRing className="h-5 w-5 text-gray-500" />,
+            bgColor: 'bg-gray-500/10',
+            title: 'إشعار'
+          };
+      }
+    };
+
+    const content = getNotificationContent(notification.type);
+
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <div className={`w-10 h-10 rounded-full ${content.bgColor} flex items-center justify-center`}>
+              {content.icon}
+            </div>
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {content.title}
+              </h3>
+              <div className="flex items-center gap-2">
+                {!notification.isRead && (
+                  <button
+                    onClick={() => markAsRead(notification.id)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    title="تعيين كمقروء"
+                  >
+                    <CheckCheck className="h-4 w-4 text-blue-500" />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteNotification(notification.id)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  title="حذف الإشعار"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </button>
+              </div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+              {notification.message}
+            </p>
+            <div className="text-xs text-gray-500">
+              {notification.formattedDate || new Date(notification.createdAt).toLocaleDateString('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
     <PageWrapper>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 rtl">
         <div className="flex justify-between items-center mb-8 rtl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue/10 dark:bg-blue/20 rounded-full flex items-center justify-center text-blue dark:text-blue-light">
-              <Bell className="w-5 h-5" />
+              <BellRing className="w-5 h-5" />
             </div>
             <h1 className="heading-lg">الإشعارات</h1>
           </div>
           
-          {notifications.some(n => !n.read) && (
-            <button 
-              onClick={markAllAsRead}
-              className="flex items-center gap-2 text-blue hover:text-blue-light transition-colors"
-            >
-              <CheckCheck className="h-4 w-4" />
-              <span>تعليم الكل كمقروء</span>
-            </button>
-          )}
+          <div className="flex gap-4">
+            {notifications.length > 0 && (
+              <button 
+                onClick={clearAllNotifications}
+                className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>حذف الكل</span>
+              </button>
+            )}
+            
+            {notifications.some(n => !n.isRead) && (
+              <button 
+                onClick={markAllAsRead}
+                className="flex items-center gap-2 text-blue hover:text-blue-light transition-colors"
+              >
+                <CheckCheck className="h-4 w-4" />
+                <span>تعليم الكل كمقروء</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -151,21 +252,21 @@ const Notifications = () => {
                 الكل
               </button>
               <button 
-                onClick={() => setFilter("win")}
+                onClick={() => setFilter("AuctionWon")}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm whitespace-nowrap",
-                  filter === "win" 
-                    ? "bg-green text-white" 
+                  filter === "AuctionWon" 
+                    ? "bg-green-500 text-white" 
                     : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 )}
               >
                 فوز بمزاد
               </button>
               <button 
-                onClick={() => setFilter("outbid")}
+                onClick={() => setFilter("BidOutbid")}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm whitespace-nowrap",
-                  filter === "outbid" 
+                  filter === "BidOutbid" 
                     ? "bg-red-500 text-white" 
                     : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 )}
@@ -173,131 +274,84 @@ const Notifications = () => {
                 تم تجاوز مزايدتك
               </button>
               <button 
-                onClick={() => setFilter("ending")}
+                onClick={() => setFilter("AuctionEnded")}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm whitespace-nowrap",
-                  filter === "ending" 
+                  filter === "AuctionEnded" 
                     ? "bg-orange-500 text-white" 
                     : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 )}
               >
-                مزادات تنتهي قريباً
+                مزادات منتهية
               </button>
               <button 
-                onClick={() => setFilter("bid")}
+                onClick={() => setFilter("BidPlaced")}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm whitespace-nowrap",
-                  filter === "bid" 
+                  filter === "BidPlaced" 
                     ? "bg-blue text-white" 
                     : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 )}
               >
-                مزايدات ناجحة
+                مزايدات جديدة
               </button>
               <button 
-                onClick={() => setFilter("system")}
+                onClick={() => setFilter("MassageReceived")}
                 className={cn(
                   "px-4 py-2 rounded-full text-sm whitespace-nowrap",
-                  filter === "system" 
+                  filter === "MassageReceived" 
+                    ? "bg-purple-500 text-white" 
+                    : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                )}
+              >
+                رسائل جديدة
+              </button>
+              <button 
+                onClick={() => setFilter("General")}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm whitespace-nowrap",
+                  filter === "General" 
                     ? "bg-gray-600 text-white" 
                     : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 )}
               >
-                إشعارات النظام
+                إشعارات عامة
               </button>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="animate-pulse flex items-start gap-4 p-4 rounded-lg rtl">
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-                  <div className="flex-1">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredNotifications.length > 0 ? (
-            <div>
-              {filteredNotifications.map((notification) => (
-                <div 
-                  key={notification.id}
-                  className={cn(
-                    "p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 rtl transition-colors hover:bg-gray-50 dark:hover:bg-gray-750",
-                    !notification.read && "bg-blue/5 dark:bg-blue-dark/10"
-                  )}
-                >
-                  <div 
-                    className="flex items-start gap-4 cursor-pointer" 
-                    onClick={() => {
-                      markAsRead(notification.id);
-                      if (notification.link) {
-                        window.location.href = notification.link;
-                      }
-                    }}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    
+          <div className="p-4">
+            {isLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse flex items-start gap-4 p-4 rounded-lg rtl">
+                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                     <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h3 className={cn(
-                          "text-lg",
-                          !notification.read && "font-semibold"
-                        )}>
-                          {notification.title}
-                        </h3>
-                        <span className="text-xs text-gray-500 whitespace-nowrap">
-                          {new Date(notification.time).toLocaleTimeString('ar-EG', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          })}
-                        </span>
-                      </div>
-                      
-                      <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                        {notification.message}
-                      </p>
-                      
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-gray-500">
-                          {new Date(notification.time).toLocaleDateString('ar-EG', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                        
-                        {notification.link && (
-                          <span className="text-blue text-sm flex items-center gap-1 hover:underline">
-                            فتح 
-                            <ArrowUpRight className="h-3 w-3" />
-                          </span>
-                        )}
-                      </div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                <Bell className="w-8 h-8 text-gray-400" />
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">لا توجد إشعارات</h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                ستظهر هنا الإشعارات المتعلقة بمزايداتك ونشاطاتك على المنصة
-              </p>
-            </div>
-          )}
+            ) : filteredNotifications.length > 0 ? (
+              <div className="space-y-4">
+                {filteredNotifications.map((notification) => (
+                  <NotificationItem key={notification.id} notification={notification} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                  <BellRing className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">لا توجد إشعارات</h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  ستظهر هنا الإشعارات المتعلقة بمزايداتك ونشاطاتك على المنصة
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </PageWrapper>
