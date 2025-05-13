@@ -3,6 +3,10 @@ import { SupportTicketDetails } from '../components/support';
 import { useAuth } from '../contexts/AuthContext';
 import supportService from '../services/supportService';
 import { toast } from 'react-toastify';
+import {
+  AlertDialog,
+  AlertDialogContent,
+} from "@/components/ui/alert-dialog";
 
 interface SupportTicket {
   id: string;
@@ -19,6 +23,8 @@ const Support: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadTickets();
@@ -55,19 +61,26 @@ const Support: React.FC = () => {
     }
   };
 
-  const handleDeleteTicket = async (ticketId: string) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه التذكرة؟')) return;
+  const handleDeleteClick = (ticketId: string) => {
+    setTicketToDelete(ticketId);
+    setShowDeleteAlert(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!ticketToDelete) return;
 
     try {
       setLoading(true);
-      setError(null);
-      await supportService.deleteTicket(ticketId);
+      await supportService.deleteTicket(ticketToDelete);
       toast.success('تم حذف التذكرة بنجاح');
-      setSelectedTicket(null);
+      setShowDeleteAlert(false);
+      setTicketToDelete(null);
+      if (selectedTicket?.id === ticketToDelete) {
+        setSelectedTicket(null);
+      }
       loadTickets();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'فشل في حذف التذكرة';
-      setError(message);
       toast.error(message);
     } finally {
       setLoading(false);
@@ -137,7 +150,7 @@ const Support: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteTicket(ticket.id);
+                          handleDeleteClick(ticket.id);
                         }}
                         className="text-red-500 text-sm hover:text-red-700 mt-2"
                       >
@@ -162,6 +175,29 @@ const Support: React.FC = () => {
           />
         </div>
       </div>
+
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent className="max-w-[400px] p-6 rounded-xl bg-white">
+          <div className="text-center mb-6 text-base">
+            هل أنت متأكد من حذف هذه التذكرة؟
+          </div>
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={handleConfirmDelete}
+              disabled={loading}
+              className="min-w-[100px] bg-[#1d4ed8] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              OK
+            </button>
+            <button 
+              onClick={() => setShowDeleteAlert(false)}
+              className="min-w-[100px] bg-[#e5e7eb] text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

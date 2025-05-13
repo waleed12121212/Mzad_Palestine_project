@@ -7,6 +7,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SupportTicket {
   id: string;
@@ -33,6 +43,8 @@ const Support = () => {
   const [filter, setFilter] = useState<'all' | 'Open' | 'InProgress' | 'Resolved' | 'Closed'>('all');
   const [response, setResponse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null);
 
   useEffect(() => {
     loadTickets();
@@ -173,217 +185,275 @@ const Support = () => {
     return ticket.status === filter;
   });
 
+  const handleDeleteClick = (ticket: SupportTicket) => {
+    setTicketToDelete(ticket);
+    setShowDeleteAlert(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!ticketToDelete) return;
+
+    try {
+      setLoading(true);
+      await supportService.deleteTicket(ticketToDelete.id);
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف التذكرة بنجاح"
+      });
+      setShowDeleteAlert(false);
+      setTicketToDelete(null);
+      if (selectedTicket?.id === ticketToDelete.id) {
+        setSelectedTicket(null);
+      }
+      await loadTickets();
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف التذكرة",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">إدارة الدعم الفني</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            الكل
-          </button>
-          <button
-            onClick={() => setFilter('Open')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'Open'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            مفتوحة
-          </button>
-          <button
-            onClick={() => setFilter('InProgress')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'InProgress'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            قيد المعالجة
-          </button>
-          <button
-            onClick={() => setFilter('Resolved')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'Resolved'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            تم الحل
-          </button>
-          <button
-            onClick={() => setFilter('Closed')}
-            className={`px-4 py-2 rounded-lg ${
-              filter === 'Closed'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            مغلقة
-          </button>
+    <div className="relative">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">إدارة الدعم الفني</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg ${
+                filter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              الكل
+            </button>
+            <button
+              onClick={() => setFilter('Open')}
+              className={`px-4 py-2 rounded-lg ${
+                filter === 'Open'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              مفتوحة
+            </button>
+            <button
+              onClick={() => setFilter('InProgress')}
+              className={`px-4 py-2 rounded-lg ${
+                filter === 'InProgress'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              قيد المعالجة
+            </button>
+            <button
+              onClick={() => setFilter('Resolved')}
+              className={`px-4 py-2 rounded-lg ${
+                filter === 'Resolved'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              تم الحل
+            </button>
+            <button
+              onClick={() => setFilter('Closed')}
+              className={`px-4 py-2 rounded-lg ${
+                filter === 'Closed'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              مغلقة
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">قائمة التذاكر</h3>
+            <ScrollArea className="h-[600px]">
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="mt-2 text-gray-500">جاري التحميل...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-500">{error}</p>
+                    <Button onClick={loadTickets} className="mt-4" variant="outline">
+                      إعادة المحاولة
+                    </Button>
+                  </div>
+                ) : filteredTickets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">لا توجد تذاكر</p>
+                  </div>
+                ) : (
+                  filteredTickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                        selectedTicket?.id === ticket.id
+                          ? 'border-blue bg-blue/5'
+                          : 'border-gray-100 hover:border-blue/50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div onClick={() => handleTicketSelect(ticket)}>
+                          <h4 className="font-medium">{ticket.subject}</h4>
+                          <p className="text-sm text-gray-600 line-clamp-2">{ticket.description}</p>
+                          <div className="mt-2 text-xs text-gray-500">
+                            <span>{formatDate(ticket.createdAt)}</span>
+                            {ticket.user && (
+                              <span className="mr-2">بواسطة: {ticket.user.username}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={getStatusColor(ticket.status)}>
+                            {ticket.status === 'Open' ? 'مفتوحة' :
+                             ticket.status === 'InProgress' ? 'قيد المعالجة' :
+                             ticket.status === 'Resolved' ? 'تم الحل' :
+                             'مغلقة'}
+                          </Badge>
+                          <button
+                            onClick={() => handleDeleteClick(ticket)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            حذف التذكرة
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </Card>
+
+          <Card className="p-6">
+            {selectedTicket ? (
+              <div className="h-[600px] flex flex-col">
+                <div className="mb-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-lg font-semibold">{selectedTicket.subject}</h3>
+                    <div className="flex gap-2 items-center">
+                      <Badge className={getStatusColor(selectedTicket.status)}>
+                        {selectedTicket.status === 'Open' ? 'مفتوحة' :
+                         selectedTicket.status === 'InProgress' ? 'قيد المعالجة' :
+                         selectedTicket.status === 'Resolved' ? 'تم الحل' :
+                         'مغلقة'}
+                      </Badge>
+                      <select
+                        value={selectedTicket.status}
+                        onChange={(e) => handleStatusChange(e.target.value as 'Open' | 'InProgress' | 'Resolved' | 'Closed')}
+                        className="px-3 py-1 border rounded-md text-sm bg-white"
+                        disabled={loading}
+                      >
+                        <option value="Open">مفتوحة</option>
+                        <option value="InProgress">قيد المعالجة</option>
+                        <option value="Resolved">تم الحل</option>
+                        <option value="Closed">مغلقة</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mb-4">{selectedTicket.description}</p>
+                  <div className="text-sm text-gray-500">
+                    تم الإنشاء في: {formatDate(selectedTicket.createdAt)}
+                  </div>
+                </div>
+
+                <ScrollArea className="flex-grow mb-6">
+                  <div className="space-y-4">
+                    {selectedTicket.responses?.map((response, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg ${
+                          response.isAdmin
+                            ? 'bg-blue-50 border border-blue-100'
+                            : 'bg-gray-50 border border-gray-100'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium">
+                            {response.isAdmin ? 'رد الإدارة' : 'رد المستخدم'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(response.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-gray-600">{response.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                {selectedTicket.status !== 'Closed' && (
+                  <form onSubmit={handleSubmitResponse} className="mt-auto">
+                    <Textarea
+                      value={response}
+                      onChange={(e) => setResponse(e.target.value)}
+                      placeholder="اكتب ردك هنا..."
+                      className="mb-4"
+                      dir="rtl"
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting || !response.trim()}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>جاري الإرسال...</span>
+                        </div>
+                      ) : (
+                        'إرسال الرد'
+                      )}
+                    </Button>
+                  </form>
+                )}
+              </div>
+            ) : (
+              <div className="h-[600px] flex items-center justify-center text-gray-500">
+                اختر تذكرة لعرض تفاصيلها
+              </div>
+            )}
+          </Card>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Tickets List */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">قائمة التذاكر</h3>
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-4">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="mt-2 text-gray-500">جاري التحميل...</p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-8">
-                  <p className="text-red-500">{error}</p>
-                  <Button
-                    onClick={loadTickets}
-                    className="mt-4"
-                    variant="outline"
-                  >
-                    إعادة المحاولة
-                  </Button>
-                </div>
-              ) : filteredTickets.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">لا توجد تذاكر</p>
-                </div>
-              ) : (
-                filteredTickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    onClick={() => handleTicketSelect(ticket)}
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                      selectedTicket?.id === ticket.id
-                        ? 'border-blue bg-blue/5'
-                        : 'border-gray-100 hover:border-blue/50'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium">{ticket.subject}</h4>
-                      <Badge className={getStatusColor(ticket.status)}>
-                        {ticket.status === 'Open' ? 'مفتوحة' :
-                         ticket.status === 'InProgress' ? 'قيد المعالجة' :
-                         ticket.status === 'Resolved' ? 'تم الحل' : 'مغلقة'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{ticket.description}</p>
-                    <div className="mt-2 text-xs text-gray-500">
-                      <span>{formatDate(ticket.createdAt)}</span>
-                      {ticket.user && (
-                        <span className="mr-2">بواسطة: {ticket.user.username}</span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </Card>
-
-        {/* Ticket Details and Response Form */}
-        <Card className="p-6">
-          {selectedTicket ? (
-            <div className="h-[600px] flex flex-col">
-              {/* Ticket Details */}
-              <div className="mb-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold">{selectedTicket.subject}</h3>
-                  <div className="flex gap-2 items-center">
-                    <Badge className={getStatusColor(selectedTicket.status)}>
-                      {selectedTicket.status === 'Open' ? 'مفتوحة' :
-                       selectedTicket.status === 'InProgress' ? 'قيد المعالجة' :
-                       selectedTicket.status === 'Resolved' ? 'تم الحل' :
-                       'مغلقة'}
-                    </Badge>
-                    <select
-                      value={selectedTicket.status}
-                      onChange={(e) => handleStatusChange(e.target.value as 'Open' | 'InProgress' | 'Resolved' | 'Closed')}
-                      className="px-3 py-1 border rounded-md text-sm bg-white"
-                      disabled={loading}
-                    >
-                      <option value="Open">مفتوحة</option>
-                      <option value="InProgress">قيد المعالجة</option>
-                      <option value="Resolved">تم الحل</option>
-                      <option value="Closed">مغلقة</option>
-                    </select>
-                  </div>
-                </div>
-                <p className="text-gray-600 mb-4">{selectedTicket.description}</p>
-                <div className="text-sm text-gray-500">
-                  تم الإنشاء في: {formatDate(selectedTicket.createdAt)}
-                </div>
-              </div>
-
-              {/* Responses */}
-              <ScrollArea className="flex-grow mb-6">
-                <div className="space-y-4">
-                  {selectedTicket.responses?.map((response, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg ${
-                        response.isAdmin
-                          ? 'bg-blue-50 border border-blue-100'
-                          : 'bg-gray-50 border border-gray-100'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-medium">
-                          {response.isAdmin ? 'رد الإدارة' : 'رد المستخدم'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(response.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-gray-600">{response.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-
-              {/* Response Form */}
-              {selectedTicket.status !== 'Closed' && (
-                <form onSubmit={handleSubmitResponse} className="mt-auto">
-                  <Textarea
-                    value={response}
-                    onChange={(e) => setResponse(e.target.value)}
-                    placeholder="اكتب ردك هنا..."
-                    className="mb-4"
-                    dir="rtl"
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting || !response.trim()}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>جاري الإرسال...</span>
-                      </div>
-                    ) : (
-                      'إرسال الرد'
-                    )}
-                  </Button>
-                </form>
-              )}
-            </div>
-          ) : (
-            <div className="h-[600px] flex items-center justify-center text-gray-500">
-              اختر تذكرة لعرض تفاصيلها
-            </div>
-          )}
-        </Card>
-      </div>
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent className="max-w-[400px] p-6 rounded-xl bg-white">
+          <div className="text-center mb-6 text-base">
+            هل أنت متأكد من حذف هذه التذكرة؟
+          </div>
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={handleConfirmDelete}
+              disabled={loading}
+              className="min-w-[100px] bg-[#1d4ed8] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              OK
+            </button>
+            <button 
+              onClick={() => setShowDeleteAlert(false)}
+              className="min-w-[100px] bg-[#e5e7eb] text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
