@@ -13,6 +13,7 @@ export interface Report {
   reporterName: string;
   reportedListingTitle: string;
   resolverName: string | null;
+  resolution: string | null;
 }
 
 export interface CreateReportDto {
@@ -22,6 +23,7 @@ export interface CreateReportDto {
 
 export interface UpdateReportDto {
   reason: string;
+  resolution: string;
 }
 
 class ReportService {

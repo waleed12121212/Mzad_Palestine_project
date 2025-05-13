@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const ReportTable = () => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -29,6 +31,8 @@ const ReportTable = () => {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [resolution, setResolution] = useState('');
+  const [showResolutionDialog, setShowResolutionDialog] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -68,12 +72,26 @@ const ReportTable = () => {
   };
 
   const handleResolve = async (reportId: number) => {
+    if (!resolution.trim()) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال رسالة الحل",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await reportService.updateReport(reportId, { reason: "تم الحل" });
+      await reportService.updateReport(reportId, { 
+        reason: "تم الحل",
+        resolution: resolution.trim()
+      });
       toast({
         title: "تم حل البلاغ",
         description: "تم تحديث حالة البلاغ بنجاح",
       });
+      setResolution('');
+      setShowResolutionDialog(false);
       fetchReports();
     } catch (error) {
       toast({
@@ -82,6 +100,11 @@ const ReportTable = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const openResolutionDialog = (report: Report) => {
+    setSelectedReport(report);
+    setShowResolutionDialog(true);
   };
 
   const handleDelete = async () => {
@@ -166,7 +189,7 @@ const ReportTable = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleResolve(report.reportId)}
+                        onClick={() => openResolutionDialog(report)}
                         className="text-green-600"
                       >
                         <CheckCircle className="h-4 w-4" />
@@ -211,13 +234,55 @@ const ReportTable = () => {
                 <p>{format(new Date(selectedReport.createdAt), 'dd MMMM yyyy', { locale: ar })}</p>
               </div>
               {selectedReport.resolverName && (
-                <div>
-                  <h3 className="font-medium">تم الحل بواسطة:</h3>
-                  <p>{selectedReport.resolverName}</p>
-                </div>
+                <>
+                  <div>
+                    <h3 className="font-medium">تم الحل بواسطة:</h3>
+                    <p>{selectedReport.resolverName}</p>
+                  </div>
+                  {selectedReport.resolution && (
+                    <div>
+                      <h3 className="font-medium">رسالة الحل:</h3>
+                      <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
+                        {selectedReport.resolution}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showResolutionDialog} onOpenChange={setShowResolutionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>حل البلاغ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="resolution">رسالة الحل</Label>
+              <Textarea
+                id="resolution"
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                placeholder="اكتب رسالة توضح كيفية حل البلاغ"
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowResolutionDialog(false)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={() => selectedReport && handleResolve(selectedReport.reportId)}
+              >
+                حل البلاغ
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={!!reportToDelete} onOpenChange={(open) => !open && setReportToDelete(null)}>
