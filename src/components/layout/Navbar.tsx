@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle } from "lucide-react";
+import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle, HelpCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -147,6 +147,14 @@ const Navbar: React.FC = () => {
                 <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-red-500 rounded-full"></span>
               </Link>
 
+              <Link 
+                to="/support" 
+                className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="الدعم الفني"
+              >
+                <HelpCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              </Link>
+
               {isAuthenticated ? (
                 <Link to="/logout" className="btn-primary">
                   تسجيل الخروج
@@ -209,11 +217,11 @@ const Navbar: React.FC = () => {
               <MobileNavLink href="/auctions" active={isActive("/auctions")}>
                 المزادات النشطة
               </MobileNavLink>
-              <MobileNavLink href="#" active={isActive("/buy-now")} onClick={e => { e.preventDefault(); toast({ title: "هذه الميزة ستكون متوفرة قريبًا", description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!" }); }}>
-                الشراء الفوري
-              </MobileNavLink>
               <MobileNavLink href="/categories" active={isActive("/categories")}>
                 تصفح الفئات
+              </MobileNavLink>
+              <MobileNavLink href="/support" active={isActive("/support")}>
+                الدعم الفني
               </MobileNavLink>
               <MobileNavLink href="/favorites" active={isActive("/favorites")}>
                 {t('nav.favorites')}

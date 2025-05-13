@@ -17,6 +17,7 @@ import AuctionCard from "@/components/ui/AuctionCard";
 import ReportTable from './Admin/ReportManagement';
 import DisputeManagement from './Admin/DisputeManagement';
 import UserDisputes from "@/components/profile/UserDisputes";
+import Support from './Admin/Support';
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -40,7 +41,7 @@ const Profile = () => {
   });
 
   // Admin user management section
-  const [adminTab, setAdminTab] = useState<'profile' | 'users' | 'reports' | 'disputes'>('profile');
+  const [adminTab, setAdminTab] = useState<'profile' | 'users' | 'reports' | 'disputes' | 'support'>('profile');
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -762,6 +763,12 @@ const Profile = () => {
               >
                 إدارة النزاعات
               </button>
+              <button
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'support' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                onClick={() => setAdminTab('support')}
+              >
+                الدعم الفني
+              </button>
             </div>
           )}
 
@@ -781,6 +788,10 @@ const Profile = () => {
               ) : userData.role === 'Admin' && adminTab === 'disputes' ? (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
                   <DisputeManagement />
+                </div>
+              ) : userData.role === 'Admin' && adminTab === 'support' ? (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                  <Support />
                 </div>
               ) : (
                 <MainContent />

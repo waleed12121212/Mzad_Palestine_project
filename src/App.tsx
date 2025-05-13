@@ -27,6 +27,7 @@ import ReportManagement from '@/pages/Admin/ReportManagement';
 import Categories from '@/pages/Categories';
 import { LogoutHandler } from '@/components/auth/LogoutHandler';
 import SellerProfile from '@/pages/SellerProfile';
+import Support from '@/pages/Support';
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <CreateAuction />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/support"
+                      element={
+                        <ProtectedRoute>
+                          <Support />
                         </ProtectedRoute>
                       }
                     />

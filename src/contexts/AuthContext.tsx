@@ -2,24 +2,41 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { LoginData, RegisterData, ChangePasswordData, ConfirmEmailData } from '../services/authService';
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: 'User' | 'Admin';
+}
+
 interface AuthContextType {
-  isAuthenticated: boolean;
+  user: User | null;
   token: string | null;
-  user: any | null;
-  login: (data: { email: string; password: string }) => Promise<void>;
+  login: (token: string, user: User) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
   changePassword: (data: ChangePasswordData) => Promise<void>;
   confirmEmail: (data: ConfirmEmailData) => Promise<void>;
   sendEmailConfirmation: (email: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  login: () => {},
+  logout: () => {},
+  isAuthenticated: false,
+  register: async () => {},
+  changePassword: async () => {},
+  confirmEmail: async () => {},
+  sendEmailConfirmation: async () => {}
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // تحميل بيانات المستخدم من localStorage عند تحميل التطبيق
   useEffect(() => {
@@ -102,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
