@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Search, Filter, FilterX, SlidersHorizontal, ChevronDown } from "lucide-react";
@@ -21,6 +21,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { auctionService } from "@/services/auctionService";
+import { useSearchParams } from "react-router-dom";
 
 interface Auction {
   id: number;
@@ -36,7 +37,9 @@ interface Auction {
 }
 
 const ActiveAuctions: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearchQuery = searchParams.get("search") || "";
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000000);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -175,6 +178,24 @@ const ActiveAuctions: React.FC = () => {
            timeFilter !== "all";
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setSearchQuery(newQuery);
+    if (newQuery) {
+      setSearchParams({ search: newQuery });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  // Update search query when URL changes
+  useEffect(() => {
+    const searchFromUrl = searchParams.get("search");
+    if (searchFromUrl !== null) {
+      setSearchQuery(searchFromUrl);
+    }
+  }, [searchParams]);
+
   if (isLoading) {
     return (
       <PageWrapper>
@@ -289,7 +310,7 @@ const ActiveAuctions: React.FC = () => {
                   placeholder="ابحث عن مزاد..."
                   className="pr-10 rtl w-full"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                 />
               </div>
               

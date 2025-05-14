@@ -26,6 +26,8 @@ interface Message {
   subject?: string;
   timestamp: string;
   isRead: boolean;
+  senderName?: string;
+  senderAvatar?: string;
 }
 
 interface Contact {
@@ -61,6 +63,8 @@ const Chat: React.FC = () => {
   const [showConversation, setShowConversation] = useState(false);
   const [markedAsReadIds, setMarkedAsReadIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevMessagesLength = useRef(messages.length);
+  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
 
   // Responsive handler
   useEffect(() => {
@@ -88,9 +92,21 @@ const Chat: React.FC = () => {
 
       try {
         console.log('Loading inbox...');
-        const inboxData = await messageService.getInbox();
+        const inboxData: Message[] = await messageService.getInbox();
+        // Group messages by senderId
+        const grouped = Object.values(
+          inboxData.reduce((acc: { [key: number]: any }, msg: Message) => {
+            if (!acc[msg.senderId] || new Date(msg.timestamp) > new Date(acc[msg.senderId].timestamp)) {
+              acc[msg.senderId] = { ...msg };
+            }
+            // Count unread messages for this sender
+            acc[msg.senderId].unreadCount = (acc[msg.senderId].unreadCount || 0) + (!msg.isRead ? 1 : 0);
+            return acc;
+          }, {} as { [key: number]: any })
+        );
+        // Enrich with sender info
         const enrichedInbox = await Promise.all(
-          inboxData.map(async (msg) => {
+          grouped.map(async (msg: Message & { senderName?: string; senderAvatar?: string }) => {
             try {
               const response = await userService.getUserById(msg.senderId.toString());
               const userDetails = response.data;
@@ -133,24 +149,32 @@ const Chat: React.FC = () => {
                   ? userDetails.profilePicture
                   : `http://mazadpalestine.runasp.net${userDetails.profilePicture}`)
               : '';
-            const lastMsg = inboxData.find(msg => msg.senderId === senderId);
+            // Find the latest message for this contact
+            const messagesForContact = inboxData.filter(msg => msg.senderId === senderId);
+            const latestMsg = messagesForContact.reduce((latest, msg) => {
+              return new Date(msg.timestamp) > new Date(latest.timestamp) ? msg : latest;
+            }, messagesForContact[0]);
             return {
               id: senderId,
               name,
               avatar,
-              lastMessage: lastMsg?.content || '',
-              lastMessageTime: lastMsg?.timestamp || '',
-              unreadCount: inboxData.filter(msg => msg.senderId === senderId && !msg.isRead).length
+              lastMessage: latestMsg?.content || '',
+              lastMessageTime: latestMsg?.timestamp || '',
+              unreadCount: messagesForContact.filter(msg => !msg.isRead).length
             };
           } catch (e) {
-            const lastMsg = inboxData.find(msg => msg.senderId === senderId);
+            // fallback if user details fetch fails
+            const messagesForContact = inboxData.filter(msg => msg.senderId === senderId);
+            const latestMsg = messagesForContact.reduce((latest, msg) => {
+              return new Date(msg.timestamp) > new Date(latest.timestamp) ? msg : latest;
+            }, messagesForContact[0]);
             return {
               id: senderId,
-              name: lastMsg?.senderName || 'مستخدم',
-              avatar: lastMsg?.senderAvatar || '',
-              lastMessage: lastMsg?.content || '',
-              lastMessageTime: lastMsg?.timestamp || '',
-              unreadCount: inboxData.filter(msg => msg.senderId === senderId && !msg.isRead).length
+              name: latestMsg?.senderName || 'مستخدم',
+              avatar: latestMsg?.senderAvatar || '',
+              lastMessage: latestMsg?.content || '',
+              lastMessageTime: latestMsg?.timestamp || '',
+              unreadCount: messagesForContact.filter(msg => !msg.isRead).length
             };
           }
         }));
@@ -216,14 +240,9 @@ const Chat: React.FC = () => {
     }
   };
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const handleContactClick = (contact: Contact) => {
     setActiveContact(contact);
-    setShowConversation(false);
+    setShowConversation(true);
     if (isMobile) {
       setShowContactsList(false);
     }
@@ -235,7 +254,7 @@ const Chat: React.FC = () => {
       console.log('[Chat] Sending message:', { receiverId: activeContact?.id, subject: messageSubject, content: newMessage });
       const sent = await messageService.sendMessage({
         receiverId: activeContact?.id,
-        subject: messageSubject,
+        subject: messageSubject.trim() === '' ? "default" : messageSubject,
         content: newMessage,
       });
       console.log('[Chat] Message sent successfully:', sent);
@@ -295,14 +314,31 @@ const Chat: React.FC = () => {
     }
   };
 
+  // Extract last message for each contact before filtering
+  const contactsWithLastMessage: (Message & { lastMessage?: string })[] = useMemo(() => {
+    // Group messages by senderId
+    const grouped = Object.values(
+      inboxMessages.reduce((acc, msg) => {
+        if (!acc[msg.senderId] || new Date(msg.timestamp) > new Date(acc[msg.senderId].timestamp)) {
+          acc[msg.senderId] = { ...msg, lastMessage: msg.content };
+        }
+        return acc;
+      }, {} as { [key: number]: Message & { lastMessage?: string } })
+    ) as (Message & { lastMessage?: string })[];
+    return grouped;
+  }, [inboxMessages]);
+
   // Filter contacts based on tab and search term
-  const filteredContacts = useMemo(() => {
-    return contacts.filter(contact => {
-      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTab = currentTab === "all" || (currentTab === "unread" && contact.unreadCount && contact.unreadCount > 0);
+  const filteredContacts: (Message & { lastMessage?: string })[] = useMemo(() => {
+    return contactsWithLastMessage.filter(msg => {
+      const matchesSearch = msg.senderName?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTab = currentTab === "all" || (currentTab === "unread" && !msg.isRead);
       return matchesSearch && matchesTab;
     });
-  }, [contacts, searchQuery, currentTab]);
+  }, [contactsWithLastMessage, searchQuery, currentTab]);
+
+  console.log('contactsWithLastMessage:', contactsWithLastMessage, Array.isArray(contactsWithLastMessage) ? contactsWithLastMessage[0] : undefined);
+  console.log('filteredContacts:', filteredContacts, Array.isArray(filteredContacts) ? filteredContacts[0] : undefined);
 
   const handleBackToContacts = () => {
     setShowContactsList(true);
@@ -393,7 +429,7 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (showConversation && activeContact && messages.length > 0 && user) {
       messages.forEach(async (message) => {
-        if (!message.isRead && message.receiverId === user.id && !markedAsReadIds.has(message.id)) {
+        if (!message.isRead && message.receiverId === Number(user.id) && !markedAsReadIds.has(message.id)) {
           console.log('[Chat] Auto-marking message as read:', message.id);
           await markMessagesAsRead(message.id);
           setMarkedAsReadIds(prev => new Set(prev).add(message.id));
@@ -401,8 +437,21 @@ const Chat: React.FC = () => {
         }
       });
     }
-  // Only re-run if showConversation, activeContact.id, messages, or user.id changes
+    prevMessagesLength.current = messages.length;
   }, [showConversation, activeContact?.id, messages, user?.id, markedAsReadIds]);
+
+  // Handler for selecting/toggling a conversation
+  const handleSelectConversation = (id: number) => {
+    setSelectedConversationId(prev => {
+      if (prev === id) return null;
+      return id;
+    });
+    // Always fetch messages when a conversation is selected (even if toggling off, it's harmless)
+    fetchMessages(id);
+  };
+
+  // Handler for closing conversation (back button)
+  const handleCloseConversation = () => setSelectedConversationId(null);
 
   if (loading) {
     return (
@@ -420,367 +469,239 @@ const Chat: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="container mx-auto px-4 py-8 max-w-screen-xl">
-        <div className="flex flex-col md:flex-row justify-between mb-6 rtl">
-          <h1 className="text-2xl font-bold mb-2 md:mb-0">المحادثات</h1>
-          {totalUnread > 0 && (
-            <Badge variant="destructive" className="self-start md:self-auto">{totalUnread} رسالة جديدة</Badge>
-          )}
-        </div>
-        
-        <div className="flex h-[75vh] bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          {/* Contacts List */}
-          {showContactsList && (
-            <div className={`${isMobile ? 'w-full' : 'w-1/3 lg:w-1/4'} border-l border-gray-200 dark:border-gray-700 flex flex-col rtl`}>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="relative mb-3">
-                  <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-                  <Input 
+      <div className="min-h-screen bg-[#181E2A] flex items-center justify-center">
+        <div className="w-full max-w-6xl h-[80vh] bg-[#232B3E] rounded-2xl flex flex-row overflow-hidden">
+          {/* Inbox List (left) */}
+          <div className="w-full md:w-1/3 bg-[#232B3E] flex flex-col h-full border-l border-[#313A4D]">
+            <div className="p-4 pb-2">
+              <div className="relative">
+                <input
                     ref={searchInputRef}
                     type="text" 
                     placeholder="بحث في المحادثات..." 
-                    className="pr-10 rtl" 
+                  className="w-full bg-[#232B3E] text-gray-300 rounded-xl pr-10 pl-4 py-2 text-sm border border-[#313A4D] focus:outline-none focus:border-blue-600 placeholder-gray-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
+                  style={{ direction: 'rtl' }}
                   />
+                <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
                   {searchQuery && (
                     <button 
                       onClick={clearSearch}
-                      className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-200"
                       aria-label="مسح البحث"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
-                
-                <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setCurrentTab(value as "all" | "unread")}>
-                  <TabsList className="grid w-full grid-cols-2 rtl mb-2">
-                    <TabsTrigger value="all">جميع المحادثات</TabsTrigger>
-                    <TabsTrigger value="unread" className="relative">
+              <div className="flex mt-4 mb-2 gap-2">
+                <button
+                  className={`flex-1 py-1 rounded-lg text-sm font-medium ${currentTab === 'all' ? 'bg-blue-700 text-white' : 'bg-[#232B3E] text-gray-400 border border-[#313A4D]'}`}
+                  onClick={() => setCurrentTab('all')}
+                >
+                  جميع المحادثات
+                </button>
+                <button
+                  className={`flex-1 py-1 rounded-lg text-sm font-medium ${currentTab === 'unread' ? 'bg-blue-700 text-white' : 'bg-[#232B3E] text-gray-400 border border-[#313A4D]'}`}
+                  onClick={() => setCurrentTab('unread')}
+                >
                       غير مقروءة
-                      {totalUnread > 0 && (
-                        <Badge variant="destructive" className="absolute -top-2 left-0 transform -translate-x-1/2 translate-y-1/2">
-                          {totalUnread}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                </button>
               </div>
-              
-              <div className="flex-1 overflow-y-auto">
-                {tab === 'inbox' ? (
-                  inboxMessages.length > 0 ? (
-                    inboxMessages.map(msg => (
-                      <div
-                        key={msg.id}
-                        className={`p-4 mb-3 rounded-lg shadow-sm border transition hover:bg-blue-50 cursor-pointer ${!msg.isRead ? 'border-blue-400' : 'border-gray-200'}`}
-                        onClick={() => handleOpenConversation(msg.senderId, msg.senderName, msg.senderAvatar)}
-                      >
-                        <div className="flex items-center mb-1">
-                          <span className="font-bold text-lg text-gray-800 flex-1">{msg.subject}</span>
-                          {!msg.isRead && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded ml-2">جديد</span>}
-                        </div>
-                        <div className="flex items-center mb-1">
-                          {msg.senderAvatar && (
-                            <img src={msg.senderAvatar.startsWith('http') ? msg.senderAvatar : `http://mazadpalestine.runasp.net${msg.senderAvatar}`} alt={msg.senderName} className="w-7 h-7 rounded-full ml-2" />
-                          )}
-                          <span className="text-sm text-blue-700 font-medium">{msg.senderName || 'مستخدم'}</span>
-                        </div>
-                        <div className="text-gray-600 text-sm mb-1" style={{whiteSpace: 'pre-line'}}>
-                          {msg.content.length > 80 ? msg.content.slice(0, 80) + '...' : msg.content}
-                        </div>
-                        <div className="text-xs text-gray-400">{new Date(msg.timestamp).toLocaleString('ar-EG')}</div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2">
+              {filteredContacts.length > 0 ? (
+                filteredContacts.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`flex items-center gap-3 px-3 py-3 mb-2 rounded-xl cursor-pointer transition-all ${selectedConversationId === msg.senderId ? 'bg-[#1A2341] border border-blue-400 text-white' : 'hover:bg-[#29304A] text-white'} ${selectedConversationId === msg.senderId ? '' : 'border border-transparent'}`}
+                    onClick={() => handleSelectConversation(msg.senderId)}
+                    style={{ direction: 'rtl' }}
+                  >
+                    <img
+                      src={msg.senderAvatar ? (msg.senderAvatar.startsWith('http') ? msg.senderAvatar : `http://mazadpalestine.runasp.net${msg.senderAvatar}`) : ''}
+                      alt={msg.senderName}
+                      className="w-10 h-10 rounded-full object-cover border border-[#313A4D]"
+                    />
+                    <div className="flex-1 min-w-0 text-right">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-bold text-base truncate" style={{ color: selectedConversationId === msg.senderId ? '#fff' : '#fff' }}>{msg.senderName || 'مستخدم'}</span>
+                        <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">{formatDate(new Date(msg.timestamp))}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-4">
-                      <div className="text-gray-400 mb-4">
-                        <Search className="h-10 w-10 mx-auto" />
-                      </div>
-                      <p className="text-gray-500 text-center">لا توجد رسائل واردة</p>
+                      <span className="block text-xs truncate" style={{ color: selectedConversationId === msg.senderId ? '#e0e7ef' : '#b0b8c9' }}>{(msg.lastMessage || msg.content) && (msg.lastMessage || msg.content).length > 40 ? (msg.lastMessage || msg.content).slice(0, 40) + '...' : (msg.lastMessage || msg.content)}</span>
                     </div>
-                  )
-                ) : (
-                  filteredContacts.length > 0 ? (
-                  filteredContacts.map((contact) => (
-                    <div 
-                      key={contact.id}
-                      className={`flex items-center p-4 cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800 ${activeContact?.id === contact.id ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                      onClick={() => handleContactClick(contact)}
-                    >
-                      <div className="relative">
-                        <Avatar className="h-12 w-12">
-                          {contact.avatar ? (
-                            <img src={contact.avatar.startsWith('http') ? contact.avatar : `http://mazadpalestine.runasp.net${contact.avatar}`} alt={contact.name} className="object-cover rounded-full w-full h-full" />
-                          ) : (
-                            <div className="bg-blue text-white h-full w-full flex items-center justify-center rounded-full">
-                              <User className="h-6 w-6" />
-                            </div>
-                          )}
-                        </Avatar>
-                        {contact.isOnline && (
-                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></span>
-                        )}
-                      </div>
-                      
-                      <div className="mr-3 flex-1 min-w-0">
-                        <div className="flex justify-between items-start w-full">
-                          <h3 className="font-semibold truncate">{contact.name}</h3>
-                            <span className="text-xs text-gray-500 whitespace-nowrap mr-1">{formatDate(new Date(contact.lastMessageTime || ""))}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{contact.lastMessage}</p>
-                      </div>
-                      
-                        {contact.unreadCount && (
-                        <div className="bg-blue text-white text-xs font-bold min-w-[1.5rem] h-6 flex items-center justify-center rounded-full mr-1">
-                            {contact.unreadCount}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-4">
-                    <div className="text-gray-400 mb-4">
-                      <Search className="h-10 w-10 mx-auto" />
-                    </div>
-                    <p className="text-gray-500 text-center">لا توجد نتائج مطابقة للبحث</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => {
-                          setSearchQuery('');
-                        setCurrentTab('all');
-                      }}
-                    >
-                      إعادة ضبط الفلتر
-                    </Button>
                   </div>
-                  )
-                )}
-              </div>
-              
-              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full p-4">
+                  <div className="text-gray-400 mb-4">
+                    <Search className="h-8 w-8 mx-auto" />
+                  </div>
+                  <p className="text-sm text-gray-500 text-center">لا توجد رسائل واردة</p>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-[#313A4D]">
                 <Button 
                   onClick={startNewChat}
-                  className="w-full bg-blue text-white hover:bg-blue-600"
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-full py-3 text-base font-medium shadow-none border-none"
+                style={{ boxShadow: 'none' }}
                 >
                   بدء محادثة جديدة
                 </Button>
               </div>
             </div>
-          )}
-          
-          {/* Chat Window */}
-          {activeContact && showConversation && (!showContactsList || !isMobile) && (
-            <div className="flex-1 flex flex-col rtl" ref={chatContainerRef}>
-              {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
+          {/* Conversation Panel (right) */}
+          <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+            {selectedConversationId ? (
+              <>
+                {/* Header */}
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900">
                 <div className="flex items-center">
-                  {isMobile && (
                     <Button 
                       variant="ghost" 
-                      size="icon" 
-                      className="text-gray-500 ml-2"
-                      onClick={handleBackToContacts}
-                      aria-label="العودة إلى قائمة المحادثات"
+                      size="sm"
+                      className="text-gray-500 ml-2 p-2"
+                      onClick={handleCloseConversation}
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
-                  )}
-                  <Avatar className="h-10 w-10 ml-3">
-                    {activeContact.avatar ? (
-                      <img src={activeContact.avatar.startsWith('http') ? activeContact.avatar : `http://mazadpalestine.runasp.net${activeContact.avatar}`} alt={activeContact.name} className="object-cover rounded-full w-full h-full" />
+                    {(() => {
+                      const contact = contacts.find(c => c.id === selectedConversationId);
+                      return contact ? (
+                        <div className="flex items-center">
+                          <Avatar className="h-8 w-8 ml-2">
+                            {contact.avatar ? (
+                              <img src={contact.avatar.startsWith('http') ? contact.avatar : `http://mazadpalestine.runasp.net${contact.avatar}`} alt={contact.name} className="object-cover rounded-full w-full h-full" />
                     ) : (
                       <div className="bg-blue text-white h-full w-full flex items-center justify-center rounded-full">
-                        <User className="h-5 w-5" />
+                                <User className="h-4 w-4" />
                       </div>
                     )}
                   </Avatar>
                   <div>
-                    <h3 
-                      className="font-semibold cursor-pointer hover:text-blue-600 transition-colors"
-                      onClick={handleSellerProfile}
-                    >
-                      {activeContact.name}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {activeContact.isOnline ? 'متصل الآن' : 'غير متصل'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex space-s-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-500 hidden md:flex"
-                    aria-label="مكالمة صوتية"
-                  >
-                    <Phone className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-500 hidden md:flex"
-                    aria-label="مكالمة فيديو"
-                  >
-                    <Video className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-500"
-                    onClick={handleSellerProfile}
-                    aria-label="معلومات الاتصال"
-                  >
-                    <Info className="h-5 w-5" />
-                  </Button>
+                            <h3 className="text-sm font-medium">{contact.name}</h3>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
                 </div>
               </div>
               
               {/* Messages Area */}
-              <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 {messages.length > 0 ? (
-                  messages.map((message, index) => {
-                    // Show date if first message or if message date differs from previous message
-                    const showDate = index === 0 || 
-                      new Date(message.timestamp).toDateString() !== 
-                      new Date(messages[index - 1].timestamp).toDateString();
-                    
-                    return (
-                      <div key={message.id}>
-                        {showDate && (
-                          <div className="flex justify-center my-4">
-                            <span className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-xs">
-                              {formatDate(new Date(message.timestamp))}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'} mb-4`}>
-                          <div className={`max-w-[70%] md:max-w-[60%] ${
-                            message.senderId === user?.id 
-                              ? 'bg-blue text-white' 
-                              : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-                            } rounded-lg px-4 py-2 shadow-sm`}
-                          >
-                            {message.subject && (
-                              <div className="text-sm font-medium mb-1">{message.subject}</div>
+                    messages.map((message, index) => (
+                      <div key={message.id} className={`flex ${message.senderId === Number(user?.id) ? 'justify-end' : 'justify-start'} mb-3`}>
+                        <div className={`max-w-[70%] rounded-lg px-3 py-2 
+                          ${message.senderId === Number(user?.id)
+                            ? 'bg-blue-100 text-gray-900 dark:bg-blue dark:text-white'
+                            : 'bg-gray-200 text-gray-900 dark:bg-gray-800 dark:text-gray-200'}
+                        `}>
+                          <p className="text-sm break-words">{message.content}</p>
+                          <div className="flex justify-end items-center gap-1 mt-1 text-blue-100 dark:text-blue-200">
+                            <span className="text-xs">{formatTime(new Date(message.timestamp))}</span>
+                            {message.isRead && (
+                              <CheckCheck className={"h-3 w-3 text-blue-600 dark:text-blue-200"} />
                             )}
-                            <p className="break-words">{message.content}</p>
-                            <div className={`flex justify-end items-center gap-1 mt-1 ${message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'}`}>
-                              <span className="text-xs">{formatTime(new Date(message.timestamp))}</span>
-                              {message.isRead && (
-                                <CheckCheck className="h-3 w-3 text-blue-100" />
-                              )}
-                            </div>
                           </div>
                         </div>
                       </div>
-                    );
-                  })
+                    ))
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">ابدأ محادثة مع {activeContact.name}</p>
+                      <p className="text-gray-500 text-sm">ابدأ محادثة مع هذا المستخدم</p>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
               
               {/* Message Input Area */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky bottom-0">
-                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-500 ml-1 hidden sm:flex"
-                    aria-label="إضافة ايموجي"
-                  >
-                    <Smile className="h-6 w-6" />
-                  </Button>
-                  <div className="flex space-s-2 ml-2 hidden sm:flex">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-gray-500"
-                      aria-label="إرفاق ملف"
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-gray-500"
-                      aria-label="إرفاق صورة"
-                    >
-                      <Image className="h-5 w-5" />
-                    </Button>
+                <div className="p-4 bg-[#232B3E]">
+                  <div className="flex flex-col gap-1">
+                    {/* Subject input above input bar */}
+                    <input
+                      type="text"
+                      placeholder="موضوع الرسالة (اختياري)"
+                      className="w-full bg-[#232B3E] text-gray-200 placeholder-gray-400 border-none outline-none focus:ring-0 text-sm rounded-lg mb-1 pr-2 focus:placeholder-transparent"
+                      value={messageSubject}
+                      onChange={(e) => setMessageSubject(e.target.value)}
+                      style={{ direction: 'rtl' }}
+                    />
+                    <div className="flex flex-row-reverse bg-[#232B3E] rounded-xl px-3 py-2 gap-2">
+                      {/* Left: Send and Attach buttons (blue, circular) */}
+                      <button
+                        onClick={handleSendMessage}
+                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-50 ml-auto"
+                        disabled={newMessage.trim() === ""}
+                        aria-label="إرسال الرسالة"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-full w-9 h-9 flex items-center justify-center"
+                        aria-label="إرفاق ملف"
+                        type="button"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      {/* Center: Input field */}
+                      <input
+                        type="text"
+                        placeholder="اكتب رسالتك هنا..."
+                        className="flex-1 bg-transparent text-gray-200 placeholder-gray-500 border-none outline-none focus:ring-0 text-base text-right mx-2"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        style={{ direction: 'rtl' }}
+                      />
+                      {/* Right: gray icons */}
+                      <button
+                        className="text-gray-400 hover:text-blue-700"
+                        type="button"
+                        aria-label="إضافة صورة"
+                      >
+                        <Image className="h-5 w-5" />
+                      </button>
+                      <button
+                        className="text-gray-400 hover:text-blue-700"
+                        type="button"
+                        aria-label="إرفاق ملف"
+                      >
+                        <Paperclip className="h-5 w-5" />
+                      </button>
+                      <button
+                        className="text-gray-400 hover:text-blue-700"
+                        type="button"
+                        aria-label="إضافة إيموجي"
+                      >
+                        <Smile className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
-                  <Input 
-                    type="text" 
-                    placeholder="موضوع الرسالة (اختياري)"
-                    className="border-0 bg-transparent flex-1 focus-visible:ring-0 focus-visible:ring-offset-0" 
-                    value={messageSubject}
-                    onChange={(e) => setMessageSubject(e.target.value)}
-                  />
-                  <Button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="bg-blue hover:bg-blue-600 text-white rounded-full ml-2 p-2 h-10 w-10"
-                    aria-label="إرفاق ملف"
-                  >
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                  <Input 
-                    type="text" 
-                    placeholder="اكتب رسالتك هنا..." 
-                    className="border-0 bg-transparent flex-1 focus-visible:ring-0 focus-visible:ring-offset-0" 
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <Button 
-                    onClick={handleSendMessage} 
-                    className="bg-blue hover:bg-blue-600 text-white rounded-full ml-2 p-2 h-10 w-10"
-                    disabled={newMessage.trim() === ""}
-                    aria-label="إرسال الرسالة"
-                  >
-                    <Send className="h-5 w-5" />
-                  </Button>
                 </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Empty State - No Selected Conversation */}
-          {(activeContact === null || (isMobile && showContactsList && activeContact)) && !isMobile && (
-            <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
-              <Card className="text-center w-3/4 max-w-md p-8">
-                <div className="text-gray-400 mb-6">
-                  <MessageCircle className="h-20 w-20 mx-auto" />
+              </>
+            ) : (
+              <div className="flex flex-1 items-center justify-center h-full">
+                <div className="text-center">
+                  <MessageCircle className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2 text-gray-300">لم يتم اختيار محادثة</h3>
+                  <p className="text-sm text-gray-500">اختر جهة اتصال من القائمة لبدء المحادثة</p>
                 </div>
-                <h3 className="text-xl font-semibold mb-4">لم يتم اختيار محادثة</h3>
-                <p className="text-gray-500 mb-6">اختر جهة اتصال من القائمة لبدء المحادثة أو متابعة محادثة سابقة</p>
-                <Button 
-                  variant="outline" 
-                  className="mx-auto"
-                  onClick={startNewChat}
-                >
-                  بدء محادثة جديدة
-                </Button>
-              </Card>
             </div>
           )}
         </div>
       </div>
+    </div>
     </PageWrapper>
   );
 };

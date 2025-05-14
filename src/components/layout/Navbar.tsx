@@ -115,7 +115,7 @@ const Navbar: React.FC = () => {
             >
               <input
                 type="text"
-                placeholder={t('nav.search')}
+                placeholder={t('')}
                 className={`w-full py-2 px-4 ${dir === 'rtl' ? 'pr-4 pl-10' : 'pl-4 pr-10'} rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm transition-all duration-300 ${
                   isSearchFocused
                     ? "ring-2 ring-blue/50"

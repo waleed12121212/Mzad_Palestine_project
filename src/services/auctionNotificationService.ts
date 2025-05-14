@@ -97,10 +97,9 @@ export const auctionNotificationService = {
   // For new messages
   notifyNewMessage: async (userId: number, senderName: string, subject?: string) => {
     try {
-      const message = subject 
-        ? `لديك رسالة جديدة بعنوان: ${subject} من ${senderName}.`
-        : `لديك رسالة جديدة من ${senderName}.`;
-      
+      const message = subject === "default" 
+  ? `لديك رسالة جديدة من ${senderName}.` // Case 1: Explicit string "default"
+  : `لديك رسالة جديدة ${subject ? `بعنوان: ${subject}` : ""} من ${senderName}.`; // Case 2: All other values
       await notificationService.createNotification(
         userId,
         message,
