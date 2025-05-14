@@ -2,6 +2,7 @@
 
 import axios, { AxiosError } from 'axios';
 import { auctionNotificationService } from './auctionNotificationService';
+import { userService } from './userService';
 
 const API_URL = '/Message';
 
@@ -73,10 +74,24 @@ export const messageService = {
   // إرسال رسالة جديدة
   async sendMessage(payload: MessagePayload) {
     const response = await axiosInstance.post('/', payload);
-    // Create notification for the receiver with subject if available
+    // Get senderId from localStorage user object
+    const user = JSON.parse(localStorage.getItem('user'));
+    const senderId = user?.id;
+    let senderName = 'مستخدم جديد';
+    if (senderId) {
+      try {
+        const { data } = await userService.getUserById(senderId.toString());
+        console.log('Debug: senderProfile =', data);
+        senderName = `${data.firstName} ${data.lastName}`;
+      } catch (e) {
+        console.log('Debug: Error fetching senderProfile', e);
+        // fallback to default if error
+      }
+    }
+    console.log('Debug: senderName =', senderName);
     await auctionNotificationService.notifyNewMessage(
       payload.receiverId,
-      'مستخدم جديد', // You might want to pass the sender's name here
+      senderName,
       payload.subject
     );
     return response.data.data;
@@ -105,4 +120,4 @@ export const messageService = {
     const response = await axiosInstance.put(`/${messageId}/read`);
     return response.data.success === true;
   },
-}; 
+};

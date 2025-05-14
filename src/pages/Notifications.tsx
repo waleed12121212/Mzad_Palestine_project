@@ -4,11 +4,13 @@ import { cn } from "@/lib/utils";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { notificationService, NotificationType, Notification } from "@/services/notificationService";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<NotificationType | "all">("all");
+  const navigate = useNavigate();
 
   const fetchNotifications = async () => {
     try {
@@ -103,7 +105,30 @@ const Notifications = () => {
     }
   };
 
-  const NotificationItem = ({ notification }: { notification: Notification }) => {
+  const handleNotificationClick = (notification: Notification) => {
+    switch (notification.type) {
+      case "MassageReceived":
+        navigate(`/messages/${notification.relatedId}`);
+        break;
+      case "AuctionWon":
+      case "BidOutbid":
+      case "AuctionEnded":
+      case "BidPlaced":
+      case "AuctionCancelled":
+        navigate(`/auctions/${notification.relatedId}`);
+        break;
+      case "General":
+        if (notification.message.includes("فزت بالمزاد")) {
+          navigate(`/auctions/won`);
+        }
+        break;
+      default:
+        // General or unknown notification: do nothing
+        break;
+    }
+  };
+
+  const NotificationItem = ({ notification, onClick }: { notification: Notification, onClick: () => void }) => {
     const getNotificationContent = (type: NotificationType) => {
       switch (type) {
         case 'AuctionWon':
@@ -154,7 +179,12 @@ const Notifications = () => {
     const content = getNotificationContent(notification.type);
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl">
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+        onClick={onClick}
+        tabIndex={0}
+        role="button"
+      >
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
             <div className={`w-10 h-10 rounded-full ${content.bgColor} flex items-center justify-center`}>
@@ -169,7 +199,7 @@ const Notifications = () => {
               <div className="flex items-center gap-2">
                 {!notification.isRead && (
                   <button
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={e => { e.stopPropagation(); markAsRead(notification.id); }}
                     className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                     title="تعيين كمقروء"
                   >
@@ -177,7 +207,7 @@ const Notifications = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => deleteNotification(notification.id)}
+                  onClick={e => { e.stopPropagation(); deleteNotification(notification.id); }}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                   title="حذف الإشعار"
                 >
@@ -337,7 +367,11 @@ const Notifications = () => {
             ) : filteredNotifications.length > 0 ? (
               <div className="space-y-4">
                 {filteredNotifications.map((notification) => (
-                  <NotificationItem key={notification.id} notification={notification} />
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    onClick={() => handleNotificationClick(notification)}
+                  />
                 ))}
               </div>
             ) : (

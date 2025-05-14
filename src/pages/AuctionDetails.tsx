@@ -37,6 +37,7 @@ interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   bidders?: number;
   views?: number;
   endTime: string;
+  currentBid?: number;
 }
 
 const AuctionDetails = () => {
@@ -61,6 +62,7 @@ const AuctionDetails = () => {
   }, [auction?.listingId, isInWishlist]);
 
   const handleBidSuccess = (newBid: Bid) => {
+    console.log('[AuctionDetails] Bid success:', newBid);
     // Optimistically update the auction data
     setAuction(prev => ({
       ...prev,
@@ -70,6 +72,14 @@ const AuctionDetails = () => {
     
     // Refetch auction data
     queryClient.invalidateQueries({ queryKey: ['auction', id] });
+    
+    // Send notification with only the auction name
+    if (auction && auction.title) {
+      // Example: notifyBidPlaced(userId, auctionTitle)
+      // Replace with your actual notification trigger if needed
+      // auctionNotificationService.notifyBidPlaced(userId, auction.title);
+      console.log('[AuctionDetails] Would send notification with auction name only:', auction.title);
+    }
   };
 
   useEffect(() => {
@@ -217,7 +227,10 @@ const AuctionDetails = () => {
   
   const navigateToChat = () => {
     if (seller?.id) {
+      console.log('[AuctionDetails] Navigating to chat with seller:', seller.id);
       navigate(`/conversations/${seller.id}`);
+    } else {
+      console.log('[AuctionDetails] Cannot navigate to chat - no seller ID available');
     }
   };
 
@@ -242,6 +255,7 @@ const AuctionDetails = () => {
 
   const handleReport = () => {
     if (!user) {
+      console.log('[AuctionDetails] User not logged in, cannot report auction');
       toast({
         title: "يجب تسجيل الدخول أولاً",
         description: "قم بتسجيل الدخول للإبلاغ عن المزاد",
@@ -250,6 +264,7 @@ const AuctionDetails = () => {
       return;
     }
 
+    console.log('[AuctionDetails] Reporting auction:', id);
     // TODO: Implement report functionality
     toast({
       title: "تم الإبلاغ عن المزاد",
@@ -259,6 +274,7 @@ const AuctionDetails = () => {
 
   const handleDispute = () => {
     if (!user) {
+      console.log('[AuctionDetails] User not logged in, cannot open dispute');
       toast({
         title: "يجب تسجيل الدخول أولاً",
         description: "قم بتسجيل الدخول لفتح نزاع",
@@ -266,6 +282,8 @@ const AuctionDetails = () => {
       });
       return;
     }
+    console.log('[AuctionDetails] Opening dispute dialog for auction:', id);
+    setShowDisputeDialog(true);
   };
 
   if (loading) {
@@ -322,7 +340,7 @@ const AuctionDetails = () => {
               <div className="mb-4 rounded-xl overflow-hidden relative group">
                 {/* Top left action buttons */}
                 <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: '8px' }}>
-                  {user && auction && user.id === auction.userId && (
+                  {user && auction && Number(user.id) === Number(auction.userId) && (
                     <>
                       <button
                         title="تعديل المزاد"
@@ -415,7 +433,7 @@ const AuctionDetails = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <h2 className="text-2xl font-bold mb-6">التقييمات والمراجعات</h2>
                   
-                  {user && auction && user.id !== auction.userId && (
+                  {user && auction && Number(user.id) !== Number(auction.userId) && (
                     <div className="mb-8">
                       <ReviewForm 
                         listingId={auction.listingId.toString()} 
@@ -438,17 +456,7 @@ const AuctionDetails = () => {
               <div className="sticky top-24">
                 {/* Dispute button in top left of card */}
                 <button
-                  onClick={() => {
-                    if (!user) {
-                      toast({
-                        title: "يجب تسجيل الدخول أولاً",
-                        description: "قم بتسجيل الدخول لفتح نزاع",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    setShowDisputeDialog(true);
-                  }}
+                  onClick={handleDispute}
                   title="فتح نزاع"
                   className="absolute top-2 left-2 z-20 bg-blue-50 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow flex items-center justify-center"
                   style={{ minWidth: '44px', minHeight: '44px' }}
@@ -515,7 +523,8 @@ const AuctionDetails = () => {
                     
                     <BidForm
                       auctionId={Number(id)}
-                      currentPrice={auction.reservePrice}
+                      auctionTitle={auction?.title || auction?.name || ''}
+                      currentPrice={auction.currentBid ?? auction.reservePrice}
                       bidIncrement={auction.bidIncrement}
                       isAuctionActive={new Date(auction.endTime) > new Date()}
                       onBidSuccess={handleBidSuccess}
@@ -539,12 +548,7 @@ const AuctionDetails = () => {
                       {auction && (
                         <ReportDialog 
                           listingId={auction.listingId} 
-                          onReportSubmitted={() => {
-                            toast({
-                              title: "تم الإبلاغ بنجاح",
-                              description: "سيتم مراجعة البلاغ من قبل فريق العمل",
-                            });
-                          }}
+                          onReportSubmitted={handleReport}
                         />
                       )}
                     </div>
@@ -554,7 +558,7 @@ const AuctionDetails = () => {
                 <div className="neo-card p-6">
                   <BidHistory 
                     auctionId={Number(id)}
-                    currentUserId={user?.id}
+                    currentUserId={Number(user?.id)}
                   />
                 </div>
                 

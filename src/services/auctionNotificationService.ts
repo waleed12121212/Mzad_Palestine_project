@@ -4,6 +4,7 @@ export const auctionNotificationService = {
   // When a user places a bid
   notifyBidPlaced: async (userId: number, auctionTitle: string) => {
     try {
+      console.debug('[auctionNotificationService] notifyBidPlaced auctionTitle:', auctionTitle);
       await notificationService.createNotification(
         userId,
         `تمت إضافة مزايدة جديدة على المزاد: ${auctionTitle}. سارع بالمنافسة!`,
@@ -17,9 +18,14 @@ export const auctionNotificationService = {
   // When a user's bid is outbid by another user
   notifyBidOutbid: async (userId: number, auctionTitle: string) => {
     try {
+      console.debug('[auctionNotificationService] notifyBidOutbid auctionTitle:', auctionTitle);
+      // Debug for message content
+      if (auctionTitle.includes('المزاد رقم')) {
+        console.debug('[auctionNotificationService] المزاد رقم detected in auctionTitle:', auctionTitle);
+      }
       await notificationService.createNotification(
         userId,
-        `تم تجاوز مزايدتك في المزاد: ${auctionTitle}. قد ترغب في تقديم مزايدة جديدة.`,
+        auctionTitle,
         'BidOutbid'
       );
     } catch (error) {
@@ -30,9 +36,10 @@ export const auctionNotificationService = {
   // When an auction ends
   notifyAuctionEnded: async (userId: number, auctionTitle: string) => {
     try {
+      console.debug('[auctionNotificationService] notifyAuctionEnded auctionTitle:', auctionTitle);
       await notificationService.createNotification(
         userId,
-        `انتهى المزاد: ${auctionTitle}. نشكرك على مشاركتك!`,
+        auctionTitle,
         'AuctionEnded'
       );
     } catch (error) {
@@ -43,9 +50,10 @@ export const auctionNotificationService = {
   // When a user wins an auction
   notifyAuctionWon: async (userId: number, auctionTitle: string) => {
     try {
+      console.debug('[auctionNotificationService] notifyAuctionWon auctionTitle:', auctionTitle);
       await notificationService.createNotification(
         userId,
-        `مبروك! لقد فزت بالمزاد: ${auctionTitle}. سنقوم بالتواصل معك لإتمام العملية.`,
+        auctionTitle,
         'AuctionWon'
       );
     } catch (error) {
@@ -56,9 +64,10 @@ export const auctionNotificationService = {
   // When an auction is cancelled
   notifyAuctionCancelled: async (userId: number, auctionTitle: string) => {
     try {
+      console.debug('[auctionNotificationService] notifyAuctionCancelled auctionTitle:', auctionTitle);
       await notificationService.createNotification(
         userId,
-        `تم إلغاء المزاد: ${auctionTitle} من قبل الإدارة.`,
+        auctionTitle,
         'AuctionCancelled'
       );
     } catch (error) {
@@ -69,6 +78,12 @@ export const auctionNotificationService = {
   // For general notifications
   notifyGeneral: async (userId: number, message: string = 'لديك إشعار جديد من إدارة المنصة.') => {
     try {
+      if (message.includes('المزاد رقم')) {
+        console.debug('[auctionNotificationService] المزاد رقم detected in general message:', message);
+      }
+      if (message.includes('تم تجواز مزايدتك')) {
+        console.debug('[auctionNotificationService] تم تجواز مزايدتك detected in general message:', message);
+      }
       await notificationService.createNotification(
         userId,
         message,

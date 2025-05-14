@@ -128,7 +128,7 @@ export const userService = {
   },
 
   // Get user by ID (admin only)
-  getUserById: async (id: string): Promise<UserProfile> => {
+  getUserById: async (id: string): Promise<{ success: boolean, data: UserProfile }> => {
     const response = await axiosInstance.get(`/${id}`);
     return response.data;
   },
@@ -143,4 +143,4 @@ export const userService = {
   deleteUser: async (userId: string): Promise<void> => {
     await axiosInstance.delete(`/${userId}`);
   }
-}; 
+};

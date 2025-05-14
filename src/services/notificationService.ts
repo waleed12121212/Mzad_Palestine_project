@@ -12,6 +12,7 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   formattedDate?: string;
+  relatedId?: number;
 }
 
 export interface CreateNotificationDto {

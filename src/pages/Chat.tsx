@@ -232,16 +232,19 @@ const Chat: React.FC = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !messageSubject.trim()) return;
     try {
+      console.log('[Chat] Sending message:', { receiverId: activeContact?.id, subject: messageSubject, content: newMessage });
       const sent = await messageService.sendMessage({
         receiverId: activeContact?.id,
         subject: messageSubject,
         content: newMessage,
       });
+      console.log('[Chat] Message sent successfully:', sent);
       setMessages(prev => [...prev, sent]);
       setNewMessage('');
       setMessageSubject('');
       toast.success('تم إرسال الرسالة بنجاح');
-    } catch {
+    } catch (error) {
+      console.error('[Chat] Error sending message:', error);
       toast.error('حدث خطأ أثناء إرسال الرسالة');
     }
   };
@@ -374,12 +377,16 @@ const Chat: React.FC = () => {
 
   const handleMarkAsRead = async (messageId: number) => {
     try {
+      console.log('[Chat] Marking message as read:', messageId);
       await messageService.markAsRead(messageId);
+      console.log('[Chat] Message marked as read successfully');
       // حدث الرسائل بعد التعليم كمقروء
       if (tab === 'inbox') {
         setInboxMessages(msgs => msgs.map(m => m.id === messageId ? { ...m, isRead: true } : m));
       }
-    } catch {}
+    } catch (error) {
+      console.error('[Chat] Error marking message as read:', error);
+    }
   };
 
   // Mark messages as read only when conversation is actually opened
@@ -387,7 +394,7 @@ const Chat: React.FC = () => {
     if (showConversation && activeContact && messages.length > 0 && user) {
       messages.forEach(async (message) => {
         if (!message.isRead && message.receiverId === user.id && !markedAsReadIds.has(message.id)) {
-          console.log('Calling markAsRead for message:', message.id);
+          console.log('[Chat] Auto-marking message as read:', message.id);
           await markMessagesAsRead(message.id);
           setMarkedAsReadIds(prev => new Set(prev).add(message.id));
           setMessages(prevMsgs => prevMsgs.map(m => m.id === message.id ? { ...m, isRead: true } : m));

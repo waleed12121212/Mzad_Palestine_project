@@ -9,6 +9,7 @@ import axios from 'axios';
 
 interface BidFormProps {
   auctionId: number;
+  auctionTitle: string;
   currentPrice: number;
   bidIncrement: number;
   isAuctionActive: boolean;
@@ -21,6 +22,7 @@ interface BidFormData {
 
 export const BidForm: React.FC<BidFormProps> = ({
   auctionId,
+  auctionTitle,
   currentPrice,
   bidIncrement,
   isAuctionActive,
@@ -48,6 +50,7 @@ export const BidForm: React.FC<BidFormProps> = ({
       const newBid = await bidService.createBid({
         auctionId,
         bidAmount: data.bidAmount,
+        auctionTitle,
       });
       toast.success('تم تقديم المزايدة بنجاح');
       reset();

@@ -16,6 +16,7 @@ export interface Bid {
 export interface CreateBidDto {
   auctionId: number;
   bidAmount: number;
+  auctionTitle: string;
 }
 
 class BidService {
@@ -28,7 +29,7 @@ class BidService {
       // Notify the bidder
       await auctionNotificationService.notifyBidPlaced(
         response.data.userId,
-        `المزاد رقم ${bidData.auctionId}`
+        bidData.auctionTitle
       );
       
       // Get the previous highest bidder if exists
@@ -39,7 +40,7 @@ class BidService {
       if (previousHighestBid && previousHighestBid.userId !== response.data.userId) {
         await auctionNotificationService.notifyBidOutbid(
           previousHighestBid.userId,
-          `المزاد رقم ${bidData.auctionId}`
+          `لقد تم تجاوز مزايدتك في المزاد: ${bidData.auctionTitle}. قم بالمزايدة مجددًا!`
         );
       }
       
