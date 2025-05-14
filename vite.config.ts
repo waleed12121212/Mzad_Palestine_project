@@ -15,6 +15,18 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/Auth/, '/Auth')
       },
+      '/Payment': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Payment/, '/Payment')
+      },
+      '/Transaction': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Transaction/, '/Transaction')
+      },
       '/Notification': {
         target: 'http://mazadpalestine.runasp.net',
         changeOrigin: true,

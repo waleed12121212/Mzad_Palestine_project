@@ -81,8 +81,11 @@ const Navbar: React.FC = () => {
             <DesktopNavLink href="/" active={isActive("/")}>
               الرئيسية
             </DesktopNavLink>
-            <DesktopNavLink href="/auctions" active={isActive("/auctions")}>
+            <DesktopNavLink href="/auctions" active={location.pathname === "/auctions"}>
               المزادات النشطة
+            </DesktopNavLink>
+            <DesktopNavLink href="/auctions/won" active={location.pathname === "/auctions/won"}>
+              المزادات الفائزة
             </DesktopNavLink>
             <DesktopNavLink 
               href="#" 
@@ -216,8 +219,11 @@ const Navbar: React.FC = () => {
               <MobileNavLink href="/" active={isActive("/")}>
                 الرئيسية
               </MobileNavLink>
-              <MobileNavLink href="/auctions" active={isActive("/auctions")}>
+              <MobileNavLink href="/auctions" active={location.pathname === "/auctions"}>
                 المزادات النشطة
+              </MobileNavLink>
+              <MobileNavLink href="/auctions/won" active={location.pathname === "/auctions/won"}>
+                المزادات الفائزة
               </MobileNavLink>
               <MobileNavLink href="/categories" active={isActive("/categories")}>
                 تصفح الفئات

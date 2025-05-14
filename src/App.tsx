@@ -28,6 +28,8 @@ import Categories from '@/pages/Categories';
 import { LogoutHandler } from '@/components/auth/LogoutHandler';
 import SellerProfile from '@/pages/SellerProfile';
 import Support from '@/pages/Support';
+import WonAuctions from '@/pages/WonAuctions';
+import PaymentPage from '@/pages/PaymentPage';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,22 @@ function App() {
                     <Route path="/auctions/active" element={<ActiveAuctions />} />
                     <Route path="/auctions/:id" element={<AuctionDetails />} />
                     <Route path="/seller/:id" element={<SellerProfile />} />
+                    <Route
+                      path="/auctions/won"
+                      element={
+                        <ProtectedRoute>
+                          <WonAuctions />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/payment/:id"
+                      element={
+                        <ProtectedRoute>
+                          <PaymentPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/listings/create"
                       element={
@@ -162,9 +180,6 @@ function App() {
                       },
                       success: {
                         duration: 3000,
-                        theme: {
-                          primary: '#4aed88',
-                        },
                       },
                     }}
                   />
