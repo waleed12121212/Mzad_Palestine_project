@@ -23,6 +23,7 @@ interface AuctionCardProps {
   isPopular?: boolean;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string) => void;
+  ownerView?: boolean;
 }
 
 const AuctionCard: React.FC<AuctionCardProps> = ({
@@ -40,7 +41,8 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   currency = "₪",
   isPopular = false,
   isFavorite = false,
-  onFavoriteToggle
+  onFavoriteToggle,
+  ownerView = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -200,8 +202,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
             navigate(`/auction/${id}`);
           }}
         >
-          <span>المزايدة الآن</span>
-          <ArrowUpRight className="h-4 w-4" />
+          {ownerView ? 'إدارة المزاد' : <><span>المزايدة الآن</span> <ArrowUpRight className="h-4 w-4" /></>}
         </button>
       </div>
     </div>

@@ -18,6 +18,10 @@ import ReportTable from './Admin/ReportManagement';
 import DisputeManagement from './Admin/DisputeManagement';
 import UserDisputes from "@/components/profile/UserDisputes";
 import Support from './Admin/Support';
+import { useQuery } from '@tanstack/react-query';
+import { auctionService } from '@/services/auctionService';
+import { MyBids } from '@/components/bidding/MyBids';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -409,6 +413,46 @@ const Profile = () => {
     </div>
   );
 
+  // Add UserAuctions component inside Profile (before MainContent):
+  const UserAuctions = ({ userId }) => {
+    const { data: response = {}, isLoading, error } = useQuery({
+      queryKey: ['userAuctions', userId],
+      queryFn: () => auctionService.getUserAuctions(userId),
+      enabled: !!userId,
+    });
+    const auctions = Array.isArray(response) ? response : response.data || [];
+    console.log('UserAuctions userId:', userId);
+    console.log('UserAuctions raw auctions:', auctions);
+    if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>;
+    if (error) return <div className="text-red-500 text-center py-8">حدث خطأ أثناء تحميل المزادات</div>;
+    if (!auctions.length) return <EmptyState message="لا يوجد مزادات حالياً" icon={Package} />;
+
+    const normalizedAuctions = auctions.map(auction => ({
+      id: auction.auctionId,
+      listingId: auction.listingId,
+      title: auction.name,
+      description: '',
+      currentPrice: auction.currentBid > 0 ? auction.currentBid : auction.reservePrice,
+      minBidIncrement: auction.bidIncrement,
+      imageUrl: auction.imageUrl,
+      endTime: auction.endTime,
+      bidders: auction.bidsCount,
+    }));
+    console.log('UserAuctions normalizedAuctions:', normalizedAuctions);
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {normalizedAuctions.map(auction => (
+          <AuctionCard
+            key={auction.id}
+            {...auction}
+            ownerView={true}
+          />
+        ))}
+      </div>
+    );
+  };
+
   // Add content components for each section
   const ProfileForm = () => {
     const InputField = ({ 
@@ -624,12 +668,12 @@ const Profile = () => {
                   <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">النشطة</button>
                   <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">المنتهية</button>
                 </div>
-                <button className="bg-blue text-white dark:bg-blue-light dark:text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2">
+                <button className="bg-blue text-white dark:bg-blue-light dark:text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2" onClick={() => navigate('/create-auction')}>
                   <Package className="h-4 w-4" />
                   <span>إضافة مزاد</span>
                 </button>
               </div>
-              <EmptyState message="لا يوجد مزادات حالياً" />
+              {userData && <UserAuctions userId={userData.id} />}
             </div>
           </ContentWrapper>
         );
@@ -643,7 +687,7 @@ const Profile = () => {
                 <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">الفائزة</button>
                 <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">قيد الانتظار</button>
               </div>
-              <EmptyState message="لا يوجد مزايدات حالياً" icon={ArrowLeft} />
+              <MyBids />
             </div>
           </ContentWrapper>
         );
@@ -708,19 +752,80 @@ const Profile = () => {
         );
       
       case 'notifications':
+        // Notifications section with filters and actions
+        const {
+          notifications,
+          isLoading: notifLoading,
+          markAsRead,
+          markAllAsRead,
+          deleteNotification,
+          clearAllNotifications,
+        } = useNotifications();
+        const [notifFilter, setNotifFilter] = useState('all');
+        const filteredNotifications = notifFilter === 'all' ? notifications : notifications.filter(n => n.type === notifFilter);
         return (
           <ContentWrapper title="الإشعارات">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex gap-4">
-                  <button className="px-4 py-2 rounded-lg bg-blue/10 text-blue dark:text-blue-light">الكل</button>
-                  <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">غير المقروءة</button>
+                  <button onClick={() => setNotifFilter('all')} className={`px-4 py-2 rounded-lg ${notifFilter === 'all' ? 'bg-blue/10 text-blue dark:text-blue-light' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>الكل</button>
+                  <button onClick={() => setNotifFilter('AuctionWon')} className={`px-4 py-2 rounded-lg ${notifFilter === 'AuctionWon' ? 'bg-green-500/10 text-green-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>فوز بمزاد</button>
+                  <button onClick={() => setNotifFilter('BidOutbid')} className={`px-4 py-2 rounded-lg ${notifFilter === 'BidOutbid' ? 'bg-red-500/10 text-red-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>تم تجاوز مزايدتك</button>
+                  <button onClick={() => setNotifFilter('AuctionEnded')} className={`px-4 py-2 rounded-lg ${notifFilter === 'AuctionEnded' ? 'bg-orange-500/10 text-orange-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>مزادات منتهية</button>
+                  <button onClick={() => setNotifFilter('BidPlaced')} className={`px-4 py-2 rounded-lg ${notifFilter === 'BidPlaced' ? 'bg-blue/10 text-blue' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>مزايدات جديدة</button>
+                  <button onClick={() => setNotifFilter('MassageReceived')} className={`px-4 py-2 rounded-lg ${notifFilter === 'MassageReceived' ? 'bg-purple-500/10 text-purple-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>رسائل جديدة</button>
+                  <button onClick={() => setNotifFilter('General')} className={`px-4 py-2 rounded-lg ${notifFilter === 'General' ? 'bg-gray-600/10 text-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>إشعارات عامة</button>
                 </div>
-                <button className="text-gray-500 hover:text-blue">
-                  <Bell className="h-5 w-5" />
-                </button>
+                <div className="flex gap-2">
+                  {notifications.length > 0 && (
+                    <>
+                      <button onClick={clearAllNotifications} className="text-red-500 hover:text-red-600 transition-colors">حذف الكل</button>
+                      <button onClick={markAllAsRead} className="text-blue hover:text-blue-light transition-colors">تعليم الكل كمقروء</button>
+                    </>
+                  )}
+                </div>
               </div>
-              <EmptyState message="لا يوجد إشعارات جديدة" icon={Bell} />
+              <div className="p-4">
+                {notifLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
+                ) : filteredNotifications.length > 0 ? (
+                  <div className="space-y-4">
+                    {filteredNotifications.map((notification) => (
+                      <div key={notification.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${!notification.isRead ? 'border-blue-200 dark:border-blue-400' : ''}`}
+                        onClick={() => markAsRead(notification.id)}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              <Bell className="h-5 w-5 text-blue-500" />
+                            </div>
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between items-start">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {notification.message}
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                {!notification.isRead && (
+                                  <button onClick={e => { e.stopPropagation(); markAsRead(notification.id); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="تعيين كمقروء">✔️</button>
+                                )}
+                                <button onClick={e => { e.stopPropagation(); deleteNotification(notification.id); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="حذف الإشعار">🗑️</button>
+                              </div>
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                              {notification.formattedDate || new Date(notification.createdAt).toLocaleDateString('ar-EG', {
+                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState message="لا يوجد إشعارات جديدة" icon={Bell} />
+                )}
+              </div>
             </div>
           </ContentWrapper>
         );
