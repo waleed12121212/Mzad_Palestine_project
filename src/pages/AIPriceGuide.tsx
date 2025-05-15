@@ -1,5 +1,4 @@
 import React from "react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AIPriceExplainer from "@/components/ui/AIPriceExplainer";
 import { Link } from "react-router-dom";
@@ -15,9 +14,7 @@ const AIPriceGuide = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow container mx-auto px-4 py-8 pt-28">
         <div className="mb-8 rtl">
           <h1 className="heading-lg mb-2">تحديد السعر التلقائي باستخدام الذكاء الاصطناعي</h1>

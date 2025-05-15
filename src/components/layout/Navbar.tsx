@@ -89,19 +89,6 @@ const Navbar: React.FC = () => {
             <DesktopNavLink href="/auctions/won" active={location.pathname === "/auctions/won"}>
               المزادات الفائزة
             </DesktopNavLink>
-            <DesktopNavLink 
-              href="#" 
-              active={isActive("/buy-now")} 
-              onClick={e => { 
-                e.preventDefault(); 
-                toast({ 
-                  title: "هذه الميزة ستكون متوفرة قريبًا",
-                  description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
-                }); 
-              }}
-            >
-              الشراء الفوري
-            </DesktopNavLink>
             <DesktopNavLink href="/categories" active={isActive("/categories")}>
               تصفح الفئات
             </DesktopNavLink>

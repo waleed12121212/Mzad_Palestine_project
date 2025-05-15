@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAuthHeader } from '@/utils/auth';
 import { auctionNotificationService } from './auctionNotificationService';
+import { imageService } from './imageService';
 import { Bid } from './bidService';
 
 const API_URL = '/Auction';
@@ -34,15 +35,33 @@ class AuctionService {
         throw new Error('All fields are required');
       }
 
+      // Handle image upload if it's a blob URL
+      let finalImageUrl = data.imageUrl;
+      if (data.imageUrl.startsWith('blob:')) {
+        try {
+          // Convert blob URL to File object
+          const response = await fetch(data.imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], 'auction-image.jpg', { type: blob.type });
+          
+          // Upload the image
+          const uploadResult = await imageService.uploadImage(file);
+          finalImageUrl = uploadResult.url;
+        } catch (error) {
+          console.error('Image upload error:', error);
+          throw new Error('فشل تحميل الصورة');
+        }
+      }
+
       // Format the data exactly as the backend expects
       const auctionData = {
         listingId: Number(data.listingId),
         name: String(data.name).trim(),
-        startTime: new Date(data.startTime).toISOString(),
-        endTime: new Date(data.endTime).toISOString(),
+        startTime: new Date(new Date(data.startTime).getTime() + (3 * 60 * 60 * 1000)).toISOString(),
+        endTime: new Date(new Date(data.endTime).getTime() + (3 * 60 * 60 * 1000)).toISOString(),
         reservePrice: Number(data.reservePrice),
         bidIncrement: Number(data.bidIncrement),
-        imageUrl: String(data.imageUrl).trim()
+        imageUrl: finalImageUrl
       };
 
       // Validate numeric fields

@@ -12,7 +12,8 @@ export const getToken = () => {
 };
 
 export const setToken = (token: string) => {
-  localStorage.setItem('token', token);
+  const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
+  localStorage.setItem('token', cleanToken);
 };
 
 export const removeToken = () => {

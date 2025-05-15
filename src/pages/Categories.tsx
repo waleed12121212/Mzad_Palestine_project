@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from '@/components/ui/use-toast';
 import { categoryService, Category, CreateCategoryData, UpdateCategoryData } from '@/services/categoryService';
 import { useAuth } from '@/contexts/AuthContext';
-import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 // دالة استخراج الدور من التوكن
@@ -539,10 +538,8 @@ const Categories = () => {
   const selectedCategoryObj = Array.isArray(categories) ? categories.find(c => c.id === category) : null;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">التصنيفات</h1>
@@ -566,27 +563,27 @@ const Categories = () => {
                   <span>إضافة تصنيف</span>
                 </button>
               )}
-                  </div>
-                </div>
-                
+            </div>
+          </div>
+          
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="w-16 h-16 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
-                    </div>
+            </div>
           ) : error ? (
             <div className="text-center py-8">
               <p className="text-red-500">{error}</p>
-                  </div>
+            </div>
           ) : categories.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">لا توجد تصنيفات</p>
-                </div>
+            </div>
           ) : (
             <div className="flex flex-wrap gap-6 justify-center">
               {categories.map(category => (
                 <CategoryCard key={category.id} category={category} />
-            ))}
-          </div>
+              ))}
+            </div>
           )}
         </div>
       </main>
@@ -597,16 +594,16 @@ const Categories = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">إضافة تصنيف جديد</h2>
             <form onSubmit={handleCreateCategory} className="space-y-4">
-          <div>
+              <div>
                 <label className="block text-sm font-medium mb-2">الاسم</label>
-                  <input
-                    type="text"
+                <input
+                  type="text"
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                   required
                 />
-                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-2">الوصف</label>
                 <textarea
@@ -617,16 +614,16 @@ const Categories = () => {
                   required
                 />
               </div>
-                    <div>
+              <div>
                 <label className="block text-sm font-medium mb-2">رابط الصورة</label>
-                        <input
+                <input
                   type="url"
                   value={formData.imageUrl}
                   onChange={e => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                   required
-                        />
-                      </div>
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-2">التصنيف الأب (اختياري)</label>
                 <select
@@ -639,26 +636,26 @@ const Categories = () => {
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
-                    </div>
+              </div>
               <div className="flex justify-end gap-4 mt-6">
-                      <button 
+                <button 
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-                      >
+                >
                   إلغاء
-                      </button>
-                      <button 
+                </button>
+                <button 
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-blue text-white dark:bg-blue-light dark:text-gray-900"
                 >
                   إضافة
-                      </button>
-                    </div>
+                </button>
+              </div>
             </form>
-                  </div>
-                </div>
-              )}
+          </div>
+        </div>
+      )}
 
       {/* Edit Category Modal */}
       {isEditModalOpen && selectedCategory && (
@@ -703,11 +700,11 @@ const Categories = () => {
               </div>
             </form>
           </div>
-          </div>
-        )}
+        </div>
+      )}
 
       <Footer />
-      </div>
+    </div>
   );
 };
 

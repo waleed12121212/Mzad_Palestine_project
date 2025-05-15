@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { User, Search, Edit2, Trash2, Eye } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { userService, UserProfile } from '@/services/userService';
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const UserManagement = () => {
@@ -102,7 +101,6 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center h-[50vh]">
@@ -116,9 +114,7 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow pt-16 md:pt-24 pb-12 md:pb-16 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">

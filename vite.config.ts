@@ -127,6 +127,39 @@ export default defineConfig(({ mode }) => ({
         target: 'http://mazadpalestine.runasp.net',
         changeOrigin: true,
         secure: false,
+      },
+      '/Image': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Copy authorization header
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+
+            // Set content type for multipart/form-data
+            if (req.headers['content-type']?.includes('multipart/form-data')) {
+              const contentType = req.headers['content-type'];
+              proxyReq.setHeader('Content-Type', contentType);
+            }
+          });
+        }
+      },
+      '/Image/': {
+        target: 'http://mazadpalestine.runasp.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       }
     }
   },

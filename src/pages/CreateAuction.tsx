@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { 
   Camera, 
@@ -467,9 +466,7 @@ const CreateAuction = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow container mx-auto px-4 py-8 pt-28">
         <div className="mb-8 rtl">
           <h1 className="heading-lg mb-2">إنشاء مزاد جديد</h1>

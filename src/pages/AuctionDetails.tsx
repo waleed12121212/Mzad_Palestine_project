@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -286,7 +285,6 @@ const AuctionDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="animate-pulse flex flex-col items-center">
             <div className="h-10 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
@@ -301,7 +299,6 @@ const AuctionDetails = () => {
   if (!auction) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <h2 className="heading-lg mb-4">لم يتم العثور على المزاد</h2>
@@ -318,9 +315,7 @@ const AuctionDetails = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8 rtl">

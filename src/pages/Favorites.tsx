@@ -1,6 +1,5 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { Heart, Loader2 } from "lucide-react";
@@ -39,9 +38,7 @@ const Favorites = () => {
   const favoriteItems = Array.isArray(favorites) ? favorites.filter(item => item && item.listing) : [];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow container mx-auto px-4 py-8 pt-28">
         <div className="flex items-center mb-8 rtl">
           <Heart className="text-primary h-7 w-7 ml-2" />

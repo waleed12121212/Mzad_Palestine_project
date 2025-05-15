@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { auctionService } from '@/services/auctionService';
 import { toast } from 'sonner';
-import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,8 +72,7 @@ const EditAuction: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-xl">
           <h1 className="heading-lg mb-8 text-center">تعديل المزاد</h1>
