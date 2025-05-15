@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2 } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -53,6 +53,7 @@ const AuctionDetails = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [isLiked, setIsLiked] = useState(false);
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (auction?.listingId) {
@@ -282,6 +283,23 @@ const AuctionDetails = () => {
     setShowDisputeDialog(true);
   };
 
+  const handleDelete = async () => {
+    try {
+      await auctionService.deleteAuction(auction.id);
+      toast({
+        title: "تم حذف المزاد بنجاح",
+        description: "تم حذف المزاد والصور المرتبطة به"
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "فشل حذف المزاد",
+        description: error.message || "حدث خطأ أثناء حذف المزاد",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -330,27 +348,54 @@ const AuctionDetails = () => {
               
               {/* Main image display with navigation arrows */}
               <div className="mb-4 rounded-xl overflow-hidden relative group">
-                {/* Top left action buttons */}
-                <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: '8px' }}>
-                  {user && auction && Number(user.id) === Number(auction.userId) && (
-                    <>
-                      <button
-                        title="تعديل المزاد"
-                        onClick={() => navigate(`/auction/${auction.id}/edit`)}
-                        className="bg-white/80 hover:bg-blue-100 text-blue-600 p-2 rounded-full shadow"
-                      >
-                        <i className="fa fa-edit" />
-                      </button>
-                      <button
-                        title="حذف المزاد"
-                        onClick={() => {/* TODO: handle delete logic */}}
-                        className="bg-white/80 hover:bg-red-100 text-red-600 p-2 rounded-full shadow"
-                      >
-                        <i className="fa fa-trash" />
-                      </button>
-                    </>
-                  )}
-                </div>
+                {/* Action buttons container */}
+                {user && auction && Number(user.id) === Number(auction.userId) && (
+                  <div className="absolute top-4 left-4 z-20 flex gap-2">
+                    <button
+                      onClick={() => navigate(`/auction/${auction.id}/edit`)}
+                      className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-blue-50 text-blue-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                      title="تعديل المزاد"
+                    >
+                      <Edit className="h-5 w-5" />
+                      <span className="hidden sm:inline">تعديل</span>
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-red-50 text-red-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                      title="حذف المزاد"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      <span className="hidden sm:inline">حذف</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Delete confirmation dialog */}
+                {showDeleteDialog && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+                      <h3 className="text-xl font-bold mb-4">تأكيد حذف المزاد</h3>
+                      <p className="mb-6 text-gray-600 dark:text-gray-300">
+                        هل أنت متأكد من حذف هذا المزاد؟ لا يمكن التراجع عن هذا الإجراء.
+                      </p>
+                      <div className="flex gap-4 justify-end">
+                        <button
+                          onClick={() => setShowDeleteDialog(false)}
+                          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+                        >
+                          إلغاء
+                        </button>
+                        <button
+                          onClick={handleDelete}
+                          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                        >
+                          حذف المزاد
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <img
                   src={(auction.images && auction.images[currentImageIndex]) || auction.imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
                   alt={auction.title}

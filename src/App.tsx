@@ -14,6 +14,7 @@ import CreateListing from '@/pages/CreateListing';
 import MyListings from '@/pages/MyListings';
 import AuctionSearch from '@/pages/AuctionSearch';
 import AuctionDetails from '@/pages/AuctionDetails';
+import EditAuction from '@/pages/EditAuction';
 import ActiveAuctions from '@/pages/ActiveAuctions';
 import Profile from '@/pages/Profile';
 import Favorites from '@/pages/Favorites';
@@ -58,6 +59,14 @@ function App() {
                     <Route path="/logout" element={<LogoutRoute />} />
                     <Route path="/auctions" element={<ActiveAuctions />} />
                     <Route path="/auction/:id" element={<AuctionDetails />} />
+                    <Route
+                      path="/auction/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <EditAuction />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/auctions/search" element={<AuctionSearch />} />
                     <Route path="/auctions/active" element={<ActiveAuctions />} />
                     <Route path="/auctions/:id" element={<AuctionDetails />} />

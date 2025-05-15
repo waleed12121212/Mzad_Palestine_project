@@ -192,50 +192,79 @@ class AuctionService {
     }
   }
 
-  async updateAuction(auctionId: number, data: any): Promise<Auction> {
+  async updateAuction(auctionId: number, data: Partial<Auction>): Promise<Auction> {
     try {
+      // Handle image upload if it's a blob URL
+      let finalImageUrl = data.imageUrl;
+      if (data.imageUrl?.startsWith('blob:')) {
+        try {
+          // Convert blob URL to File object
+          const response = await fetch(data.imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], 'auction-image.jpg', { type: blob.type });
+          
+          // Upload the image
+          const uploadResult = await imageService.uploadImage(file);
+          finalImageUrl = uploadResult.url;
+        } catch (error) {
+          console.error('Image upload error:', error);
+          throw new Error('فشل تحميل الصورة');
+        }
+      }
+
+      // Prepare update data
+      const updateData = {
+        ...data,
+        imageUrl: finalImageUrl,
+        // Add timezone offset for dates if they exist
+        ...(data.startTime && {
+          startTime: new Date(new Date(data.startTime).getTime() + (3 * 60 * 60 * 1000)).toISOString()
+        }),
+        ...(data.endTime && {
+          endTime: new Date(new Date(data.endTime).getTime() + (3 * 60 * 60 * 1000)).toISOString()
+        })
+      };
+
       const response = await axios.put(
         `${API_URL}/${auctionId}`,
-        data,
+        updateData,
         {
           headers: {
             ...getAuthHeader(),
-            'Content-Type': 'application/json',
-          },
+            'Content-Type': 'application/json'
+          }
         }
       );
+
       return response.data;
     } catch (error: any) {
-      console.error('Auction update error:', error);
-      throw error;
+      console.error('Update auction error:', error);
+      throw new Error(error.response?.data?.message || 'فشل تحديث المزاد');
     }
   }
 
   async deleteAuction(auctionId: number): Promise<void> {
     try {
+      // Get the auction first to get the image URL
       const auction = await this.getAuctionById(auctionId);
-      const response = await axios.get<Bid[]>(`/Bid/auction/${auctionId}`, {
+
+      // Delete the auction
+      await axios.delete(`${API_URL}/${auctionId}`, {
         headers: getAuthHeader()
       });
-      const bids = response.data;
 
-      await axios.delete(`${API_URL}/${auctionId}`, {
-        headers: getAuthHeader(),
-      });
-
-      // Get all unique bidders
-      const uniqueBidders = Array.from(new Set(bids.map(bid => bid.userId)));
-      
-      // Notify all participants that the auction has been cancelled
-      for (const bidderId of uniqueBidders) {
-        await auctionNotificationService.notifyAuctionCancelled(
-          bidderId,
-          auction.name
-        );
+      // Try to delete the associated image if it exists and is hosted on our server
+      if (auction.imageUrl && auction.imageUrl.includes('mazadpalestine.runasp.net')) {
+        try {
+          await imageService.deleteImage(auction.imageUrl);
+        } catch (error) {
+          console.error('Failed to delete auction image:', error);
+          // Don't throw here as the auction was already deleted
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete auction error:', error);
-      throw error;
+      throw new Error(error.response?.data?.message || 'فشل حذف المزاد');
     }
   }
 }
