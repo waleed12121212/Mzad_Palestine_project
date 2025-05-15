@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search, Filter, FilterX, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Loader2, Search, Filter, FilterX, SlidersHorizontal, ChevronDown, Car, Shirt, Smartphone, Book, Gem, CupSoda, Home, Package, Laptop, ShoppingBag } from "lucide-react";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { auctionService } from "@/services/auctionService";
 import { useSearchParams } from "react-router-dom";
+import { useQuery as useQueryCategories } from "@tanstack/react-query";
+import { categoryService } from "@/services/categoryService";
 
 interface Auction {
   id: number;
@@ -36,6 +38,21 @@ interface Auction {
   userId: number;
 }
 
+const categoryIcons: { [key: string]: React.ReactNode } = {
+  "سيارات": <Car className="inline-block ml-2" />,
+  "أزياء": <Shirt className="inline-block ml-2" />,
+  "إلكترونيات": <Smartphone className="inline-block ml-2" />,
+  "هواتف": <Smartphone className="inline-block ml-2" />,
+  "كتب": <Book className="inline-block ml-2" />,
+  "كونتمكس": <Gem className="inline-block ml-2" />,
+  "أثاث": <Package className="inline-block ml-2" />,
+  "مستلزمات منزلية": <CupSoda className="inline-block ml-2" />,
+  "لابتوبات": <Laptop className="inline-block ml-2" />,
+  "عقارات": <Home className="inline-block ml-2" />,
+  "ملابس رجالية": <Shirt className="inline-block ml-2" />,
+  // fallback/default
+};
+
 const ActiveAuctions: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearchQuery = searchParams.get("search") || "";
@@ -48,6 +65,7 @@ const ActiveAuctions: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [auctionView, setAuctionView] = useState<"grid" | "list">("grid");
   const [timeFilter, setTimeFilter] = useState<"all" | "ending-soon" | "new">("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const priceOptions = [
     { label: "كل الأسعار", value: [0, 1000000] },
@@ -68,6 +86,11 @@ const ActiveAuctions: React.FC = () => {
       console.error("Expected array or { data: array } from getActiveAuctions, got:", response);
       return [];
     }
+  });
+
+  const { data: categories = [] } = useQueryCategories({
+    queryKey: ["categories"],
+    queryFn: () => categoryService.getAllCategories(),
   });
 
   console.log("Raw auctions data:", data);
@@ -113,7 +136,8 @@ const ActiveAuctions: React.FC = () => {
       const diffHours = (endTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       matchesTime = diffHours >= 72;
     }
-    return matchesQuery && matchesPrice && matchesTime;
+    const matchesCategory = selectedCategory === "all" || String(auction.categoryId) === selectedCategory;
+    return matchesQuery && matchesPrice && matchesTime && matchesCategory;
   });
   console.log("Filtered auctions:", filteredAuctions);
 
@@ -198,59 +222,208 @@ const ActiveAuctions: React.FC = () => {
 
   if (isLoading) {
     return (
-      <PageWrapper>
-        <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
-          <Loader2 className="h-12 w-12 text-blue animate-spin mb-4" />
-          <p className="text-lg text-gray-600 dark:text-gray-400">جاري تحميل المزادات النشطة...</p>
-        </div>
-      </PageWrapper>
+      <>
+        <style>{`
+          [data-state="open"], [data-state="closed"], [data-radix-popper-content-wrapper], .radix-select-content, .radix-popper-content {
+            transition: none !important;
+            animation: none !important;
+          }
+        `}</style>
+        <PageWrapper>
+          <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
+            <Loader2 className="h-12 w-12 text-blue animate-spin mb-4" />
+            <p className="text-lg text-gray-600 dark:text-gray-400">جاري تحميل المزادات النشطة...</p>
+          </div>
+        </PageWrapper>
+      </>
     );
   }
 
   if (error) {
     return (
-      <PageWrapper>
-        <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
-          <div className="text-red-500 text-xl mb-4">حدث خطأ أثناء تحميل المزادات</div>
-          <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
-        </div>
-      </PageWrapper>
+      <>
+        <style>{`
+          [data-state="open"], [data-state="closed"], [data-radix-popper-content-wrapper], .radix-select-content, .radix-popper-content {
+            transition: none !important;
+            animation: none !important;
+          }
+        `}</style>
+        <PageWrapper>
+          <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
+            <div className="text-red-500 text-xl mb-4">حدث خطأ أثناء تحميل المزادات</div>
+            <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+          </div>
+        </PageWrapper>
+      </>
     );
   }
 
   return (
-    <PageWrapper>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8 rtl">
-          <h1 className="text-2xl font-bold">المزادات النشطة</h1>
-          <Badge variant={sortedAuctions.length > 0 ? "outline" : "secondary"} className="text-sm px-3 py-1">
-            {sortedAuctions.length} مزاد
-          </Badge>
-        </div>
+    <>
+      <style>{`
+        [data-state="open"], [data-state="closed"], [data-radix-popper-content-wrapper], .radix-select-content, .radix-popper-content {
+          transition: none !important;
+          animation: none !important;
+        }
+      `}</style>
+      <PageWrapper>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8 rtl">
+            <h1 className="text-2xl font-bold">المزادات النشطة</h1>
+            <Badge variant={sortedAuctions.length > 0 ? "outline" : "secondary"} className="text-sm px-3 py-1">
+              {sortedAuctions.length} مزاد
+            </Badge>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="md:col-span-1 rtl">
-            <Card className="sticky top-20">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold">الفلاتر</h3>
-                  {hasActiveFilters() && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-blue hover:text-blue-700 p-0 h-auto"
-                      onClick={handleResetFilters}
-                    >
-                      <FilterX className="h-4 w-4 ml-1" />
-                      <span>إعادة ضبط</span>
-                    </Button>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="md:col-span-1 rtl">
+              <Card className="sticky top-20">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold">الفلاتر</h3>
+                    {hasActiveFilters() && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-blue hover:text-blue-700 p-0 h-auto"
+                        onClick={handleResetFilters}
+                      >
+                        <FilterX className="h-4 w-4 ml-1" />
+                        <span>إعادة ضبط</span>
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <Accordion type="multiple" defaultValue={["category", "price", "time"]}>
+                    <AccordionItem value="category">
+                      <AccordionTrigger className="py-3 text-sm hover:no-underline">الفئة</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="px-1">
+                          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="اختر الفئة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">كل الفئات</SelectItem>
+                              {categories.map(cat => (
+                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                  {categoryIcons[cat.name] || <Gem className="inline-block ml-2" />} {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="price">
+                      <AccordionTrigger className="py-3 text-sm hover:no-underline">نطاق السعر</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="px-1">
+                          <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="اختر نطاق السعر" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {priceOptions.map(opt => (
+                                <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="time">
+                      <AccordionTrigger className="py-3 text-sm hover:no-underline">الوقت المتبقي</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-1">
+                          <Button 
+                            variant={timeFilter === "all" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                            onClick={() => setTimeFilter("all")}
+                          >
+                            جميع المزادات
+                          </Button>
+                          <Button 
+                            variant={timeFilter === "ending-soon" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                            onClick={() => setTimeFilter("ending-soon")}
+                          >
+                            تنتهي قريبًا (خلال 24 ساعة)
+                          </Button>
+                          <Button 
+                            variant={timeFilter === "new" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto"
+                            onClick={() => setTimeFilter("new")}
+                          >
+                            مضافة حديثًا
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="md:col-span-3">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 rtl">
+                <div className="relative w-full md:w-auto md:flex-1">
+                  <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="ابحث عن مزاد..."
+                    className="pr-10 rtl w-full"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                  />
                 </div>
                 
-                <Accordion type="multiple" defaultValue={["price", "time"]}>
-                  <AccordionItem value="price">
-                    <AccordionTrigger className="py-3 text-sm hover:no-underline">نطاق السعر</AccordionTrigger>
-                    <AccordionContent>
+                <div className="flex space-s-2 w-full md:w-auto">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="ترتيب حسب" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">الأحدث</SelectItem>
+                      <SelectItem value="priceHigh">السعر: من الأعلى للأدنى</SelectItem>
+                      <SelectItem value="priceLow">السعر: من الأدنى للأعلى</SelectItem>
+                      <SelectItem value="endingSoon">تنتهي قريبًا</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="md:hidden"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              {showFilters && (
+                <div className="md:hidden bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6 rtl">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold">الفلاتر</h3>
+                    {hasActiveFilters() && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-blue hover:text-blue-700 p-0 h-auto"
+                        onClick={handleResetFilters}
+                      >
+                        <FilterX className="h-4 w-4 ml-1" />
+                        <span>إعادة ضبط</span>
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">نطاق السعر</h4>
                       <div className="px-1">
                         <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
                           <SelectTrigger className="w-full">
@@ -265,179 +438,74 @@ const ActiveAuctions: React.FC = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="time">
-                    <AccordionTrigger className="py-3 text-sm hover:no-underline">الوقت المتبقي</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-1">
-                        <Button 
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">الوقت المتبقي</h4>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge 
                           variant={timeFilter === "all" ? "default" : "outline"}
-                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          className="cursor-pointer"
                           onClick={() => setTimeFilter("all")}
                         >
                           جميع المزادات
-                        </Button>
-                        <Button 
+                        </Badge>
+                        <Badge 
                           variant={timeFilter === "ending-soon" ? "default" : "outline"}
-                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          className="cursor-pointer"
                           onClick={() => setTimeFilter("ending-soon")}
                         >
-                          تنتهي قريبًا (خلال 24 ساعة)
-                        </Button>
-                        <Button 
+                          تنتهي قريبًا
+                        </Badge>
+                        <Badge 
                           variant={timeFilter === "new" ? "default" : "outline"}
-                          className="w-full justify-start text-right px-2 py-1.5 h-auto"
+                          className="cursor-pointer"
                           onClick={() => setTimeFilter("new")}
                         >
                           مضافة حديثًا
-                        </Button>
+                        </Badge>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          <div className="md:col-span-3">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 rtl">
-              <div className="relative w-full md:w-auto md:flex-1">
-                <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="ابحث عن مزاد..."
-                  className="pr-10 rtl w-full"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                />
-              </div>
-              
-              <div className="flex space-s-2 w-full md:w-auto">
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="ترتيب حسب" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">الأحدث</SelectItem>
-                    <SelectItem value="priceHigh">السعر: من الأعلى للأدنى</SelectItem>
-                    <SelectItem value="priceLow">السعر: من الأدنى للأعلى</SelectItem>
-                    <SelectItem value="endingSoon">تنتهي قريبًا</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="h-5 w-5" />
-                </Button>
-              </div>
+              {sortedAuctions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
+                  <Filter className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">لا توجد مزادات مطابقة</h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                    حاول تغيير معايير البحث أو التصفية للعثور على المزادات التي تبحث عنها.
+                  </p>
+                  <Button onClick={handleResetFilters}>إعادة ضبط الفلاتر</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sortedAuctions.map((auction) => {
+                    console.log('Rendering auction:', auction); // للتأكد من البيانات قبل تمريرها للمكون
+                    return (
+                      <AuctionCard
+                        key={auction.id}
+                        id={auction.id}
+                        listingId={auction.listingId}
+                        title={auction.title}
+                        description={""}
+                        currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
+                        minBidIncrement={auction.bidIncrement}
+                        imageUrl={auction.imageUrl}
+                        endTime={auction.endTime}
+                        bidders={auction.bidsCount ?? 0}
+                        userId={auction.userId}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            {showFilters && (
-              <div className="md:hidden bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6 rtl">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold">الفلاتر</h3>
-                  {hasActiveFilters() && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-blue hover:text-blue-700 p-0 h-auto"
-                      onClick={handleResetFilters}
-                    >
-                      <FilterX className="h-4 w-4 ml-1" />
-                      <span>إعادة ضبط</span>
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">نطاق السعر</h4>
-                    <div className="px-1">
-                      <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="اختر نطاق السعر" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {priceOptions.map(opt => (
-                            <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">الوقت المتبقي</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge 
-                        variant={timeFilter === "all" ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setTimeFilter("all")}
-                      >
-                        جميع المزادات
-                      </Badge>
-                      <Badge 
-                        variant={timeFilter === "ending-soon" ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setTimeFilter("ending-soon")}
-                      >
-                        تنتهي قريبًا
-                      </Badge>
-                      <Badge 
-                        variant={timeFilter === "new" ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setTimeFilter("new")}
-                      >
-                        مضافة حديثًا
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {sortedAuctions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <Filter className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">لا توجد مزادات مطابقة</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                  حاول تغيير معايير البحث أو التصفية للعثور على المزادات التي تبحث عنها.
-                </p>
-                <Button onClick={handleResetFilters}>إعادة ضبط الفلاتر</Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedAuctions.map((auction) => {
-                  console.log('Rendering auction:', auction); // للتأكد من البيانات قبل تمريرها للمكون
-                  return (
-                    <AuctionCard
-                      key={auction.id}
-                      id={auction.id}
-                      listingId={auction.listingId}
-                      title={auction.title}
-                      description={""}
-                      currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
-                      minBidIncrement={auction.bidIncrement}
-                      imageUrl={auction.imageUrl}
-                      endTime={auction.endTime}
-                      bidders={auction.bidsCount ?? 0}
-                      userId={auction.userId}
-                    />
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
-      </div>
-    </PageWrapper>
+      </PageWrapper>
+    </>
   );
 };
 
