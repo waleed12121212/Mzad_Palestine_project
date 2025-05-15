@@ -420,7 +420,7 @@ const Profile = () => {
       queryFn: () => auctionService.getUserAuctions(userId),
       enabled: !!userId,
     });
-    const auctions = Array.isArray(response) ? response : response.data || [];
+    const auctions = (response as any).data || [];
     console.log('UserAuctions userId:', userId);
     console.log('UserAuctions raw auctions:', auctions);
     if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>;

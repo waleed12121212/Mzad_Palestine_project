@@ -31,6 +31,7 @@ import SellerProfile from '@/pages/SellerProfile';
 import Support from '@/pages/Support';
 import WonAuctions from '@/pages/WonAuctions';
 import PaymentPage from '@/pages/PaymentPage';
+import CategoryPage from '@/pages/CategoryPage';
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,7 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/categories/:categoryId" element={<CategoryPage />} />
                     <Route path="/conversations" element={<Navigate to="/chat" replace />} />
                     <Route
                       path="/create-auction"
