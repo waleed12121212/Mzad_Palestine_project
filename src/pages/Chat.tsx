@@ -65,6 +65,14 @@ const Chat: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevMessagesLength = useRef(messages.length);
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Get contact ID from URL
+  const contactId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const contact = params.get('contact');
+    return contact ? parseInt(contact) : null;
+  }, [window.location.search]);
 
   // Responsive handler
   useEffect(() => {
@@ -104,6 +112,7 @@ const Chat: React.FC = () => {
             return acc;
           }, {} as { [key: number]: any })
         );
+
         // Enrich with sender info
         const enrichedInbox = await Promise.all(
           grouped.map(async (msg: Message & { senderName?: string; senderAvatar?: string }) => {
@@ -134,8 +143,12 @@ const Chat: React.FC = () => {
         );
         setInboxMessages(enrichedInbox);
         
-        // Extract unique contacts from inbox messages
-        const contactIds: number[] = Array.from(new Set(inboxData.map(message => message.senderId)));
+        // Extract unique contacts from inbox messages and add the contact from URL if not present
+        let contactIds: number[] = Array.from(new Set(inboxData.map(message => message.senderId)));
+        if (contactId && !contactIds.includes(contactId)) {
+          contactIds.push(contactId);
+        }
+
         const uniqueContacts: Contact[] = await Promise.all(contactIds.map(async (_senderId) => {
           const senderId = Number(_senderId);
           try {
@@ -180,13 +193,14 @@ const Chat: React.FC = () => {
         }));
         setContacts(uniqueContacts);
 
-        // التحقق من وجود معرف جهة اتصال في الرابط
-        const contactId = new URLSearchParams(window.location.search).get('contact');
+        // If there's a contact ID in the URL, open that conversation
         if (contactId) {
-          const contact = uniqueContacts.find(c => c.id === parseInt(contactId));
+          const contact = uniqueContacts.find(c => c.id === contactId);
           if (contact) {
             setActiveContact(contact);
+            setShowContactsList(false);
             fetchMessages(contact.id);
+            setTab('conversation');
           }
         } else if (uniqueContacts.length > 0) {
           // Default to first contact if no id specified
@@ -197,7 +211,7 @@ const Chat: React.FC = () => {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('حدث خطأ أثناء تحميل البيانات');
+        toast.error('حدث خطأ أثناء تحميل المحادثات');
         setLoading(false);
       }
     };
@@ -210,7 +224,7 @@ const Chat: React.FC = () => {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [user, navigate]);
+  }, [user, navigate, contactId]);
 
   const getAuthHeader = () => {
     const token = localStorage.getItem('token');
@@ -219,12 +233,40 @@ const Chat: React.FC = () => {
 
   const fetchMessages = async (contactId: number) => {
     try {
-      const data = await messageService.getConversation(contactId);
-      setMessages(data);
-      // Do not mark as read here
+      setLoading(true);
+      const response = await messageService.getConversation(contactId);
+      setMessages(response);
+      
+      // Mark messages as read if we are the receiver
+      const unreadMessages = response.filter(
+        (msg: Message) => !msg.isRead && msg.receiverId === user?.id
+      );
+      
+      if (unreadMessages.length > 0) {
+        await messageService.markAllInboxAsRead();
+        // Update local state to reflect read status
+        setMessages(prevMsgs => 
+          prevMsgs.map(msg => 
+            msg.receiverId === user?.id ? { ...msg, isRead: true } : msg
+          )
+        );
+        // Update contacts list to reflect read status
+        setContacts(prevContacts => 
+          prevContacts.map(contact => 
+            contact.id === contactId ? { ...contact, unreadCount: 0 } : contact
+          )
+        );
+      }
+
+      // Scroll to bottom of messages
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('حدث خطأ أثناء تحميل الرسائل');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -453,6 +495,61 @@ const Chat: React.FC = () => {
   // Handler for closing conversation (back button)
   const handleCloseConversation = () => setSelectedConversationId(null);
 
+  // Mark all messages as read when conversation is opened
+  useEffect(() => {
+    const markAllAsRead = async () => {
+      if (selectedConversationId && user) {
+        try {
+          // Only mark as read if we are the receiver
+          const conversation = messages.find(m => m.senderId === selectedConversationId);
+          if (conversation && conversation.receiverId === Number(user.id)) {
+            await messageService.markAllInboxAsRead();
+            // Update local state to reflect read status
+            setMessages(prevMsgs => 
+              prevMsgs.map(msg => 
+                msg.receiverId === Number(user.id) ? { ...msg, isRead: true } : msg
+              )
+            );
+            // Update contacts list to reflect read status
+            setContacts(prevContacts => 
+              prevContacts.map(contact => 
+                contact.id === selectedConversationId ? { ...contact, unreadCount: 0 } : contact
+              )
+            );
+            // Update inbox messages to reflect read status
+            setInboxMessages(prevInbox => 
+              prevInbox.map(msg => 
+                msg.senderId === selectedConversationId ? { ...msg, isRead: true } : msg
+              )
+            );
+            // Refresh unread count
+            fetchUnreadCount();
+          }
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+          toast.error('حدث خطأ أثناء تحديث حالة الرسائل');
+        }
+      }
+    };
+
+    markAllAsRead();
+  }, [selectedConversationId, user]);
+
+  // Add function to fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await messageService.getUnreadCount();
+      setUnreadCount(response.data);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Add useEffect to fetch unread count initially and after marking messages as read
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
+
   if (loading) {
     return (
       <PageWrapper>
@@ -469,17 +566,17 @@ const Chat: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen bg-[#181E2A] flex items-center justify-center">
-        <div className="w-full max-w-6xl h-[80vh] bg-[#232B3E] rounded-2xl flex flex-row overflow-hidden">
+      <div className="min-h-screen bg-gray-100 dark:bg-[#181E2A] flex items-center justify-center">
+        <div className="w-full max-w-6xl h-[80vh] bg-white dark:bg-[#232B3E] rounded-2xl flex flex-row overflow-hidden">
           {/* Inbox List (left) */}
-          <div className="w-full md:w-1/3 bg-[#232B3E] flex flex-col h-full border-l border-[#313A4D]">
+          <div className="w-full md:w-1/3 bg-white dark:bg-[#232B3E] flex flex-col h-full border-l border-gray-200 dark:border-[#313A4D]">
             <div className="p-4 pb-2">
               <div className="relative">
                 <input
                     ref={searchInputRef}
                     type="text" 
                     placeholder="بحث في المحادثات..." 
-                  className="w-full bg-[#232B3E] text-gray-300 rounded-xl pr-10 pl-4 py-2 text-sm border border-[#313A4D] focus:outline-none focus:border-blue-600 placeholder-gray-500"
+                    className="w-full bg-gray-50 dark:bg-[#232B3E] text-gray-700 dark:text-gray-300 rounded-xl pr-10 pl-4 py-2 text-sm border border-gray-200 dark:border-[#313A4D] focus:outline-none focus:border-blue-600 placeholder-gray-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
@@ -498,16 +595,21 @@ const Chat: React.FC = () => {
                 </div>
               <div className="flex mt-4 mb-2 gap-2">
                 <button
-                  className={`flex-1 py-1 rounded-lg text-sm font-medium ${currentTab === 'all' ? 'bg-blue-700 text-white' : 'bg-[#232B3E] text-gray-400 border border-[#313A4D]'}`}
+                  className={`flex-1 py-1 rounded-lg text-sm font-medium ${currentTab === 'all' ? 'bg-blue-700 text-white' : 'bg-gray-50 dark:bg-[#232B3E] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#313A4D]'}`}
                   onClick={() => setCurrentTab('all')}
                 >
                   جميع المحادثات
                 </button>
                 <button
-                  className={`flex-1 py-1 rounded-lg text-sm font-medium ${currentTab === 'unread' ? 'bg-blue-700 text-white' : 'bg-[#232B3E] text-gray-400 border border-[#313A4D]'}`}
+                  className={`flex-1 py-1 rounded-lg text-sm font-medium relative ${currentTab === 'unread' ? 'bg-blue-700 text-white' : 'bg-gray-50 dark:bg-[#232B3E] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#313A4D]'}`}
                   onClick={() => setCurrentTab('unread')}
                 >
                       غير مقروءة
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -516,7 +618,7 @@ const Chat: React.FC = () => {
                 filteredContacts.map(msg => (
                   <div
                     key={msg.id}
-                    className={`flex items-center gap-3 px-3 py-3 mb-2 rounded-xl cursor-pointer transition-all ${selectedConversationId === msg.senderId ? 'bg-[#1A2341] border border-blue-400 text-white' : 'hover:bg-[#29304A] text-white'} ${selectedConversationId === msg.senderId ? '' : 'border border-transparent'}`}
+                    className={`flex items-center gap-3 px-3 py-3 mb-2 rounded-xl cursor-pointer transition-all ${selectedConversationId === msg.senderId ? 'bg-blue-50 dark:bg-[#1A2341] border border-blue-400 text-gray-900 dark:text-white' : 'hover:bg-gray-50 dark:hover:bg-[#29304A] text-gray-900 dark:text-white'} ${selectedConversationId === msg.senderId ? '' : 'border border-transparent'}`}
                     onClick={() => handleSelectConversation(msg.senderId)}
                     style={{ direction: 'rtl' }}
                   >
@@ -527,10 +629,10 @@ const Chat: React.FC = () => {
                     />
                     <div className="flex-1 min-w-0 text-right">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="font-bold text-base truncate" style={{ color: selectedConversationId === msg.senderId ? '#fff' : '#fff' }}>{msg.senderName || 'مستخدم'}</span>
+                        <span className="font-bold text-base truncate" style={{ color: selectedConversationId === msg.senderId ? '#1a1a1a' : '#1a1a1a' }}>{msg.senderName || 'مستخدم'}</span>
                         <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">{formatDate(new Date(msg.timestamp))}</span>
                       </div>
-                      <span className="block text-xs truncate" style={{ color: selectedConversationId === msg.senderId ? '#e0e7ef' : '#b0b8c9' }}>{(msg.lastMessage || msg.content) && (msg.lastMessage || msg.content).length > 40 ? (msg.lastMessage || msg.content).slice(0, 40) + '...' : (msg.lastMessage || msg.content)}</span>
+                      <span className="block text-xs truncate" style={{ color: selectedConversationId === msg.senderId ? '#4a5568' : '#718096' }}>{(msg.lastMessage || msg.content) && (msg.lastMessage || msg.content).length > 40 ? (msg.lastMessage || msg.content).slice(0, 40) + '...' : (msg.lastMessage || msg.content)}</span>
                     </div>
                   </div>
                 ))
@@ -543,7 +645,7 @@ const Chat: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="p-4 border-t border-[#313A4D]">
+            <div className="p-4 border-t border-gray-200 dark:border-[#313A4D]">
                 <Button 
                   onClick={startNewChat}
                 className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-full py-3 text-base font-medium shadow-none border-none"
@@ -601,10 +703,15 @@ const Chat: React.FC = () => {
                             : 'bg-gray-200 text-gray-900 dark:bg-gray-800 dark:text-gray-200'}
                         `}>
                           <p className="text-sm break-words">{message.content}</p>
-                          <div className="flex justify-end items-center gap-1 mt-1 text-blue-100 dark:text-blue-200">
-                            <span className="text-xs">{formatTime(new Date(message.timestamp))}</span>
+                          <div className="flex justify-end items-center gap-1 mt-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{formatTime(new Date(message.timestamp))}</span>
+                            {message.senderId === Number(user?.id) && (
+                              <div className="flex items-center">
+                                <CheckCheck className={`h-3 w-3 ${message.isRead ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
                             {message.isRead && (
-                              <CheckCheck className={"h-3 w-3 text-blue-600 dark:text-blue-200"} />
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">مقروءة</span>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -619,18 +726,18 @@ const Chat: React.FC = () => {
               </div>
               
               {/* Message Input Area */}
-                <div className="p-4 bg-[#232B3E]">
+                <div className="p-4 bg-white dark:bg-[#232B3E]">
                   <div className="flex flex-col gap-1">
                     {/* Subject input above input bar */}
                     <input
                       type="text"
                       placeholder="موضوع الرسالة (اختياري)"
-                      className="w-full bg-[#232B3E] text-gray-200 placeholder-gray-400 border-none outline-none focus:ring-0 text-sm rounded-lg mb-1 pr-2 focus:placeholder-transparent"
+                      className="w-full bg-white dark:bg-[#232B3E] text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 border-none outline-none focus:ring-0 text-sm rounded-lg mb-1 pr-2 focus:placeholder-transparent"
                       value={messageSubject}
                       onChange={(e) => setMessageSubject(e.target.value)}
                       style={{ direction: 'rtl' }}
                     />
-                    <div className="flex flex-row-reverse bg-[#232B3E] rounded-xl px-3 py-2 gap-2">
+                    <div className="flex flex-row-reverse bg-gray-50 dark:bg-[#232B3E] rounded-xl px-3 py-2 gap-2">
                       {/* Left: Send and Attach buttons (blue, circular) */}
                       <button
                         onClick={handleSendMessage}
@@ -658,7 +765,7 @@ const Chat: React.FC = () => {
                       <input
                         type="text"
                         placeholder="اكتب رسالتك هنا..."
-                        className="flex-1 bg-transparent text-gray-200 placeholder-gray-500 border-none outline-none focus:ring-0 text-base text-right mx-2"
+                        className="flex-1 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-500 border-none outline-none focus:ring-0 text-base text-right mx-2"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}

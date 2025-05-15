@@ -7,6 +7,7 @@ export interface Category {
   imageUrl: string;
   parentCategoryId: string | null;
   isActive: boolean;
+  listingsCount: number;
   subCategories?: Category[];
   listings?: any[]; // Replace with proper listing type if available
 }
@@ -38,18 +39,31 @@ class CategoryService {
 
   // Get active categories
   async getActiveCategories(): Promise<Category[]> {
-    const response = await axios.get(`${this.baseUrl}/actives`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    return response.data.data;
+    try {
+      const response = await axios.get(`${this.baseUrl}/actives`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      console.log('Active categories response:', response); // للتحقق من شكل البيانات
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error in getActiveCategories:', error);
+      throw error;
+    }
   }
 
   // Get category by ID
   async getCategoryById(id: string): Promise<Category> {
-    const response = await axios.get(`${this.baseUrl}/get/${id}`);
-    return response.data;
+    try {
+      const response = await axios.get(`${this.baseUrl}/get/${id}`);
+      console.log('Category response:', response); // للتحقق من شكل البيانات
+      // تأكد من أن البيانات موجودة في response.data.data
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error in getCategoryById:', error);
+      throw error;
+    }
   }
 
   // Get subcategories by parent ID

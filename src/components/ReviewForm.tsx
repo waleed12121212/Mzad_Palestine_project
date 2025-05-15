@@ -52,40 +52,63 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ listingId, onReviewSubmitted })
   };
 
   if (hasReviewed) {
-    return <p className="text-gray-600">لقد قمت بتقييم هذا المنتج مسبقاً</p>;
+    return <p className="text-gray-600 dark:text-gray-400">لقد قمت بتقييم هذا المنتج مسبقاً</p>;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-4 rounded-lg shadow">
-      <div className="flex flex-col items-center">
-        <label className="text-lg font-medium mb-2">تقييمك</label>
-        <Rating
-          value={rating}
-          onChange={(_, newValue) => setRating(newValue)}
-          size="large"
-          dir="ltr"
-        />
-      </div>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
+        التقييمات والمراجعات
+      </h2>
       
-      <div className="flex flex-col">
-        <label className="text-lg font-medium mb-2">تعليقك</label>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="border rounded-lg p-2 h-24 resize-none"
-          placeholder="اكتب تعليقك هنا..."
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex flex-col items-center">
+          <label className="text-lg font-medium mb-3 text-gray-900 dark:text-white">تقييمك</label>
+          <Rating
+            value={rating}
+            onChange={(_, newValue) => setRating(newValue)}
+            size="large"
+            dir="ltr"
+            sx={{
+              '& .MuiRating-iconFilled': {
+                color: '#EAB308',
+              },
+              '& .MuiRating-iconEmpty': {
+                color: 'rgba(234, 179, 8, 0.3)',
+              },
+              fontSize: '2.5rem'
+            }}
+          />
+        </div>
+        
+        <div className="flex flex-col">
+          <label className="text-lg font-medium mb-2 text-gray-900 dark:text-white">تعليقك</label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full min-h-[120px] px-4 py-3 rounded-xl border border-gray-200 
+                     dark:border-gray-700 bg-white dark:bg-gray-900 
+                     text-gray-900 dark:text-white placeholder-gray-500 
+                     dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 
+                     focus:border-transparent transition duration-200 resize-none"
+            placeholder="اكتب تعليقك هنا..."
+          />
+        </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition
-          ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        {isSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
-      </button>
-    </form>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`w-full py-3 px-6 text-lg font-medium text-white 
+                     bg-blue-600 hover:bg-blue-700 rounded-xl 
+                     transition duration-200 transform hover:scale-[1.02]
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {isSubmitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+        </button>
+      </form>
+    </div>
   );
 };
 

@@ -120,4 +120,8 @@ export const messageService = {
     const response = await axiosInstance.put(`/${messageId}/read`);
     return response.data.success === true;
   },
+
+  markAllInboxAsRead: () => axiosInstance.put('/inbox/read-all'),
+
+  getUnreadCount: () => axiosInstance.get('/inbox/unread-count').then(response => response.data)
 };

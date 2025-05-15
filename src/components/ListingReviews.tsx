@@ -133,7 +133,7 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
     return (
       <div className="text-center py-8">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue border-t-transparent"></div>
-        <p className="mt-2 text-gray-600">جاري تحميل التقييمات...</p>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">جاري تحميل التقييمات...</p>
       </div>
     );
   }
@@ -147,19 +147,36 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
   return (
     <div className="space-y-6">
       {/* Rating Summary */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center gap-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border border-gray-100 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row items-center gap-8">
           {/* Average Rating */}
           <div className="text-center md:text-right">
-            <div className="text-4xl font-bold mb-2">{Number(averageRating || 0).toFixed(1)}</div>
-            <Rating value={Number(averageRating || 0)} readOnly precision={0.5} size="large" dir="ltr" />
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-5xl font-bold mb-3 text-gray-900 dark:text-white">
+              {Number(averageRating || 0).toFixed(1)}
+            </div>
+            <Rating 
+              value={Number(averageRating || 0)} 
+              readOnly 
+              precision={0.5} 
+              size="large" 
+              dir="ltr"
+              sx={{
+                '& .MuiRating-iconFilled': {
+                  color: '#EAB308',
+                },
+                '& .MuiRating-iconEmpty': {
+                  color: 'rgba(234, 179, 8, 0.3)',
+                },
+                fontSize: '2rem'
+              }}
+            />
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {totalReviews} تقييم
             </div>
           </div>
 
           {/* Rating Bars */}
-          <div className="flex-grow">
+          <div className="flex-grow w-full md:w-auto">
             {[5, 4, 3, 2, 1].map((rating) => {
               const count = ratingCounts[rating] || 0;
               const percentage = totalReviews > 0 
@@ -167,15 +184,17 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
                 : 0;
               
               return (
-                <div key={rating} className="flex items-center gap-2 mb-2">
-                  <div className="text-sm w-8">{rating}</div>
-                  <div className="flex-grow h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div key={rating} className="flex items-center gap-3 mb-3">
+                  <div className="text-sm font-medium w-8 text-gray-700 dark:text-gray-300">{rating}</div>
+                  <div className="flex-grow h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-yellow-400 rounded-full"
+                      className="h-full bg-yellow-400 dark:bg-yellow-500 rounded-full transition-all duration-300"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <div className="text-sm w-12 text-left">{count}</div>
+                  <div className="text-sm font-medium w-12 text-left text-gray-600 dark:text-gray-400">
+                    {count}
+                  </div>
                 </div>
               );
             })}
@@ -185,99 +204,117 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
 
       {/* Reviews List */}
       {reviews.length === 0 ? (
-        <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-          <p className="text-gray-500">لا توجد تقييمات بعد</p>
+        <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+          <p className="text-gray-600 dark:text-gray-400">لا توجد تقييمات بعد</p>
         </div>
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (
-            <div key={review.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <div key={review.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
               {editingReview === review.id ? (
                 <div className="space-y-4">
                   <div className="flex flex-col items-start">
-                    <label className="text-sm font-medium mb-2">التقييم</label>
+                    <label className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">التقييم</label>
                     <Rating
                       value={editForm.rating}
-                      onChange={(_, newValue) => setEditForm({ ...editForm, rating: newValue || 0 })}
+                      onChange={(_, value) => setEditForm({ ...editForm, rating: value || 0 })}
                       size="large"
                       dir="ltr"
+                      sx={{
+                        '& .MuiRating-iconFilled': {
+                          color: '#EAB308',
+                        },
+                        '& .MuiRating-iconEmpty': {
+                          color: 'rgba(234, 179, 8, 0.3)',
+                        }
+                      }}
                     />
                   </div>
-                  
-                  <div className="flex flex-col">
-                    <label className="text-sm font-medium mb-2">التعليق</label>
+                  <div className="flex flex-col items-start">
+                    <label className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">التعليق</label>
                     <textarea
                       value={editForm.comment}
                       onChange={(e) => setEditForm({ ...editForm, comment: e.target.value })}
-                      className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue"
-                      rows={4}
+                      className="w-full min-h-[100px] px-4 py-3 rounded-xl border border-gray-200 
+                               dark:border-gray-700 bg-white dark:bg-gray-900 
+                               text-gray-900 dark:text-white placeholder-gray-500 
+                               dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 
+                               focus:border-transparent transition duration-200 resize-none"
                     />
                   </div>
-
                   <div className="flex gap-2 justify-end">
                     <button
-                      onClick={handleUpdate}
-                      className="px-4 py-2 bg-blue text-white rounded-lg hover:bg-blue-600 transition"
-                    >
-                      حفظ التعديلات
-                    </button>
-                    <button
                       onClick={() => setEditingReview(null)}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                      className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 
+                               hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                     >
                       إلغاء
+                    </button>
+                    <button
+                      onClick={handleUpdate}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 
+                               hover:bg-blue-700 rounded-lg transition-colors"
+                    >
+                      حفظ التعديلات
                     </button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      {review.userImage ? (
-                        <img 
-                          src={review.userImage} 
-                          alt={review.userName} 
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                          <span className="text-blue-600 dark:text-blue-300 font-medium">
-                            {review.userName?.charAt(0) || 'م'}
-                          </span>
-                        </div>
-                      )}
+                      <img
+                        src={review.userImage || '/default-avatar.png'}
+                        alt={review.userName}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                      />
                       <div>
-                        <h3 className="font-medium text-lg">{review.userName}</h3>
-                        <Rating value={review.rating} readOnly size="small" dir="ltr" />
+                        <h3 className="font-medium text-gray-900 dark:text-white">
+                          {review.userName}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {format(new Date(review.createdAt), 'dd MMMM yyyy', { locale: ar })}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">
-                  {format(new Date(review.createdAt), 'dd MMMM yyyy', { locale: ar })}
-                </span>
-                      {user && review.reviewerId === user.id && (
-                        <div className="flex gap-2 mr-4">
-                          <button
-                            onClick={() => handleEdit(review)}
-                            className="p-1.5 text-blue hover:bg-blue-50 rounded-full transition"
-                            title="تعديل التقييم"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(review.id)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition"
-                            title="حذف التقييم"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-              </div>
-              {review.comment && (
-                    <p className="mt-3 text-gray-700 dark:text-gray-300 mr-13">{review.comment}</p>
-                  )}
+                    {user && user.id === review.reviewerId && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(review)}
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 
+                                   dark:hover:text-blue-400 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(review.id)}
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 
+                                   dark:hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <Rating
+                      value={review.rating}
+                      readOnly
+                      size="medium"
+                      dir="ltr"
+                      sx={{
+                        '& .MuiRating-iconFilled': {
+                          color: '#EAB308',
+                        },
+                        '& .MuiRating-iconEmpty': {
+                          color: 'rgba(234, 179, 8, 0.3)',
+                        }
+                      }}
+                    />
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {review.comment}
+                  </p>
                 </>
               )}
             </div>

@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -18,6 +19,7 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
+  const { unreadCount } = useUnreadMessages();
 
   // Update document direction based on language
   useEffect(() => {
@@ -144,7 +146,11 @@ const Navbar: React.FC = () => {
 
               <Link to="/conversations" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <MessageCircle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-blue rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
 
               <Link to="/notifications" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">

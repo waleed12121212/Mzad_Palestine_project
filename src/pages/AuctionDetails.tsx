@@ -226,11 +226,8 @@ const AuctionDetails = () => {
   };
   
   const navigateToChat = () => {
-    if (seller?.id) {
-      console.log('[AuctionDetails] Navigating to chat with seller:', seller.id);
-      navigate(`/conversations/${seller.id}`);
-    } else {
-      console.log('[AuctionDetails] Cannot navigate to chat - no seller ID available');
+    if (seller) {
+      navigate(`/conversations?contact=${seller.id}`);
     }
   };
 

@@ -41,14 +41,42 @@ const Index = () => {
   const [auctions, setAuctions] = useState([]);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsCategoriesLoading(true);
       try {
         const activeCategories = await categoryService.getActiveCategories();
-        setCategories(activeCategories);
+        console.log('Active categories:', activeCategories);
+        
+        // Fetch detailed information for each category
+        const detailedCategories = await Promise.all(
+          activeCategories.map(async (category) => {
+            try {
+              const detailedCategory = await categoryService.getCategoryById(category.id.toString());
+              console.log(`Detailed category ${category.id}:`, detailedCategory);
+              return {
+                ...category,
+                listingsCount: detailedCategory.listingsCount ?? 0
+              };
+            } catch (error) {
+              console.error(`Error fetching details for category ${category.id}:`, error);
+              return {
+                ...category,
+                listingsCount: 0
+              };
+            }
+          })
+        );
+
+        console.log("Final detailed categories:", detailedCategories);
+        setCategories(detailedCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
+        setCategories([]);
+      } finally {
+        setIsCategoriesLoading(false);
       }
     };
 
@@ -272,21 +300,27 @@ const Index = () => {
             </Link>
           </div>
           
-          <CategoryCarousel 
-            categories={categories.map(cat => ({
-              id: cat.id,
-              name: cat.name,
-              imageUrl: cat.imageUrl,
-              count: cat.listings?.length || 0,
-              subcategories: cat.subCategories?.map(sub => ({
-                id: sub.id,
-                name: sub.name,
-                count: sub.listings?.length || 0
-              }))
-            }))}
-            selectedCategory={selectedCategory}
-            onSelectCategory={handleCategorySelect}
-          />
+          {isCategoriesLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : categories.length > 0 && (
+            <CategoryCarousel
+              categories={categories.map(category => ({
+                id: category.id,
+                name: category.name,
+                imageUrl: category.imageUrl,
+                count: category.listingsCount ?? 0,
+                subcategories: category.subCategories?.map(sub => ({
+                  id: sub.id,
+                  name: sub.name,
+                  count: sub.listingsCount ?? 0
+                }))
+              }))}
+              selectedCategory={selectedCategory}
+              onSelectCategory={handleCategorySelect}
+            />
+          )}
         </div>
       </section>
 
@@ -379,7 +413,7 @@ const Index = () => {
                 categories={categories.map(cat => ({
                   ...cat,
                   icon: getCategoryIcon(cat.name),
-                  count: cat.listings?.length || 0
+                  count: cat.listingsCount || 0
                 }))}
                 onSelectCategory={handleCategorySelect}
                 selectedCategoryId={selectedCategory || undefined}
