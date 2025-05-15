@@ -70,8 +70,8 @@ const Support = () => {
     }
   };
 
-  const handleTicketSelect = async (ticket: SupportTicket) => {
-    setSelectedTicket(ticket);
+  const handleTicketSelect = (ticket: SupportTicket) => {
+    setSelectedTicket(prev => (prev && prev.id === ticket.id ? null : ticket));
     setResponse(''); // Clear response when selecting new ticket
   };
 
@@ -306,9 +306,10 @@ const Support = () => {
                           ? 'border-blue bg-blue/5'
                           : 'border-gray-100 hover:border-blue/50'
                       }`}
+                      onClick={() => handleTicketSelect(ticket)}
                     >
                       <div className="flex justify-between items-start">
-                        <div onClick={() => handleTicketSelect(ticket)}>
+                        <div>
                           <h4 className="font-medium">{ticket.subject}</h4>
                           <p className="text-sm text-gray-600 line-clamp-2">{ticket.description}</p>
                           <div className="mt-2 text-xs text-gray-500">
@@ -319,7 +320,13 @@ const Support = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <Badge className={getStatusColor(ticket.status)}>
+                          <Badge className={
+                            `${getStatusColor(ticket.status)} ` +
+                            `${ticket.status === 'Open' ? 'dark:bg-green-900 dark:text-green-300' : ''}` +
+                            `${ticket.status === 'InProgress' ? 'dark:bg-yellow-900 dark:text-yellow-300' : ''}` +
+                            `${ticket.status === 'Resolved' ? 'dark:bg-blue-900 dark:text-blue-300' : ''}` +
+                            `${ticket.status === 'Closed' ? 'dark:bg-red-900 dark:text-red-300' : ''}`
+                          }>
                             {ticket.status === 'Open' ? 'مفتوحة' :
                              ticket.status === 'InProgress' ? 'قيد المعالجة' :
                              ticket.status === 'Resolved' ? 'تم الحل' :
@@ -347,7 +354,13 @@ const Support = () => {
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-lg font-semibold">{selectedTicket.subject}</h3>
                     <div className="flex gap-2 items-center">
-                      <Badge className={getStatusColor(selectedTicket.status)}>
+                      <Badge className={
+                        `${getStatusColor(selectedTicket.status)} ` +
+                        `${selectedTicket.status === 'Open' ? 'dark:bg-green-900 dark:text-green-300' : ''}` +
+                        `${selectedTicket.status === 'InProgress' ? 'dark:bg-yellow-900 dark:text-yellow-300' : ''}` +
+                        `${selectedTicket.status === 'Resolved' ? 'dark:bg-blue-900 dark:text-blue-300' : ''}` +
+                        `${selectedTicket.status === 'Closed' ? 'dark:bg-red-900 dark:text-red-300' : ''}`
+                      }>
                         {selectedTicket.status === 'Open' ? 'مفتوحة' :
                          selectedTicket.status === 'InProgress' ? 'قيد المعالجة' :
                          selectedTicket.status === 'Resolved' ? 'تم الحل' :
@@ -356,7 +369,7 @@ const Support = () => {
                       <select
                         value={selectedTicket.status}
                         onChange={(e) => handleStatusChange(e.target.value as 'Open' | 'InProgress' | 'Resolved' | 'Closed')}
-                        className="px-3 py-1 border rounded-md text-sm bg-white"
+                        className="px-3 py-1 border rounded-md text-sm bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                         disabled={loading}
                       >
                         <option value="Open">مفتوحة</option>
