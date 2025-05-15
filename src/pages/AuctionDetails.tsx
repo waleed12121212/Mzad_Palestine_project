@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
 import ReportDialog from '@/components/ReportDialog';
 import DisputeDialog from '@/components/DisputeDialog';
+import ContactSellerDialog from '@/components/ContactSellerDialog';
 
 interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   title?: string;
@@ -54,6 +55,7 @@ const AuctionDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showContactDialog, setShowContactDialog] = useState(false);
 
   useEffect(() => {
     if (auction?.listingId) {
@@ -225,10 +227,16 @@ const AuctionDetails = () => {
     }
   };
   
-  const navigateToChat = () => {
-    if (seller) {
-      navigate(`/conversations?contact=${seller.id}`);
+  const handleContactClick = () => {
+    if (!user) {
+      toast({
+        title: "يجب تسجيل الدخول أولاً",
+        description: "قم بتسجيل الدخول للتواصل مع البائع",
+        variant: "destructive",
+      });
+      return;
     }
+    setShowContactDialog(true);
   };
 
   // Handle image navigation
@@ -645,11 +653,12 @@ const AuctionDetails = () => {
                     </div>
                   </div>
                   <button 
-                    className="w-full btn-secondary"
-                    onClick={navigateToChat}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleContactClick}
                     disabled={!seller}
                   >
-                    {seller ? "الاتصال بالبائع" : "جاري التحميل..."}
+                    <MessageCircle className="h-5 w-5" />
+                    {seller ? "تواصل مع البائع" : "جاري التحميل..."}
                   </button>
                 </div>
                 
@@ -684,6 +693,19 @@ const AuctionDetails = () => {
       </main>
       
       <Footer />
+
+      {seller && (
+        <ContactSellerDialog
+          isOpen={showContactDialog}
+          onClose={() => setShowContactDialog(false)}
+          sellerId={seller.id}
+          sellerName={`${seller.firstName || ''} ${seller.lastName || ''}`.trim() || seller.username || 'مستخدم'}
+          auctionTitle={auction?.title}
+          auctionId={auction?.id}
+          auctionImage={auction?.imageUrl || (auction?.images && auction.images[0])}
+          auctionPrice={auction?.currentBid || auction?.reservePrice}
+        />
+      )}
     </div>
   );
 };

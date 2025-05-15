@@ -40,6 +40,69 @@ interface Contact {
   isOnline?: boolean;
 }
 
+// Utility function to parse the auction block
+function parseAuctionBlock(content: string) {
+  // Flexible regex: matches [مزاد: title](url) optionally followed by image and price, then the rest
+  const auctionRegex = /^\[مزاد: (.+?)\]\((.+?)\)[ \n]*(?:!\[صورة المزاد\]\((.+?)\)[ \n]*)?(?:السعر الحالي: ₪(\d+)[ \n]*)?(?:[-]+[ \n]*)?/;
+  const match = content.match(auctionRegex);
+  if (!match) return null;
+  return {
+    title: match[1],
+    url: match[2],
+    image: match[3],
+    price: match[4],
+    rest: content.replace(auctionRegex, '').trim(),
+  };
+}
+
+// AuctionMessage component
+const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
+  const auction = parseAuctionBlock(content);
+  if (!auction) {
+    return <span>{content}</span>;
+  }
+  return (
+    <div>
+      <div
+        style={{
+          border: '1px solid #2563eb',
+          background: '#f0f6ff',
+          borderRadius: 8,
+          padding: 12,
+          marginBottom: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {auction.image && (
+          <img
+            src={auction.image}
+            alt={auction.title}
+            style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover' }}
+          />
+        )}
+        <div>
+          <a
+            href={auction.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+          >
+            {auction.title}
+          </a>
+          {auction.price && (
+            <div style={{ color: '#2563eb', fontSize: 14, marginTop: 2 }}>
+              السعر الحالي: ₪{auction.price}
+            </div>
+          )}
+        </div>
+      </div>
+      <div>{auction.rest}</div>
+    </div>
+  );
+};
+
 const Chat: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -239,7 +302,7 @@ const Chat: React.FC = () => {
       
       // Mark messages as read if we are the receiver
       const unreadMessages = response.filter(
-        (msg: Message) => !msg.isRead && msg.receiverId === user?.id
+        (msg: Message) => !msg.isRead && Number(msg.receiverId) === Number(user?.id)
       );
       
       if (unreadMessages.length > 0) {
@@ -247,7 +310,7 @@ const Chat: React.FC = () => {
         // Update local state to reflect read status
         setMessages(prevMsgs => 
           prevMsgs.map(msg => 
-            msg.receiverId === user?.id ? { ...msg, isRead: true } : msg
+            Number(msg.receiverId) === Number(user?.id) ? { ...msg, isRead: true } : msg
           )
         );
         // Update contacts list to reflect read status
@@ -292,10 +355,17 @@ const Chat: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !messageSubject.trim()) return;
+    const receiverId = selectedConversationId || activeContact?.id;
+    console.log('[Chat] selectedConversationId:', selectedConversationId);
+    console.log('[Chat] activeContact?.id:', activeContact?.id);
+    console.log('[Chat] Sending message to receiverId:', receiverId);
+    if (!receiverId) {
+      toast.error('لا يوجد جهة اتصال محددة');
+      return;
+    }
     try {
-      console.log('[Chat] Sending message:', { receiverId: activeContact?.id, subject: messageSubject, content: newMessage });
       const sent = await messageService.sendMessage({
-        receiverId: activeContact?.id,
+        receiverId,
         subject: messageSubject.trim() === '' ? "default" : messageSubject,
         content: newMessage,
       });
@@ -629,10 +699,10 @@ const Chat: React.FC = () => {
                     />
                     <div className="flex-1 min-w-0 text-right">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="font-bold text-base truncate" style={{ color: selectedConversationId === msg.senderId ? '#1a1a1a' : '#1a1a1a' }}>{msg.senderName || 'مستخدم'}</span>
-                        <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">{formatDate(new Date(msg.timestamp))}</span>
+                        <span className="font-bold text-base truncate dark:text-white">{msg.senderName || 'مستخدم'}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-400 ml-2 whitespace-nowrap">{formatDate(new Date(msg.timestamp))}</span>
                       </div>
-                      <span className="block text-xs truncate" style={{ color: selectedConversationId === msg.senderId ? '#4a5568' : '#718096' }}>{(msg.lastMessage || msg.content) && (msg.lastMessage || msg.content).length > 40 ? (msg.lastMessage || msg.content).slice(0, 40) + '...' : (msg.lastMessage || msg.content)}</span>
+                      <span className="block text-xs truncate text-gray-500 dark:text-gray-400">{(msg.lastMessage || msg.content) && (msg.lastMessage || msg.content).length > 40 ? (msg.lastMessage || msg.content).slice(0, 40) + '...' : (msg.lastMessage || msg.content)}</span>
                     </div>
                   </div>
                 ))
@@ -656,7 +726,7 @@ const Chat: React.FC = () => {
               </div>
             </div>
           {/* Conversation Panel (right) */}
-          <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+          <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 dark:text-white">
             {selectedConversationId ? (
               <>
                 {/* Header */}
@@ -702,7 +772,9 @@ const Chat: React.FC = () => {
                             ? 'bg-blue-100 text-gray-900 dark:bg-blue dark:text-white'
                             : 'bg-gray-200 text-gray-900 dark:bg-gray-800 dark:text-gray-200'}
                         `}>
-                          <p className="text-sm break-words">{message.content}</p>
+                          <p className="text-sm break-words">
+                            <AuctionMessage content={message.content} />
+                          </p>
                           <div className="flex justify-end items-center gap-1 mt-1">
                             <span className="text-xs text-gray-500 dark:text-gray-400">{formatTime(new Date(message.timestamp))}</span>
                             {message.senderId === Number(user?.id) && (
