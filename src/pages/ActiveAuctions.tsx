@@ -19,7 +19,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { auctionService } from "@/services/auctionService";
 import { useSearchParams } from "react-router-dom";
 import { useQuery as useQueryCategories } from "@tanstack/react-query";
@@ -229,12 +228,10 @@ const ActiveAuctions: React.FC = () => {
             animation: none !important;
           }
         `}</style>
-        <PageWrapper>
           <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
             <Loader2 className="h-12 w-12 text-blue animate-spin mb-4" />
             <p className="text-lg text-gray-600 dark:text-gray-400">جاري تحميل المزادات النشطة...</p>
           </div>
-        </PageWrapper>
       </>
     );
   }
@@ -248,12 +245,10 @@ const ActiveAuctions: React.FC = () => {
             animation: none !important;
           }
         `}</style>
-        <PageWrapper>
           <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
             <div className="text-red-500 text-xl mb-4">حدث خطأ أثناء تحميل المزادات</div>
             <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
           </div>
-        </PageWrapper>
       </>
     );
   }
@@ -266,7 +261,6 @@ const ActiveAuctions: React.FC = () => {
           animation: none !important;
         }
       `}</style>
-      <PageWrapper>
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8 rtl">
             <h1 className="text-2xl font-bold">المزادات النشطة</h1>
@@ -504,7 +498,6 @@ const ActiveAuctions: React.FC = () => {
             </div>
           </div>
         </div>
-      </PageWrapper>
     </>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Footer from "@/components/layout/Footer";
 import { 
   Camera, 
   PlusCircle, 
@@ -1048,7 +1047,6 @@ const CreateAuction = () => {
           </form>
         </div>
       </main>
-      <Footer />
       {/* Success Modal */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">

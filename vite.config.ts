@@ -3,32 +3,33 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
+const API_URL = process.env.VITE_API_URL || 'http://mazadpalestine.runasp.net';
+
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8081,
     proxy: {
       '/Auth': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Auth/, '/Auth')
       },
       '/Payment': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Payment/, '/Payment')
       },
       '/Transaction': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Transaction/, '/Transaction')
       },
       '/Notification': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Notification/, '/Notification'),
@@ -41,13 +42,13 @@ export default defineConfig(({ mode }) => ({
         }
       },
       '/User': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/User/, '/User')
       },
       '/Support': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Support/, '/Support'),
@@ -61,75 +62,75 @@ export default defineConfig(({ mode }) => ({
         }
       },
       '/Category': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
       },
       '/Message': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Message/, '/Message')
       },
       '/Listing': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Listing/, '/Listing')
       },
       '/Auction': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Auction/, '/Auction')
       },
       '/Bid': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Bid/, '/Bid')
       },
       '/Review': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Review/, '/Review')
       },
       '/Wishlist': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Wishlist/, '/Wishlist')
       },
       '/Report': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Report/, '/Report')
       },
       '/Dispute': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Dispute/, '/Dispute')
       },
       '/LaptopPrediction': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
       },
       '/CarPrediction': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
       },
       '/PhonePrediction': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
       },
       '/Image': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/Image/, '/Image'),
@@ -142,7 +143,7 @@ export default defineConfig(({ mode }) => ({
         }
       },
       '/Image/': {
-        target: 'http://mazadpalestine.runasp.net',
+        target: API_URL,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
@@ -153,6 +154,18 @@ export default defineConfig(({ mode }) => ({
             }
           });
         }
+      },
+      '/api': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      },
+      '/auth': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/auth/, '/auth')
       }
     }
   },
@@ -167,7 +180,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://mazadpalestine.runasp.net'),
+    'import.meta.env.VITE_API_URL': JSON.stringify(API_URL),
   },
   logLevel: 'error',
   clearScreen: false,

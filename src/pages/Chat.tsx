@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { useAuth } from '../contexts/AuthContext';
 import { messageService } from '@/services/messageService';
 import { userService } from '@/services/userService';
@@ -622,20 +621,17 @@ const Chat: React.FC = () => {
 
   if (loading) {
     return (
-      <PageWrapper>
         <div className="container mx-auto py-8 max-w-screen-xl">
           <div className="flex justify-center items-center h-[60vh]">
             <div className="w-12 h-12 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
-      </PageWrapper>
     );
   }
 
   const totalUnread = contacts.reduce((sum, contact) => sum + (contact.unreadCount || 0), 0);
 
   return (
-    <PageWrapper>
       <div className="min-h-screen bg-gray-100 dark:bg-[#181E2A] flex items-center justify-center">
         <div className="w-full max-w-6xl h-[80vh] bg-white dark:bg-[#232B3E] rounded-2xl flex flex-row overflow-hidden">
           {/* Inbox List (left) */}
@@ -881,7 +877,6 @@ const Chat: React.FC = () => {
         </div>
       </div>
     </div>
-    </PageWrapper>
   );
 };
 

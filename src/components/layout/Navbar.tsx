@@ -69,7 +69,7 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <img 
-              src="/lovable-uploads/9d68d225-811b-46be-a62c-123042182c3c.png" 
+              src="/images/logo.png" 
               alt={t('nav.logoAlt')} 
               className={`h-10 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`}
             />

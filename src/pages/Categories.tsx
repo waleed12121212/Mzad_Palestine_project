@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from '@/components/ui/use-toast';
 import { categoryService, Category, CreateCategoryData, UpdateCategoryData } from '@/services/categoryService';
 import { useAuth } from '@/contexts/AuthContext';
-import Footer from '@/components/layout/Footer';
 
 // دالة استخراج الدور من التوكن
 function getRoleFromToken(token) {
@@ -703,7 +702,6 @@ const Categories = () => {
         </div>
       )}
 
-      <Footer />
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Footer from "@/components/layout/Footer";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { Heart, Loader2 } from "lucide-react";
 import { wishlistService, WishlistItem } from "@/services/wishlistService";
@@ -87,8 +86,6 @@ const Favorites = () => {
           </div>
         )}
       </main>
-      
-      <Footer />
     </div>
   );
 };

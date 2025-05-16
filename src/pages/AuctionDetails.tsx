@@ -695,8 +695,6 @@ const AuctionDetails = () => {
           </div>
         </div>
       </main>
-      
-      <Footer />
 
       {seller && (
         <ContactSellerDialog

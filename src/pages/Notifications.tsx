@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BellRing, CheckCheck, Clock, Award, Tag, AlertCircle, ArrowUpRight, Trash2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { notificationService, NotificationType, Notification } from "@/services/notificationService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -234,7 +233,6 @@ const Notifications = () => {
   };
 
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-8 rtl">
         <div className="flex justify-between items-center mb-8 rtl">
           <div className="flex items-center gap-3">
@@ -388,7 +386,6 @@ const Notifications = () => {
           </div>
         </div>
       </div>
-    </PageWrapper>
   );
 };
 

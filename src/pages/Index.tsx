@@ -1,6 +1,5 @@
 import React, { useState, useEffect, JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import PageWrapper from "@/components/layout/PageWrapper";
 import AuctionCard from "@/components/ui/AuctionCard";
 import CategorySidebar from "@/components/ui/CategorySidebar";
 import CategoryCarousel from "@/components/ui/CategoryCarousel";
@@ -221,7 +220,7 @@ const Index = () => {
   console.log("user from AuthContext:", user);
 
   return (
-    <PageWrapper>
+    <>
       <section className="pt-28 pb-16 relative bg-gradient-to-b from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent dark-mode-transition">
         <div className="container mx-auto px-4">
           {isAuthenticated && user && (
@@ -531,7 +530,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-    </PageWrapper>
+    </>
   );
 };
 
