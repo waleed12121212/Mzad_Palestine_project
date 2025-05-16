@@ -29,7 +29,10 @@ const SupportStatusDropdown: React.FC<SupportStatusDropdownProps> = ({
     try {
       setIsLoading(true);
       
-      await supportService.updateStatus(ticketId, newStatus);
+      // Map our UI status to the API expected status
+      const apiStatus = mapToApiStatus(newStatus);
+      
+      await supportService.updateStatus(ticketId, apiStatus);
       
       toast({
         title: "تم تحديث الحالة",
@@ -49,6 +52,16 @@ const SupportStatusDropdown: React.FC<SupportStatusDropdownProps> = ({
     }
   };
 
+  // Map our UI status to the API expected status format
+  const mapToApiStatus = (status: StatusType): string => {
+    switch (status) {
+      case 'Open': return '0';
+      case 'Pending': return '1';
+      case 'Closed': return '2';
+      default: return '0';
+    }
+  };
+
   const getStatusLabel = (status: StatusType) => {
     switch (status) {
       case 'Open':
@@ -64,25 +77,25 @@ const SupportStatusDropdown: React.FC<SupportStatusDropdownProps> = ({
 
   return (
     <div className="space-y-2" dir="rtl">
-      <Label htmlFor="status">حالة التذكرة</Label>
+      <Label htmlFor="status" className="dark:text-gray-200">حالة التذكرة</Label>
       <Select
         disabled={isLoading}
         value={currentStatus}
         onValueChange={(value: StatusType) => handleStatusChange(value)}
       >
-        <SelectTrigger id="status" className="w-full">
+        <SelectTrigger id="status" className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600">
           <SelectValue>
             {getStatusLabel(currentStatus)}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
           <SelectItem value="Open">مفتوحة</SelectItem>
           <SelectItem value="Pending">قيد المعالجة</SelectItem>
           <SelectItem value="Closed">مغلقة</SelectItem>
         </SelectContent>
       </Select>
       {isLoading && (
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"></div>
           <span>جاري تحديث الحالة...</span>
         </div>

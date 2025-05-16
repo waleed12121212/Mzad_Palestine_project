@@ -7,14 +7,21 @@ import {
   AlertDialog,
   AlertDialogContent,
 } from "@/components/ui/alert-dialog";
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SupportTicket {
-  id: string;
+  id: string | number;
+  userId?: string | number;
   subject: string;
   description: string;
-  status: 'Open' | 'Pending' | 'Closed';
-  createdAt: string;
+  status: 'Open' | 'Pending' | 'Closed' | number;
+  createdAt?: string;
   responses?: string[];
+}
+
+interface AdminResponse {
+  text: string;
+  date: string;
 }
 
 const Support: React.FC = () => {
@@ -25,6 +32,7 @@ const Support: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
+  const [expandedTickets, setExpandedTickets] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadTickets();
@@ -35,8 +43,23 @@ const Support: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await supportService.getUserTickets();
-      setTickets(Array.isArray(response?.data) ? response.data : []);
+      
+      console.log('API Response:', response); // Debug log
+      
+      // Handle the API response format
+      let ticketsData = [];
+      if (response?.success && Array.isArray(response.data)) {
+        ticketsData = response.data;
+      } else if (Array.isArray(response?.data)) {
+        ticketsData = response.data;
+      } else if (Array.isArray(response)) {
+        ticketsData = response;
+      }
+      
+      console.log('Processed tickets:', ticketsData); // Debug log
+      setTickets(ticketsData);
     } catch (error) {
+      console.error('Error loading tickets:', error); // Debug log
       const message = error instanceof Error ? error.message : 'فشل في تحميل التذاكر';
       setError(message);
       toast.error(message);
@@ -50,15 +73,37 @@ const Support: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const details = await supportService.getTicketDetails(ticket.id);
-      setSelectedTicket(details);
+      
+      console.log('Selected ticket:', ticket); // Debug log
+      
+      // First try to get details if available
+      let details;
+      try {
+        details = await supportService.getTicketDetails(String(ticket.id));
+        console.log('Ticket details:', details); // Debug log
+      } catch (e) {
+        console.error('Error fetching ticket details:', e); // Debug log
+        // If getting details fails, use the ticket itself
+        details = ticket;
+      }
+      
+      setSelectedTicket({
+        ...ticket,
+        ...(details || {})
+      });
     } catch (error) {
+      console.error('Error selecting ticket:', error); // Debug log
       const message = error instanceof Error ? error.message : 'فشل في تحميل تفاصيل التذكرة';
       setError(message);
       toast.error(message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTicketClick = (ticket: SupportTicket) => {
+    // Toggle expansion when clicking the ticket
+    toggleTicketExpansion(ticket.id);
   };
 
   const handleDeleteClick = (ticketId: string) => {
@@ -94,18 +139,74 @@ const Support: React.FC = () => {
   const handleStatusChanged = async () => {
     if (selectedTicket) {
       await handleTicketSelect(selectedTicket);
+      await loadTickets(); // Reload all tickets to reflect the status change
     }
   };
+
+  // Parse admin responses from the description field
+  const parseAdminResponses = (description: string): { userDescription: string, adminResponses: AdminResponse[] } => {
+    if (!description) return { userDescription: '', adminResponses: [] };
+    
+    const regex = /Admin Response \(([^)]+)\):\s*([^]*?)(?=Admin Response \(|$)/g;
+    let match;
+    const adminResponses: AdminResponse[] = [];
+    let userDescription = description;
+
+    // Find all admin responses
+    while ((match = regex.exec(description)) !== null) {
+      adminResponses.push({
+        date: match[1],
+        text: match[2].trim()
+      });
+    }
+
+    // Remove admin responses from the user description
+    if (adminResponses.length > 0) {
+      const firstResponseIndex = description.indexOf('Admin Response (');
+      if (firstResponseIndex > -1) {
+        userDescription = description.substring(0, firstResponseIndex).trim();
+      }
+    }
+
+    return { userDescription, adminResponses };
+  };
+
+  const toggleTicketExpansion = (ticketId: string | number) => {
+    setExpandedTickets(prev => ({
+      ...prev,
+      [ticketId.toString()]: !prev[ticketId.toString()]
+    }));
+  };
+
+  // Convert numeric status to string
+  const getStatusText = (status: 'Open' | 'Pending' | 'Closed' | number): string => {
+    if (typeof status === 'number') {
+      switch (status) {
+        case 0: return 'مفتوحة';
+        case 1: return 'قيد المعالجة';
+        case 2: return 'مغلقة';
+        default: return 'مفتوحة';
+      }
+    }
+    return status;
+  };
+
+  // Debug render
+  console.log('Rendering Support with:', { 
+    tickets: tickets.length, 
+    selectedTicket: selectedTicket?.id, 
+    userRole: user?.role 
+  });
 
   if (error && !tickets.length) {
     return (
       <div className="responsive-container py-8">
         <div className="text-center">
-          <h1 className="heading-lg mb-4">الدعم الفني</h1>
-          <p className="text-red-500">{error}</p>
+          <h1 className="heading-lg mb-4 dark:text-white">الدعم الفني</h1>
+          <p className="text-red-500 dark:text-red-400">{error}</p>
           <button
             onClick={loadTickets}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
           >
             إعادة المحاولة
           </button>
@@ -116,49 +217,81 @@ const Support: React.FC = () => {
 
   return (
     <div className="responsive-container py-8">
-      <h1 className="heading-lg mb-8 text-center">الدعم الفني</h1>
+      <h1 className="heading-lg mb-8 text-center dark:text-white">الدعم الفني</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Tickets List */}
         <div className="md:col-span-1">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-xl font-semibold mb-4">التذاكر الخاصة بك</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">التذاكر الخاصة بك</h2>
             {loading ? (
-              <p className="text-center py-4">جاري التحميل...</p>
+              <p className="text-center py-4 dark:text-gray-300">جاري التحميل...</p>
             ) : tickets.length === 0 ? (
-              <p className="text-center py-4">لا يوجد تذاكر</p>
+              <p className="text-center py-4 dark:text-gray-300">لا يوجد تذاكر</p>
             ) : (
               <div className="space-y-2">
-                {tickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className={`p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedTicket?.id === ticket.id
-                        ? 'bg-blue-50 border border-blue-200'
-                        : 'hover:bg-gray-50 border border-gray-100'
-                    }`}
-                    onClick={() => handleTicketSelect(ticket)}
-                  >
-                    <h3 className="font-medium">{ticket.subject}</h3>
-                    <p className="text-sm text-gray-500">
-                      الحالة: {ticket.status}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(ticket.createdAt).toLocaleDateString('ar-EG')}
-                    </p>
-                    {user?.role === 'Admin' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(ticket.id);
-                        }}
-                        className="text-red-500 text-sm hover:text-red-700 mt-2"
-                      >
-                        حذف التذكرة
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {tickets.map((ticket) => {
+                  const { userDescription, adminResponses } = parseAdminResponses(ticket.description);
+                  const isExpanded = expandedTickets[ticket.id.toString()] || false;
+                  
+                  return (
+                    <div
+                      key={ticket.id}
+                      className={`p-3 rounded-md cursor-pointer transition-colors ${
+                        selectedTicket?.id === ticket.id
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700'
+                      }`}
+                      onClick={() => handleTicketClick(ticket)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium dark:text-white">{ticket.subject}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            الحالة: {getStatusText(ticket.status)}
+                          </p>
+                          {ticket.createdAt && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                              {new Date(ticket.createdAt).toLocaleDateString('ar-EG')}
+                            </p>
+                          )}
+                        </div>
+                        {adminResponses.length > 0 && (
+                          <span className="text-blue-500 dark:text-blue-400">
+                            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                          {userDescription}
+                        </p>
+                      </div>
+
+                      {/* Admin Responses */}
+                      {isExpanded && adminResponses.length > 0 && (
+                        <div className="mt-3 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                          {adminResponses.map((response, index) => (
+                            <div key={index} className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                  رد الإدارة
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {response.date}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                {response.text}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -167,8 +300,8 @@ const Support: React.FC = () => {
         {/* Ticket Details and Forms */}
         <div className="md:col-span-2">
           <SupportTicketDetails
-            userRole={user?.role}
-            ticketId={selectedTicket?.id}
+            userRole={user?.role === 'Admin' ? undefined : user?.role}
+            ticketId={selectedTicket?.id?.toString()}
             currentStatus={selectedTicket?.status || 'Open'}
             onTicketCreated={handleTicketCreated}
             onStatusChanged={handleStatusChanged}
@@ -176,28 +309,30 @@ const Support: React.FC = () => {
         </div>
       </div>
 
-      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent className="max-w-[400px] p-6 rounded-xl bg-white">
-          <div className="text-center mb-6 text-base">
-            هل أنت متأكد من حذف هذه التذكرة؟
-          </div>
-          <div className="flex justify-center gap-3">
-            <button
-              onClick={handleConfirmDelete}
-              disabled={loading}
-              className="min-w-[100px] bg-[#1d4ed8] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              OK
-            </button>
-            <button 
-              onClick={() => setShowDeleteAlert(false)}
-              className="min-w-[100px] bg-[#e5e7eb] text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+      {user?.role === 'Admin' && (
+        <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+          <AlertDialogContent className="max-w-[400px] p-6 rounded-xl bg-white dark:bg-gray-800">
+            <div className="text-center mb-6 text-base dark:text-white">
+              هل أنت متأكد من حذف هذه التذكرة؟
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={handleConfirmDelete}
+                disabled={loading}
+                className="min-w-[100px] bg-[#1d4ed8] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
+                OK
+              </button>
+              <button 
+                onClick={() => setShowDeleteAlert(false)}
+                className="min-w-[100px] bg-[#e5e7eb] text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

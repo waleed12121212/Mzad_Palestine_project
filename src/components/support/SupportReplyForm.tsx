@@ -40,8 +40,13 @@ const SupportReplyForm: React.FC<SupportReplyFormProps> = ({
     try {
       setIsLoading(true);
       
-      // Send the response as a raw string
-      await supportService.addResponse(ticketId, trimmedResponse);
+      // Format the response with the admin response format
+      const now = new Date();
+      const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
+      const formattedResponse = `Admin Response (${formattedDate}):\n${trimmedResponse}`;
+      
+      // Send the formatted response
+      await supportService.addResponse(ticketId, formattedResponse);
       
       toast({
         title: "تم الإرسال",
@@ -65,16 +70,16 @@ const SupportReplyForm: React.FC<SupportReplyFormProps> = ({
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 dark:bg-gray-800 border-gray-100 dark:border-gray-700">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="response">نص الرد</Label>
+          <Label htmlFor="response" className="dark:text-gray-200">نص الرد</Label>
           <Textarea
             id="response"
             value={response}
             onChange={(e) => setResponse(e.target.value)}
             placeholder="اكتب نص الرد هنا..."
-            className="min-h-[100px] resize-y"
+            className="min-h-[100px] resize-y dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:placeholder:text-gray-400"
             dir="rtl"
           />
         </div>
@@ -82,7 +87,7 @@ const SupportReplyForm: React.FC<SupportReplyFormProps> = ({
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full"
+          className="w-full dark:bg-blue-600 dark:hover:bg-blue-700"
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">

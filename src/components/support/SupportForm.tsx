@@ -59,35 +59,35 @@ const SupportForm: React.FC<SupportFormProps> = ({ onTicketCreated }) => {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-6">إنشاء تذكرة دعم جديدة</h2>
+    <Card className="p-6 dark:bg-gray-800 border-gray-100 dark:border-gray-700">
+      <h2 className="text-2xl font-bold mb-6 dark:text-white">إنشاء تذكرة دعم جديدة</h2>
       <form onSubmit={handleSubmit} className="space-y-6" dir="rtl">
         <div className="space-y-2">
-          <Label htmlFor="subject">الموضوع</Label>
+          <Label htmlFor="subject" className="dark:text-gray-200">الموضوع</Label>
           <Input
             id="subject"
             value={formData.subject}
             onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
             placeholder="أدخل موضوع التذكرة"
-            className="w-full"
+            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:placeholder:text-gray-400"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">الوصف</Label>
+          <Label htmlFor="description" className="dark:text-gray-200">الوصف</Label>
           <Textarea
             id="description"
             value={formData.description}
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             placeholder="اكتب تفاصيل المشكلة هنا..."
-            className="min-h-[150px] resize-y"
+            className="min-h-[150px] resize-y dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:placeholder:text-gray-400"
           />
         </div>
 
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue hover:bg-blue-600"
+          className="w-full bg-blue hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">
