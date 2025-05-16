@@ -10,7 +10,8 @@
     "notifications": "الإشعارات",
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
-    "createAuction": "إضافة مزاد"
+    "createAuction": "إضافة مزاد",
+    "logoAlt": "شعار مزاد فلسطين"
   },
   "auth": {
     "welcome": "مرحباً بك في مزاد فلسطين",

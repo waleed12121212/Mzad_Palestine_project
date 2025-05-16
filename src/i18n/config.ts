@@ -10,7 +10,7 @@ i18n
   .init({
     fallbackLng: 'ar',
     supportedLngs: ['ar', 'en'],
-    debug: process.env.NODE_ENV === 'development',
+    debug: false,
     
     interpolation: {
       escapeValue: false,
@@ -28,6 +28,10 @@ i18n
     react: {
       useSuspense: true,
     },
+
+    saveMissing: false,
+    missingKeyHandler: () => undefined,
+    saveMissingTo: 'none',
   });
 
 export default i18n; 

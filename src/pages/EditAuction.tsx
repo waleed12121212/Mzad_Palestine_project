@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { auctionService } from '@/services/auctionService';
+import { imageService } from '@/services/imageService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Upload } from 'lucide-react';
+
+interface ApiAuction {
+  AuctionId: number;
+  UserId: number;
+  StartTime: string;
+  EndTime: string;
+  ReservePrice: number;
+  BidIncrement: number;
+  ImageUrl: string;
+  Status: number;
+}
+
+interface ApiResponse {
+  data: ApiAuction;
+}
 
 export interface Auction {
+  id?: number;
+  userId?: number;
   startTime: string;
   endTime: string;
   reservePrice: number;
   bidIncrement: number;
   imageUrl: string;
-  status: number;
+  status?: number;
 }
 
 // Form validation schema
@@ -40,7 +58,6 @@ const formSchema = z.object({
   bidIncrement: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: 'يجب أن تكون قيمة الزيادة رقماً موجباً',
   }),
-  imageUrl: z.string().url('يجب إدخال رابط صورة صحيح'),
   status: z.number().min(0).max(3),
 });
 
@@ -50,6 +67,8 @@ const EditAuction = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -58,7 +77,6 @@ const EditAuction = () => {
       endTime: new Date(),
       reservePrice: '',
       bidIncrement: '',
-      imageUrl: '',
       status: 1,
     },
   });
@@ -77,10 +95,11 @@ const EditAuction = () => {
         }
 
         console.log('Fetching auction with ID:', id);
-        const auction = await auctionService.getAuctionById(Number(id));
-        console.log('Received auction data:', auction);
+        const response = await auctionService.getAuctionById(Number(id));
+        const auctionData = (response as unknown as ApiResponse).data;
+        console.log('Received auction data:', auctionData);
         
-        if (!auction) {
+        if (!auctionData) {
           toast({
             title: "خطأ",
             description: "لم يتم العثور على المزاد",
@@ -90,8 +109,7 @@ const EditAuction = () => {
           return;
         }
 
-        // تحقق من أن المستخدم هو صاحب المزاد
-        if (auction.userId !== user.id) {
+        if (Number(auctionData.UserId) !== Number(user.id)) {
           toast({
             title: "غير مصرح",
             description: "لا يمكنك تعديل هذا المزاد",
@@ -102,13 +120,13 @@ const EditAuction = () => {
         }
 
         form.reset({
-          startTime: new Date(auction.startTime),
-          endTime: new Date(auction.endTime),
-          reservePrice: auction.reservePrice.toString(),
-          bidIncrement: auction.bidIncrement.toString(),
-          imageUrl: auction.imageUrl || '',
-          status: auction.status || 1,
+          startTime: new Date(auctionData.StartTime),
+          endTime: new Date(auctionData.EndTime),
+          reservePrice: auctionData.ReservePrice.toString(),
+          bidIncrement: auctionData.BidIncrement.toString(),
+          status: auctionData.Status || 1,
         });
+        setPreviewUrl(auctionData.ImageUrl || '');
         setLoading(false);
       } catch (error: any) {
         console.error('Error loading auction:', error);
@@ -126,29 +144,67 @@ const EditAuction = () => {
     }
   }, [id, user, navigate, form]);
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const uploadResult = await imageService.uploadImage(file);
+      return uploadResult.url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setSubmitting(true);
       console.log('Submitting update with values:', values);
       
+      let imageUrl = previewUrl;
+      if (selectedImage) {
+        try {
+          imageUrl = await uploadImage(selectedImage);
+        } catch (error) {
+          toast({
+            title: "فشل في رفع الصورة",
+            description: "حدث خطأ أثناء رفع الصورة، يرجى المحاولة مرة أخرى",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const updateData = {
         startTime: values.startTime.toISOString(),
         endTime: values.endTime.toISOString(),
         reservePrice: Number(values.reservePrice),
         bidIncrement: Number(values.bidIncrement),
-        imageUrl: values.imageUrl,
+        imageUrl: imageUrl,
         status: values.status,
       };
 
       console.log('Sending update data:', updateData);
-      await auctionService.updateAuction(Number(id), updateData);
+      const result = await auctionService.updateAuction(Number(id), updateData);
+      console.log('Update result:', result);
 
-      toast({
-        title: "تم تحديث المزاد بنجاح",
-        description: "تم حفظ التغييرات بنجاح",
-      });
-
-      navigate(`/auction/${id}`);
+      if (result) {
+        toast({
+          title: "تم تحديث المزاد بنجاح",
+          description: "تم حفظ التغييرات بنجاح",
+        });
+        
+        // Add a small delay before navigation
+        setTimeout(() => {
+          navigate(`/auction/${id}`);
+        }, 500);
+      }
     } catch (error: any) {
       console.error('Error updating auction:', error);
       toast({
@@ -178,6 +234,53 @@ const EditAuction = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                صورة المزاد
+              </label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg">
+                <div className="space-y-1 text-center">
+                  {previewUrl ? (
+                    <div className="relative">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="mx-auto h-32 w-auto object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setPreviewUrl('');
+                        }}
+                        className="absolute top-0 right-0 -mr-2 -mt-2 bg-red-500 text-white rounded-full p-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  )}
+                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                    <label className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                      <span>رفع صورة</span>
+                      <input
+                        type="file"
+                        className="sr-only"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                    <p className="pr-2">أو اسحب وأفلت</p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    PNG, JPG, GIF حتى 10MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="startTime"
@@ -284,20 +387,6 @@ const EditAuction = () => {
                   <FormLabel>قيمة الزيادة</FormLabel>
                   <FormControl>
                     <Input {...field} type="number" min="0" placeholder="أدخل قيمة الزيادة" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>رابط الصورة</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="أدخل رابط الصورة" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -7,11 +7,12 @@ class ImageService {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post('http://mazadpalestine.runasp.net/Image/upload', formData, {
+      const response = await axios.post('/Image/upload', formData, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'multipart/form-data',
-        }
+        },
+        withCredentials: false
       });
 
       if (!response.data?.success || !response.data?.data?.url) {
@@ -38,8 +39,9 @@ class ImageService {
         ? imagePath.split('mazadpalestine.runasp.net')[1]
         : imagePath;
 
-      await axios.delete(`http://mazadpalestine.runasp.net${path}`, {
-        headers: getAuthHeader()
+      await axios.delete(`/Image${path}`, {
+        headers: getAuthHeader(),
+        withCredentials: false
       });
     } catch (error: any) {
       console.error('Image deletion error:', error);

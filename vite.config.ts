@@ -132,18 +132,11 @@ export default defineConfig(({ mode }) => ({
         target: 'http://mazadpalestine.runasp.net',
         changeOrigin: true,
         secure: false,
-        ws: true,
+        rewrite: (path) => path.replace(/^\/Image/, '/Image'),
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            // Copy authorization header
             if (req.headers.authorization) {
               proxyReq.setHeader('Authorization', req.headers.authorization);
-            }
-
-            // Set content type for multipart/form-data
-            if (req.headers['content-type']?.includes('multipart/form-data')) {
-              const contentType = req.headers['content-type'];
-              proxyReq.setHeader('Content-Type', contentType);
             }
           });
         }
@@ -176,4 +169,14 @@ export default defineConfig(({ mode }) => ({
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify('http://mazadpalestine.runasp.net'),
   },
+  logLevel: 'error',
+  clearScreen: false,
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+        warn(warning);
+      }
+    }
+  }
 }));

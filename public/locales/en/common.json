@@ -10,7 +10,8 @@
     "notifications": "Notifications",
     "login": "Login",
     "logout": "Logout",
-    "createAuction": "Create Auction"
+    "createAuction": "Create Auction",
+    "logoAlt": "Mzad Palestine Logo"
   },
   "auth": {
     "welcome": "Welcome to Mzad Palestine",

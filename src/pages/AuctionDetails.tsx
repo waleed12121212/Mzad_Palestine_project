@@ -360,7 +360,11 @@ const AuctionDetails = () => {
                 {user && auction && Number(user.id) === Number(auction.userId) && (
                   <div className="absolute top-4 left-4 z-20 flex gap-2">
                     <button
-                      onClick={() => navigate(`/auction/${auction.id}/edit`)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(`/auction/${auction.id}/edit`);
+                      }}
                       className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-blue-50 text-blue-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
                       title="تعديل المزاد"
                     >
