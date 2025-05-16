@@ -10,27 +10,37 @@ interface UserQuickPanelProps {
 }
 
 const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (isAuthenticated) {
+      if (isAuthenticated && user) {
         try {
           const profile = await userService.getCurrentUser();
           setUserProfile(profile);
         } catch (error) {
           console.error('Error fetching user profile:', error);
         }
+      } else {
+        setUserProfile(null);
       }
       setLoading(false);
     };
 
     fetchUserProfile();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
-  const displayName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : userName || "المستخدم";
+  const displayName = isAuthenticated && userProfile 
+    ? `${userProfile.firstName} ${userProfile.lastName}` 
+    : isAuthenticated && userName 
+      ? userName 
+      : "المستخدم";
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleSellProduct = (e: React.MouseEvent) => {
     e.preventDefault();

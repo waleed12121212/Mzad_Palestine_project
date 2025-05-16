@@ -40,7 +40,7 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [auctions, setAuctions] = useState([]);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
 
   useEffect(() => {
@@ -224,7 +224,9 @@ const Index = () => {
     <PageWrapper>
       <section className="pt-28 pb-16 relative bg-gradient-to-b from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent dark-mode-transition">
         <div className="container mx-auto px-4">
-          <UserQuickPanel userName={user?.username || undefined} />
+          {isAuthenticated && user && (
+            <UserQuickPanel userName={user?.username || undefined} />
+          )}
           
           <div className="mb-4 rtl text-right">
             <span className="text-sm font-medium text-blue dark:text-blue-light">طريقة جديدة للمزايدة</span>

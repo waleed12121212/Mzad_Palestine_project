@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { LoginData, RegisterData, ChangePasswordData, ConfirmEmailData } from '../services/authService';
+import { LoginData, RegisterData, ChangePasswordData, ConfirmEmailData, VerifyEmailCodeData } from '../services/authService';
 
 export interface User {
   id: string;
@@ -12,25 +12,27 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (data: LoginData) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   register: (data: RegisterData) => Promise<void>;
   changePassword: (data: ChangePasswordData) => Promise<void>;
   confirmEmail: (data: ConfirmEmailData) => Promise<void>;
   sendEmailConfirmation: (email: string) => Promise<void>;
+  verifyEmailCode: (data: VerifyEmailCodeData) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
   isAuthenticated: false,
   register: async () => {},
   changePassword: async () => {},
   confirmEmail: async () => {},
-  sendEmailConfirmation: async () => {}
+  sendEmailConfirmation: async () => {},
+  verifyEmailCode: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }
 
-  const login = async (data: { email: string; password: string }) => {
+  const login = async (data: LoginData) => {
     const response = await authService.login(data);
     setToken(response.token);
     setUser(response.user);
@@ -98,6 +100,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.sendEmailConfirmation(email);
   };
 
+  const verifyEmailCode = async (data: VerifyEmailCodeData) => {
+    await authService.verifyEmailCode(data);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -110,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         changePassword,
         confirmEmail,
         sendEmailConfirmation,
+        verifyEmailCode,
       }}
     >
       {children}

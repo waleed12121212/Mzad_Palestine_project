@@ -27,15 +27,15 @@ export const SendEmailConfirmationForm: React.FC = () => {
       await sendEmailConfirmation(email);
       
       toast({
-        title: "تم إرسال رابط التأكيد",
-        description: "يرجى التحقق من بريدك الإلكتروني"
+        title: "تم إرسال رمز التحقق",
+        description: "يرجى التحقق من بريدك الإلكتروني للحصول على رمز التحقق"
       });
       
-      navigate('/auth/login');
+      navigate('/auth/verify-email-code', { state: { email } });
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء إرسال رابط التأكيد",
+        description: error.response?.data?.message || "حدث خطأ أثناء إرسال رمز التحقق",
         variant: "destructive"
       });
     } finally {
@@ -46,9 +46,9 @@ export const SendEmailConfirmationForm: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">إعادة إرسال رابط التأكيد</h2>
+        <h2 className="text-2xl font-bold mb-2">إرسال رمز التحقق</h2>
         <p className="text-gray-600 dark:text-gray-300">
-          أدخل بريدك الإلكتروني وسنرسل لك رابط تأكيد جديد
+          أدخل بريدك الإلكتروني وسنرسل لك رمز تحقق جديد
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export const SendEmailConfirmationForm: React.FC = () => {
           className="w-full btn-primary py-3 rounded-xl"
           disabled={loading}
         >
-          {loading ? "جاري إرسال الرابط..." : "إرسال رابط التأكيد"}
+          {loading ? "جاري إرسال الرمز..." : "إرسال رمز التحقق"}
         </button>
 
         <p className="text-center text-sm text-gray-600 dark:text-gray-300">

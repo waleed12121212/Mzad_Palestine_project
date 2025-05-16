@@ -96,6 +96,11 @@ export interface ConfirmEmailData {
   token: string;
 }
 
+export interface VerifyEmailCodeData {
+  email: string;
+  verificationCode: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: any;
@@ -155,6 +160,15 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       throw new Error(error.message || 'حدث خطأ أثناء إرسال رابط التأكيد');
+    }
+  },
+
+  verifyEmailCode: async (data: VerifyEmailCodeData): Promise<void> => {
+    try {
+      const response = await axiosInstance.post('/verify-email-code', data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.message || 'حدث خطأ أثناء التحقق من رمز التأكيد');
     }
   },
 

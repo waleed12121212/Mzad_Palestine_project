@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -37,12 +37,27 @@ const queryClient = new QueryClient();
 
 const LogoutRoute = () => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   
   React.useEffect(() => {
-    logout();
-  }, [logout]);
+    const performLogout = async () => {
+      await logout();
+      navigate('/', { replace: true });
+    };
+    
+    performLogout();
+  }, [logout, navigate]);
 
-  return <Navigate to="/" replace />;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">جاري تسجيل الخروج</h2>
+        <p className="text-gray-600 dark:text-gray-300">
+          يرجى الانتظار...
+        </p>
+      </div>
+    </div>
+  );
 };
 
 function App() {

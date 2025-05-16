@@ -6,7 +6,7 @@ import { toast } from '../ui/use-toast';
 
 export const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, sendEmailConfirmation } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -64,6 +64,7 @@ export const RegisterForm: React.FC = () => {
     
     setLoading(true);
     try {
+      // First register the user
       await register({
         username: formData.username,
         email: formData.email,
@@ -71,12 +72,25 @@ export const RegisterForm: React.FC = () => {
         password: formData.password
       });
       
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني"
-      });
-      
-      navigate('/auth/confirm-email');
+      // Then immediately send email confirmation
+      try {
+        await sendEmailConfirmation(formData.email);
+        
+        toast({
+          title: "تم إنشاء الحساب بنجاح",
+          description: "تم إرسال رمز تحقق إلى بريدك الإلكتروني"
+        });
+        
+        navigate('/auth/verify-email-code', { state: { email: formData.email } });
+      } catch (confirmError: any) {
+        // If sending confirmation fails, still proceed but with a different message
+        toast({
+          title: "تم إنشاء الحساب بنجاح",
+          description: "يرجى طلب رمز التحقق لتأكيد بريدك الإلكتروني"
+        });
+        
+        navigate('/auth/verify-email-code', { state: { email: formData.email } });
+      }
     } catch (error: any) {
       toast({
         title: "خطأ في التسجيل",
