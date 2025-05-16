@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../ui/use-toast';
 
@@ -27,15 +27,16 @@ export const ForgotPasswordForm: React.FC = () => {
       await forgotPassword(email);
       
       toast({
-        title: "تم إرسال رابط إعادة تعيين كلمة المرور",
-        description: "يرجى التحقق من بريدك الإلكتروني"
+        title: "تم إرسال رمز التحقق",
+        description: "تم إرسال رمز التحقق إلى بريدك الإلكتروني"
       });
       
-      navigate('/auth/login');
+      // Navigate to reset password form with email
+      navigate('/auth/reset-password', { state: { email } });
     } catch (error: any) {
       toast({
         title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور",
+        description: error.message || "حدث خطأ أثناء إرسال رمز التحقق",
         variant: "destructive"
       });
     } finally {
@@ -44,15 +45,18 @@ export const ForgotPasswordForm: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">نسيت كلمة المرور؟</h2>
+    <div className="space-y-6 max-w-md mx-auto" dir="rtl">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Mail className="h-10 w-10 text-blue-500 dark:text-blue-400" />
+        </div>
+        <h2 className="text-2xl font-bold">نسيت كلمة المرور؟</h2>
         <p className="text-gray-600 dark:text-gray-300">
-          أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور
+          أدخل بريدك الإلكتروني وسنرسل لك رمز تحقق لإعادة تعيين كلمة المرور
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-2">
             البريد الإلكتروني
@@ -63,31 +67,42 @@ export const ForgotPasswordForm: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+              className="w-full py-3 px-5 rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none"
               placeholder="your.email@example.com"
               disabled={loading}
+              dir="ltr"
             />
-            <Mail className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
           </div>
         </div>
 
         <button
           type="submit"
-          className="w-full btn-primary py-3 rounded-xl"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading}
         >
-          {loading ? "جاري إرسال الرابط..." : "إرسال رابط إعادة التعيين"}
+          {loading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              جاري إرسال الرمز...
+            </>
+          ) : (
+            <>
+              <Mail className="h-5 w-5" />
+              إرسال رمز التحقق
+            </>
+          )}
         </button>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-300">
-          تذكرت كلمة المرور؟{' '}
-          <Link
-            to="/auth/login"
-            className="text-blue dark:text-blue-light hover:underline"
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/auth/login')}
+            className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 flex items-center justify-center gap-1"
           >
-            تسجيل الدخول
-          </Link>
-        </p>
+            <ArrowLeft className="h-4 w-4" />
+            العودة إلى تسجيل الدخول
+          </button>
+        </div>
       </form>
     </div>
   );

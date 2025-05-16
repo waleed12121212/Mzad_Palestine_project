@@ -4,6 +4,7 @@ import { LoginForm } from '../components/auth/LoginForm';
 import { RegisterForm } from '../components/auth/RegisterForm';
 import { ChangePasswordForm } from '../components/auth/ChangePasswordForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
+import { ResetPasswordForm } from '../components/auth/ResetPasswordForm';
 import { ConfirmEmailForm } from '../components/auth/ConfirmEmailForm';
 import { SendEmailConfirmationForm } from '../components/auth/SendEmailConfirmationForm';
 import { VerifyEmailCodeForm } from '../components/auth/VerifyEmailCodeForm';
@@ -36,6 +37,7 @@ export const AuthPage: React.FC = () => {
             <Route path="/register" element={<RegisterForm />} />
             <Route path="/change-password" element={<ChangePasswordForm />} />
             <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+            <Route path="/reset-password" element={<ResetPasswordForm />} />
             <Route path="/confirm-email" element={<ConfirmEmailForm />} />
             <Route path="/send-email-confirmation" element={<SendEmailConfirmationForm />} />
             <Route path="/verify-email-code" element={<VerifyEmailCodeForm />} />

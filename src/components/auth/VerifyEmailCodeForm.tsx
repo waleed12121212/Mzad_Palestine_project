@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, CheckCircle2, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../ui/use-toast';
 
@@ -14,23 +14,45 @@ export const VerifyEmailCodeForm: React.FC = () => {
   const { verifyEmailCode } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    // Get email from location state if available
     const state = location.state as LocationState;
     if (state?.email) {
       setEmail(state.email);
     }
+    inputRefs.current[0]?.focus(); // Focus first input for LTR numbers
   }, [location.state]);
+
+  const handleCodeChange = (index: number, value: string) => {
+    if (value.length > 1) return;
+
+    const newCode = [...verificationCode];
+    newCode[index] = value;
+    setVerificationCode(newCode);
+
+    // Auto-focus next input for LTR
+    if (value !== '' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && verificationCode[index] === '' && index > 0) {
+      // Move to previous input on backspace if current is empty (LTR)
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !verificationCode) {
+    const code = verificationCode.join('');
+    if (!email || !code || code.length !== 6) {
       toast({
         title: "خطأ",
-        description: "الرجاء إدخال البريد الإلكتروني ورمز التحقق",
+        description: "الرجاء إدخال رمز التحقق المكون من 6 أرقام",
         variant: "destructive"
       });
       return;
@@ -38,7 +60,7 @@ export const VerifyEmailCodeForm: React.FC = () => {
     
     setLoading(true);
     try {
-      await verifyEmailCode({ email, verificationCode });
+      await verifyEmailCode({ email, verificationCode: code });
       
       toast({
         title: "تم التحقق بنجاح",
@@ -52,60 +74,63 @@ export const VerifyEmailCodeForm: React.FC = () => {
         description: error.response?.data?.message || "رمز التحقق غير صحيح أو منتهي الصلاحية",
         variant: "destructive"
       });
+      setVerificationCode(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
   };
 
+  // Create reversed array for display
+  const displayOrder = [...verificationCode].reverse();
+
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">التحقق من البريد الإلكتروني</h2>
-        <p className="text-gray-600 dark:text-gray-300">
-          أدخل بريدك الإلكتروني ورمز التحقق الذي تم إرساله إليك
-        </p>
+    <div className="space-y-6 max-w-md mx-auto" dir="rtl">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Mail className="h-10 w-10 text-blue-500 dark:text-blue-400" />
+        </div>
+        <h2 className="text-2xl font-bold">التحقق من البريد الإلكتروني</h2>
+        <div className="space-y-2">
+          <p className="text-gray-600 dark:text-gray-300">
+            تم إرسال رمز التحقق إلى
+          </p>
+          <p className="font-medium text-blue-600 dark:text-blue-400 dir-ltr">
+            {email}
+          </p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            البريد الإلكتروني
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-center mb-4">
+            أدخل رمز التحقق المكون من 6 أرقام
           </label>
-          <div className="relative">
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-              placeholder="your.email@example.com"
-              disabled={loading}
-            />
-            <Mail className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="verificationCode" className="block text-sm font-medium mb-2">
-            رمز التحقق
-          </label>
-          <div className="relative">
-            <input
-              id="verificationCode"
-              type="text"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
-              className="w-full py-3 px-5 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-              placeholder="000000"
-              disabled={loading}
-              maxLength={6}
-            />
+          <div className="flex justify-center gap-2 dir-ltr">
+            {displayOrder.map((digit, index) => {
+              const actualIndex = 5 - index; // Convert display index to actual index
+              return (
+                <input
+                  key={actualIndex}
+                  ref={el => inputRefs.current[actualIndex] = el}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleCodeChange(actualIndex, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(actualIndex, e)}
+                  className="w-12 h-14 text-center text-lg font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all"
+                  disabled={loading}
+                />
+              );
+            })}
           </div>
         </div>
 
         <button
           type="submit"
-          className="w-full btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading}
         >
           {loading ? (
@@ -116,33 +141,31 @@ export const VerifyEmailCodeForm: React.FC = () => {
           ) : (
             <>
               <CheckCircle2 className="h-5 w-5" />
-              تأكيد البريد الإلكتروني
+              تأكيد الرمز
             </>
           )}
         </button>
 
-        <div className="text-center space-y-2">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            لم تستلم رمز التحقق؟{' '}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <span>لم تستلم الرمز؟</span>
             <button
               type="button"
               onClick={() => navigate('/auth/send-email-confirmation')}
-              className="text-blue dark:text-blue-light hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              إعادة إرسال الرمز
+              إعادة إرسال
             </button>
-          </p>
+          </div>
           
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            هل لديك حساب؟{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/auth/login')}
-              className="text-blue dark:text-blue-light hover:underline"
-            >
-              تسجيل الدخول
-            </button>
-          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/auth/login')}
+            className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 flex items-center justify-center gap-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            العودة إلى تسجيل الدخول
+          </button>
         </div>
       </form>
     </div>

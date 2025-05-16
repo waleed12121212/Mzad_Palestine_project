@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { LoginData, RegisterData, ChangePasswordData, ConfirmEmailData, VerifyEmailCodeData } from '../services/authService';
+import { LoginData, RegisterData, ChangePasswordData, ConfirmEmailData, VerifyEmailCodeData, ResetPasswordData } from '../services/authService';
 
 export interface User {
   id: string;
@@ -20,6 +20,8 @@ interface AuthContextType {
   confirmEmail: (data: ConfirmEmailData) => Promise<void>;
   sendEmailConfirmation: (email: string) => Promise<void>;
   verifyEmailCode: (data: VerifyEmailCodeData) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPasswordWithCode: (data: ResetPasswordData) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -32,7 +34,9 @@ export const AuthContext = createContext<AuthContextType>({
   changePassword: async () => {},
   confirmEmail: async () => {},
   sendEmailConfirmation: async () => {},
-  verifyEmailCode: async () => {}
+  verifyEmailCode: async () => {},
+  forgotPassword: async () => {},
+  resetPasswordWithCode: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -104,6 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.verifyEmailCode(data);
   };
 
+  const forgotPassword = async (email: string) => {
+    await authService.forgotPassword(email);
+  };
+
+  const resetPasswordWithCode = async (data: ResetPasswordData) => {
+    await authService.resetPasswordWithCode(data);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -117,6 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         confirmEmail,
         sendEmailConfirmation,
         verifyEmailCode,
+        forgotPassword,
+        resetPasswordWithCode
       }}
     >
       {children}

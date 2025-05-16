@@ -144,7 +144,7 @@ const Auth = () => {
                         <label htmlFor="login-password" className="block text-sm font-medium">
                           كلمة المرور
                         </label>
-                        <Link to="/reset-password" className="text-sm text-blue dark:text-blue-light hover:underline">
+                        <Link to="/auth/forgot-password" className="text-sm text-blue dark:text-blue-light hover:underline">
                           نسيت كلمة المرور؟
                         </Link>
                       </div>

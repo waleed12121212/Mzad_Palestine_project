@@ -64,6 +64,7 @@ export const RegisterForm: React.FC = () => {
     
     setLoading(true);
     try {
+      console.log('Starting registration process for:', formData.email);
       // First register the user
       await register({
         username: formData.username,
@@ -72,10 +73,12 @@ export const RegisterForm: React.FC = () => {
         password: formData.password
       });
       
+      console.log('Registration successful, sending email confirmation...');
       // Then immediately send email confirmation
       try {
         await sendEmailConfirmation(formData.email);
         
+        console.log('Email confirmation sent successfully');
         toast({
           title: "تم إنشاء الحساب بنجاح",
           description: "تم إرسال رمز تحقق إلى بريدك الإلكتروني"
@@ -83,15 +86,17 @@ export const RegisterForm: React.FC = () => {
         
         navigate('/auth/verify-email-code', { state: { email: formData.email } });
       } catch (confirmError: any) {
+        console.error('Failed to send email confirmation:', confirmError);
         // If sending confirmation fails, still proceed but with a different message
         toast({
           title: "تم إنشاء الحساب بنجاح",
-          description: "يرجى طلب رمز التحقق لتأكيد بريدك الإلكتروني"
+          description: "حدث خطأ في إرسال رمز التحقق. يرجى المحاولة مرة أخرى"
         });
         
-        navigate('/auth/verify-email-code', { state: { email: formData.email } });
+        navigate('/auth/send-email-confirmation', { state: { email: formData.email } });
       }
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "خطأ في التسجيل",
         description: error.response?.data?.message || "حدث خطأ أثناء إنشاء الحساب",

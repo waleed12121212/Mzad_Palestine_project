@@ -101,6 +101,12 @@ export interface VerifyEmailCodeData {
   verificationCode: string;
 }
 
+export interface ResetPasswordData {
+  email: string;
+  verificationCode: string;
+  newPassword: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: any;
@@ -109,10 +115,13 @@ export interface AuthResponse {
 export const authService = {
   register: async (data: RegisterData): Promise<void> => {
     try {
+      console.log('Attempting to register user:', { ...data, password: '***' });
       const response = await axiosInstance.post('/Register', data);
+      console.log('Registration successful:', response.data);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.message || 'حدث خطأ أثناء إنشاء الحساب');
+      console.error('Registration error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || error.message || 'حدث خطأ أثناء إنشاء الحساب');
     }
   },
 
@@ -156,10 +165,17 @@ export const authService = {
 
   sendEmailConfirmation: async (email: string): Promise<void> => {
     try {
+      console.log('Sending email confirmation request for:', email);
       const response = await axiosInstance.post('/send-email-confirmation', { email });
+      console.log('Email confirmation response:', response.data);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.message || 'حدث خطأ أثناء إرسال رابط التأكيد');
+      console.error('Email confirmation error:', {
+        response: error.response?.data,
+        status: error.response?.status,
+        message: error.message
+      });
+      throw new Error(error.response?.data?.message || error.message || 'حدث خطأ أثناء إرسال رابط التأكيد');
     }
   },
 
@@ -207,5 +223,25 @@ export const authService = {
   // Helper method to get token
   getToken: () => {
     return localStorage.getItem('token');
-  }
+  },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    try {
+      const response = await axiosInstance.post('/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      console.error('Forgot password error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || error.message || 'حدث خطأ أثناء إرسال رمز إعادة تعيين كلمة المرور');
+    }
+  },
+
+  resetPasswordWithCode: async (data: ResetPasswordData): Promise<void> => {
+    try {
+      const response = await axiosInstance.post('/reset-password-with-code', data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Reset password error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || error.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
+    }
+  },
 }; 
