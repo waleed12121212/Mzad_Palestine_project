@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use relative URL for proxy
-const API_URL = 'http://localhost:8081';
+const API_URL = '';
 
 // Create an axios instance with default config
 const api = axios.create({
@@ -121,6 +121,16 @@ const supportService = {
         }
       });
       return result.data;
+    } catch (error) {
+      handleError(error);
+    }
+  },
+
+  // Get all support tickets (admin)
+  getAllSupport: async () => {
+    try {
+      const response = await api.get('/Support/all');
+      return response.data;
     } catch (error) {
       handleError(error);
     }

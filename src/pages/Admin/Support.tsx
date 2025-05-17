@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import supportService from '@/services/supportService';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSupportTicket } from '@/hooks/useSupportTicket';
 
 interface SupportTicket {
   id: string;
@@ -36,109 +36,35 @@ interface SupportTicket {
 }
 
 const Support = () => {
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    tickets,
+    selectedTicket,
+    loading,
+    error,
+    response,
+    isSubmitting,
+    setSelectedTicket,
+    setResponse,
+    loadTickets,
+    handleStatusChange,
+    handleSubmitResponse,
+    handleDeleteTicket
+  } = useSupportTicket();
+
   const [filter, setFilter] = useState<'all' | 'Open' | 'InProgress' | 'Resolved' | 'Closed' | 0 | 1 | 2>('all');
-  const [response, setResponse] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null);
 
   useEffect(() => {
     loadTickets();
-  }, []);
-
-  const loadTickets = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await supportService.getUserTickets();
-      console.log('Support tickets response:', response);
-      setTickets(Array.isArray(response?.data) ? response.data : []);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'فشل في تحميل التذاكر';
-      setError(message);
-      toast({
-        title: "خطأ",
-        description: message,
-        variant: "destructive"
-      });
-      setTickets([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadTickets]);
 
   const handleTicketSelect = (ticket: SupportTicket) => {
-    setSelectedTicket(prev => (prev && prev.id === ticket.id ? null : ticket));
-    setResponse(''); // Clear response when selecting new ticket
-  };
-
-  const handleStatusChange = async (newStatus: string | number) => {
-    if (!selectedTicket) return;
-
-    try {
-      setLoading(true);
-      await supportService.updateStatus(selectedTicket.id.toString(), newStatus.toString());
-      
-      // Update the tickets list with the new status
-      setTickets(tickets.map(ticket => {
-        if (ticket.id === selectedTicket.id) {
-          return { ...ticket, status: newStatus as any };
-        }
-        return ticket;
-      }));
-      
-      // Update the selected ticket with the new status
-      setSelectedTicket({ ...selectedTicket, status: newStatus as any });
-
-      toast({
-        title: "تم التحديث",
-        description: "تم تحديث حالة التذكرة بنجاح"
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "فشل في تحديث حالة التذكرة",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmitResponse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTicket || !response.trim()) return;
-
-    try {
-      setIsSubmitting(true);
-      // Format the response with the admin response format
-      const now = new Date();
-      const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()} ${now.toLocaleTimeString()}`;
-      const formattedResponse = `Admin Response (${formattedDate}):\n${response.trim()}`;
-      
-      await supportService.addResponse(selectedTicket.id.toString(), formattedResponse);
-      toast({
-        title: "تم الإرسال",
-        description: "تم إرسال الرد بنجاح"
-      });
+    if (selectedTicket && selectedTicket.id === ticket.id) {
+      setSelectedTicket(null);
+    } else {
+      setSelectedTicket(ticket);
       setResponse('');
-      await loadTickets();
-      const updatedTicket = tickets.find(t => t.id === selectedTicket.id);
-      if (updatedTicket) {
-        setSelectedTicket(updatedTicket);
-      }
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "فشل في إرسال الرد",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -248,32 +174,11 @@ const Support = () => {
 
   const handleConfirmDelete = async () => {
     if (!ticketToDelete) return;
-
-    try {
-      setLoading(true);
-      await supportService.deleteTicket(ticketToDelete.id.toString());
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف التذكرة بنجاح"
-      });
-      setShowDeleteAlert(false);
-      setTicketToDelete(null);
-      if (selectedTicket?.id === ticketToDelete.id) {
-        setSelectedTicket(null);
-      }
-      await loadTickets();
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "فشل في حذف التذكرة",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    await handleDeleteTicket(ticketToDelete);
+    setShowDeleteAlert(false);
+    setTicketToDelete(null);
   };
 
-  // Parse admin responses from the description field
   const parseAdminResponses = (description: string) => {
     if (!description) return { userDescription: '', adminResponses: [] };
     
@@ -290,15 +195,40 @@ const Support = () => {
       });
     }
 
+    // Remove duplicates and filter out empty responses
+    const uniqueResponses = [];
+    const seen = new Set();
+    for (const resp of adminResponses) {
+      const key = resp.date + '|' + resp.text;
+      if (!seen.has(key) && resp.text.trim() !== '') {
+        uniqueResponses.push(resp);
+        seen.add(key);
+      }
+    }
+
     // Remove admin responses from the user description
-    if (adminResponses.length > 0) {
+    if (uniqueResponses.length > 0) {
       const firstResponseIndex = description.indexOf('Admin Response (');
       if (firstResponseIndex > -1) {
         userDescription = description.substring(0, firstResponseIndex).trim();
       }
     }
 
-    return { userDescription, adminResponses };
+    console.debug('[UI] Parsed admin responses:', uniqueResponses);
+
+    return { userDescription, adminResponses: uniqueResponses };
+  };
+
+  const handleStatusChangeWithLog = async (newStatus: string | number) => {
+    if (!selectedTicket) return;
+
+    console.debug('[Support] Status change initiated:', {
+      ticketId: selectedTicket.id,
+      oldStatus: selectedTicket.status,
+      newStatus
+    });
+
+    await handleStatusChange(newStatus);
   };
 
   return (
@@ -440,7 +370,7 @@ const Support = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(0)}
+                        onClick={() => handleStatusChangeWithLog(0)}
                         disabled={selectedTicket.status === 0}
                         className="dark:border-gray-600 dark:text-gray-200"
                       >
@@ -449,7 +379,7 @@ const Support = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(1)}
+                        onClick={() => handleStatusChangeWithLog(1)}
                         disabled={selectedTicket.status === 1}
                         className="dark:border-gray-600 dark:text-gray-200"
                       >
@@ -458,7 +388,7 @@ const Support = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(2)}
+                        onClick={() => handleStatusChangeWithLog(2)}
                         disabled={selectedTicket.status === 2}
                         className="dark:border-gray-600 dark:text-gray-200"
                       >

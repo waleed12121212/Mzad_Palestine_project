@@ -191,7 +191,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">الحد الأدنى للمزايدة</p>
             <p className="text-sm font-semibold text-green-600">
-              + {currency} {minBidIncrement.toLocaleString()}
+              {currency} {(currentPrice + (minBidIncrement - currentPrice)).toLocaleString()}
             </p>
           </div>
         </div>

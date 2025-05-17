@@ -13,7 +13,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { bidService, Bid } from "@/services/bidService";
 import { BidForm } from '@/components/bidding/BidForm';
 import { BidHistory } from '@/components/bidding/BidHistory';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
 import ReportDialog from '@/components/ReportDialog';
@@ -40,15 +40,21 @@ interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
   currentBid?: number;
 }
 
+interface SellerInfo {
+  id?: number;
+  firstName?: string;
+  lastName?: string;
+  rating?: number;
+  totalSales?: number;
+  profilePicture?: string;
+  username?: string;
+  [key: string]: any;
+}
+
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [auction, setAuction] = useState<ExtendedAuction>(null);
-  const [originalStartPrice, setOriginalStartPrice] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const isMobile = useIsMobile();
-  const [seller, setSeller] = useState<any>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -56,7 +62,62 @@ const AuctionDetails = () => {
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Fetch auction data with React Query
+  const { data: auction, isLoading, refetch } = useQuery({
+    queryKey: ['auction', id],
+    queryFn: async () => {
+      const auctionResponse: any = await auctionService.getAuctionById(Number(id));
+      const auctionData = auctionResponse.data;
+      // Normalize auction data as before
+      return {
+        id: auctionData.AuctionId,
+        listingId: auctionData.ListingId,
+        name: auctionData.Name,
+        title: auctionData.Name,
+        description: auctionData.Listing?.Description || '',
+        imageUrl: auctionData.ImageUrl,
+        startTime: auctionData.StartTime,
+        endTime: auctionData.EndTime,
+        reservePrice: auctionData.ReservePrice,
+        currentBid: auctionData.CurrentBid,
+        bidIncrement: auctionData.BidIncrement,
+        status: auctionData.Status,
+        userId: auctionData.UserId,
+        bidders: auctionData.Bids?.length || 0,
+        bids: auctionData.Bids || [],
+        category: typeof auctionData.Listing?.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing?.Category || '',
+        subcategory: typeof auctionData.Listing?.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing?.Subcategory || '',
+        condition: auctionData.Listing?.Condition || auctionData.Listing?.condition || '',
+        location: auctionData.Listing?.Location || auctionData.Listing?.location || '',
+        features: auctionData.Listing?.Features || [],
+        views: 0,
+        images: auctionData.Listing?.Images || [],
+      };
+    },
+    enabled: !!id,
+  });
+
+  // Fetch seller data with React Query
+  const { data: seller } = useQuery({
+    queryKey: ['seller', auction?.userId],
+    queryFn: async () => {
+      if (!auction?.userId) return null;
+      const sellerData = await userService.getUserById(auction.userId.toString());
+      const sellerInfo: SellerInfo = sellerData.data || sellerData || {};
+      return {
+        ...sellerInfo,
+        firstName: sellerInfo.firstName || '',
+        lastName: sellerInfo.lastName || '',
+        rating: sellerInfo.rating || 0,
+        totalSales: sellerInfo.totalSales || 0
+      };
+    },
+    enabled: !!auction?.userId,
+  });
+
+  // Set isLiked when auction/listingId changes
   useEffect(() => {
     if (auction?.listingId) {
       setIsLiked(isInWishlist(auction.listingId));
@@ -64,116 +125,11 @@ const AuctionDetails = () => {
   }, [auction?.listingId, isInWishlist]);
 
   const handleBidSuccess = (newBid: Bid) => {
-    console.log('[AuctionDetails] Bid success:', newBid);
-    // Optimistically update the auction data
-    setAuction(prev => ({
-      ...prev,
-      reservePrice: newBid.bidAmount,
-      bids: [newBid, ...(prev.bids || [])]
-    }));
-    
-    // Refetch auction data
+    // Auto-refresh auction data
     queryClient.invalidateQueries({ queryKey: ['auction', id] });
-    
-    // Send notification with only the auction name
-    if (auction && auction.title) {
-      // Example: notifyBidPlaced(userId, auctionTitle)
-      // Replace with your actual notification trigger if needed
-      // auctionNotificationService.notifyBidPlaced(userId, auction.title);
-      console.log('[AuctionDetails] Would send notification with auction name only:', auction.title);
-    }
+    // Optionally, refetch bids if you have a separate query for them
+    // queryClient.invalidateQueries({ queryKey: ['auctionBids', id] });
   };
-
-  useEffect(() => {
-    const fetchAuction = async () => {
-      setLoading(true);
-      try {
-        const auctionResponse: any = await auctionService.getAuctionById(Number(id));
-        console.log('auctionData', auctionResponse);
-        const auctionData = auctionResponse.data;
-        
-        // Debug: log the Listing object
-        console.log('Listing data:', auctionData.Listing);
-        
-        // التحقق من وجود المنتج المرتبط
-        if (!auctionData.Listing) {
-          throw new Error("المزاد لا يحتوي على منتج مرتبط");
-        }
-
-        // تحويل البيانات إلى الشكل المتوقع في الواجهة
-        const normalizedAuction = {
-          id: auctionData.AuctionId,
-          listingId: auctionData.ListingId,
-          name: auctionData.Name,
-          title: auctionData.Name,
-          description: auctionData.Listing?.Description || '',
-          imageUrl: auctionData.ImageUrl,
-          startTime: auctionData.StartTime,
-          endTime: auctionData.EndTime,
-          reservePrice: auctionData.ReservePrice,
-          currentBid: auctionData.CurrentBid,
-          bidIncrement: auctionData.BidIncrement,
-          status: auctionData.Status,
-          userId: auctionData.UserId,
-          bidders: auctionData.Bids?.length || 0,
-          bids: auctionData.Bids || [],
-          category: typeof auctionData.Listing?.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing?.Category || '',
-          subcategory: typeof auctionData.Listing?.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing?.Subcategory || '',
-          condition: auctionData.Listing?.Condition || auctionData.Listing?.condition || '',
-          location: auctionData.Listing?.Location || auctionData.Listing?.location || '',
-          features: auctionData.Listing?.Features || [],
-          views: 0,
-        };
-
-        console.log('Normalized auction data:', normalizedAuction); // للتأكد من البيانات
-
-        setAuction(normalizedAuction);
-        setOriginalStartPrice(auctionData.ReservePrice);
-
-        // جلب معلومات البائع
-        if (auctionData.UserId || auctionData.userId) {
-          try {
-            const sellerId = (auctionData.UserId || auctionData.userId).toString();
-            const sellerData = await userService.getUserById(sellerId);
-            // Debug: log the full sellerData and its keys
-            console.log('Fetched sellerData:', sellerData);
-            console.log('sellerData keys:', Object.keys(sellerData));
-            if (sellerData) {
-              // @ts-expect-error: sellerData is not a UserProfile, it has a 'data' property
-              const sellerInfo = sellerData.data || sellerData || {};
-              setSeller({
-                ...sellerInfo,
-                firstName: sellerInfo.firstName || '',
-                lastName: sellerInfo.lastName || '',
-                rating: sellerInfo.rating || 0,
-                totalSales: sellerInfo.totalSales || 0
-              });
-            } else {
-              setSeller(null);
-              console.error('No seller data returned for ID:', sellerId);
-            }
-          } catch (error) {
-            console.error('Error fetching seller data:', error);
-            setSeller(null);
-            // Don't show error toast for seller data - just handle gracefully
-          }
-        } else {
-          console.error('No seller ID found in auction data');
-          setSeller(null);
-        }
-      } catch (error) {
-        setAuction(null);
-        setSeller(null);
-        toast({
-          title: "خطأ في جلب بيانات المزاد",
-          description: error.message || "حدث خطأ غير متوقع."
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAuction();
-  }, [id]);
 
   const toggleLike = async () => {
     if (!user) {
@@ -222,8 +178,8 @@ const AuctionDetails = () => {
   };
   
   const navigateToSellerProfile = () => {
-    if (auction?.seller?.id) {
-      navigate(`/seller/${auction.seller.id}`);
+    if (seller?.id) {
+      navigate(`/seller/${seller.id}`);
     }
   };
   
@@ -308,7 +264,7 @@ const AuctionDetails = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow flex items-center justify-center">
@@ -532,13 +488,13 @@ const AuctionDetails = () => {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">السعر الحالي</p>
                       <p className="text-3xl font-bold text-blue dark:text-blue-light">
-                        ₪{(((auction as any).currentBid && (auction as any).currentBid > 0) ? (auction as any).currentBid : (originalStartPrice ?? 0)).toLocaleString()}
+                        ₪{(((auction as any).currentBid && (auction as any).currentBid > 0) ? (auction as any).currentBid : (auction.reservePrice ?? 0)).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">بدأ من</p>
                       <p className="text-lg font-medium">
-                        ₪{(originalStartPrice || 0).toLocaleString()}
+                        ₪{(auction.reservePrice || 0).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -563,7 +519,7 @@ const AuctionDetails = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">
-                        الحد الأدنى للمزايدة: ₪{(((auction as any).currentBid ?? originalStartPrice ?? 0) + (auction.bidIncrement ?? 0)).toLocaleString()}
+                        الحد الأدنى للمزايدة: ₪{((auction.currentBid && auction.currentBid > 0 ? auction.currentBid : auction.reservePrice ?? 0) + (auction.bidIncrement ?? 0)).toLocaleString()}
                       </span>
                       <span className="text-sm text-gray-600 dark:text-gray-300">
                         {auction.views} مشاهدة
@@ -573,7 +529,7 @@ const AuctionDetails = () => {
                     <BidForm
                       auctionId={Number(id)}
                       auctionTitle={auction?.title || auction?.name || ''}
-                      currentPrice={auction.currentBid ?? auction.reservePrice}
+                      currentPrice={auction.currentBid && auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
                       bidIncrement={auction.bidIncrement}
                       isAuctionActive={new Date(auction.endTime) > new Date()}
                       onBidSuccess={handleBidSuccess}
@@ -619,13 +575,13 @@ const AuctionDetails = () => {
                       onClick={navigateToSellerProfile}
                     >
                       {seller?.profilePicture ? (
-                        <img 
+                        <img
                           src={
                             seller.profilePicture.startsWith('http')
                               ? seller.profilePicture
                               : `http://mazadpalestine.runasp.net${seller.profilePicture}`
-                          } 
-                          alt={`${seller.firstName} ${seller.lastName}`}
+                          }
+                          alt={`${seller.firstName ?? ''} ${seller.lastName ?? ''}`}
                           className="w-full h-full object-cover"
                         />
                       ) : (

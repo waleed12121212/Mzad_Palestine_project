@@ -24,6 +24,37 @@ interface AdminResponse {
   date: string;
 }
 
+const getStatusColor = (status) => {
+  const numericStatus = typeof status === 'number' ? status : getNumericStatus(status);
+  switch (numericStatus) {
+    case 0: return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    case 1: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    case 2: return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+  }
+};
+
+const getStatusText = (status) => {
+  const numericStatus = typeof status === 'number' ? status : getNumericStatus(status);
+  switch (numericStatus) {
+    case 0: return 'مفتوحة';
+    case 1: return 'قيد المعالجة';
+    case 2: return 'مغلقة';
+    default: return 'مفتوحة';
+  }
+};
+
+const getNumericStatus = (status) => {
+  switch (status) {
+    case 'Open': return 0;
+    case 'InProgress': return 1;
+    case 'Pending': return 1;
+    case 'Resolved': return 2;
+    case 'Closed': return 2;
+    default: return 0;
+  }
+};
+
 const Support: React.FC = () => {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -33,6 +64,7 @@ const Support: React.FC = () => {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<string | null>(null);
   const [expandedTickets, setExpandedTickets] = useState<Record<string, boolean>>({});
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     loadTickets();
@@ -160,15 +192,26 @@ const Support: React.FC = () => {
       });
     }
 
+    // Remove duplicates and filter out empty responses
+    const uniqueResponses: AdminResponse[] = [];
+    const seen = new Set();
+    for (const resp of adminResponses) {
+      const key = resp.date + '|' + resp.text;
+      if (!seen.has(key) && resp.text.trim() !== '') {
+        uniqueResponses.push(resp);
+        seen.add(key);
+      }
+    }
+
     // Remove admin responses from the user description
-    if (adminResponses.length > 0) {
+    if (uniqueResponses.length > 0) {
       const firstResponseIndex = description.indexOf('Admin Response (');
       if (firstResponseIndex > -1) {
         userDescription = description.substring(0, firstResponseIndex).trim();
       }
     }
 
-    return { userDescription, adminResponses };
+    return { userDescription, adminResponses: uniqueResponses };
   };
 
   const toggleTicketExpansion = (ticketId: string | number) => {
@@ -176,19 +219,6 @@ const Support: React.FC = () => {
       ...prev,
       [ticketId.toString()]: !prev[ticketId.toString()]
     }));
-  };
-
-  // Convert numeric status to string
-  const getStatusText = (status: 'Open' | 'Pending' | 'Closed' | number): string => {
-    if (typeof status === 'number') {
-      switch (status) {
-        case 0: return 'مفتوحة';
-        case 1: return 'قيد المعالجة';
-        case 2: return 'مغلقة';
-        default: return 'مفتوحة';
-      }
-    }
-    return status;
   };
 
   // Debug render
@@ -224,74 +254,122 @@ const Support: React.FC = () => {
         <div className="md:col-span-1">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <h2 className="text-xl font-semibold mb-4 dark:text-white">التذاكر الخاصة بك</h2>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200'
+                }`}
+              >
+                الكل
+              </button>
+              <button
+                onClick={() => setStatusFilter('0')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === '0'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200'
+                }`}
+              >
+                مفتوحة
+              </button>
+              <button
+                onClick={() => setStatusFilter('1')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === '1'
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200'
+                }`}
+              >
+                قيد المعالجة
+              </button>
+              <button
+                onClick={() => setStatusFilter('2')}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === '2'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200'
+                }`}
+              >
+                مغلقة
+              </button>
+            </div>
             {loading ? (
               <p className="text-center py-4 dark:text-gray-300">جاري التحميل...</p>
             ) : tickets.length === 0 ? (
               <p className="text-center py-4 dark:text-gray-300">لا يوجد تذاكر</p>
             ) : (
               <div className="space-y-2">
-                {tickets.map((ticket) => {
-                  const { userDescription, adminResponses } = parseAdminResponses(ticket.description);
-                  const isExpanded = expandedTickets[ticket.id.toString()] || false;
-                  
-                  return (
-                    <div
-                      key={ticket.id}
-                      className={`p-3 rounded-md cursor-pointer transition-colors ${
-                        selectedTicket?.id === ticket.id
-                          ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700'
-                      }`}
-                      onClick={() => handleTicketClick(ticket)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium dark:text-white">{ticket.subject}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            الحالة: {getStatusText(ticket.status)}
-                          </p>
-                          {ticket.createdAt && (
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                              {new Date(ticket.createdAt).toLocaleDateString('ar-EG')}
+                {tickets
+                  .filter(ticket => {
+                    if (statusFilter === 'all') return true;
+                    const numericStatus = typeof ticket.status === 'number' ? ticket.status : getNumericStatus(ticket.status);
+                    return String(numericStatus) === statusFilter;
+                  })
+                  .map((ticket) => {
+                    const { userDescription, adminResponses } = parseAdminResponses(ticket.description);
+                    const isExpanded = expandedTickets[ticket.id.toString()] || false;
+                    
+                    return (
+                      <div
+                        key={ticket.id}
+                        className={`p-3 rounded-md cursor-pointer transition-colors ${
+                          selectedTicket?.id === ticket.id
+                            ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700'
+                        }`}
+                        onClick={() => handleTicketClick(ticket)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium dark:text-white">{ticket.subject}</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              الحالة: <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getStatusColor(ticket.status)}`}>{getStatusText(ticket.status)}</span>
                             </p>
+                            {ticket.createdAt && (
+                              <p className="text-xs text-gray-400 dark:text-gray-500">
+                                {new Date(ticket.createdAt).toLocaleDateString('ar-EG')}
+                              </p>
+                            )}
+                          </div>
+                          {adminResponses.length > 0 && (
+                            <span className="text-blue-500 dark:text-blue-400">
+                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                            </span>
                           )}
                         </div>
-                        {adminResponses.length > 0 && (
-                          <span className="text-blue-500 dark:text-blue-400">
-                            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                          </span>
+
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                            {userDescription}
+                          </p>
+                        </div>
+
+                        {/* Admin Responses */}
+                        {isExpanded && adminResponses.length > 0 && (
+                          <div className="mt-3 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                            {adminResponses.map((response, index) => (
+                              <div key={index} className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                    رد الإدارة
+                                  </span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {response.date}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                  {response.text}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
-
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                          {userDescription}
-                        </p>
-                      </div>
-
-                      {/* Admin Responses */}
-                      {isExpanded && adminResponses.length > 0 && (
-                        <div className="mt-3 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                          {adminResponses.map((response, index) => (
-                            <div key={index} className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                  رد الإدارة
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {response.date}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                {response.text}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
           </div>

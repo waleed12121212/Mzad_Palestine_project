@@ -182,7 +182,7 @@ export default defineConfig(({ mode }) => ({
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify(API_URL),
   },
-  logLevel: 'error',
+  logLevel: 'info',
   clearScreen: false,
   build: {
     rollupOptions: {

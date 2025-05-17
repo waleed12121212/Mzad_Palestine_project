@@ -476,7 +476,10 @@ const ActiveAuctions: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {sortedAuctions.map((auction) => {
-                    console.log('Rendering auction:', auction); // للتأكد من البيانات قبل تمريرها للمكون
+                    const bidIncrement = auction.bidIncrement ?? 0;
+                    const minBid = (auction.currentBid != null && auction.currentBid > 0
+                      ? auction.currentBid
+                      : (auction.reservePrice ?? 0)) + bidIncrement;
                     return (
                       <AuctionCard
                         key={auction.id}
@@ -485,7 +488,7 @@ const ActiveAuctions: React.FC = () => {
                         title={auction.title}
                         description={""}
                         currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
-                        minBidIncrement={auction.bidIncrement}
+                        minBidIncrement={minBid}
                         imageUrl={auction.imageUrl}
                         endTime={auction.endTime}
                         bidders={auction.bidsCount ?? 0}

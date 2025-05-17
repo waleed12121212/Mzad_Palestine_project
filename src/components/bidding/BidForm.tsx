@@ -29,12 +29,14 @@ export const BidForm: React.FC<BidFormProps> = ({
   onBidSuccess,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [minBidError, setMinBidError] = useState<string | null>(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<BidFormData>();
 
   const minBidAmount = currentPrice + bidIncrement;
   console.log(currentPrice);
   console.log(bidIncrement);
   const onSubmit = async (data: BidFormData) => {
+    setMinBidError(null);
     if (!isAuctionActive) {
       toast.error('المزاد غير نشط حالياً');
       return;
@@ -42,6 +44,7 @@ export const BidForm: React.FC<BidFormProps> = ({
 
     if (data.bidAmount < minBidAmount) {
       toast.error(`يجب أن تكون المزايدة على الأقل ${minBidAmount} ₪`);
+      setMinBidError(`يجب أن تكون المزايدة على الأقل ${minBidAmount} ₪`);
       return;
     }
 
@@ -73,13 +76,15 @@ export const BidForm: React.FC<BidFormProps> = ({
         toast.error('حدث خطأ غير متوقع');
       }
       console.error('Bid error:', error);
-    } finally {
-      setIsSubmitting(false);
     }
+    setIsSubmitting(false);
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {minBidError && (
+        <div className="text-red-500 text-sm mb-2 text-center">{minBidError}</div>
+      )}
       <div>
         <Input
           type="number"
