@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-// Use relative URL to work with the proxy
+// Use the environment variable for API URL
 const API_URL = '/User';
 
 // Create a custom axios instance
@@ -40,6 +40,9 @@ axiosInstance.interceptors.response.use(
     const axiosError = error as AxiosError<{ message?: string }>;
     // Handle network errors
     if (!axiosError.response) {
+      if (axiosError.message === 'Network Error' || axiosError.message === 'net::ERR_INTERNET_DISCONNECTED') {
+        throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى');
+      }
       throw new Error('خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت الخاص بك');
     }
     // Handle API errors
@@ -142,5 +145,22 @@ export const userService = {
   // Delete user (admin only)
   deleteUser: async (userId: string): Promise<void> => {
     await axiosInstance.delete(`/${userId}`);
-  }
+  },
+
+  // Get user profile by user ID
+  getUserProfileByUserId: async (userId: number): Promise<{
+    success: boolean;
+    data: {
+      id: number;
+      username: string;
+      email: string;
+      phoneNumber: string;
+      profilePicture: string;
+      location: string;
+      joinDate: string;
+    }
+  }> => {
+    const response = await axiosInstance.get(`/profile/${userId}`);
+    return response.data;
+  },
 };
