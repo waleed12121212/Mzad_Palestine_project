@@ -87,15 +87,15 @@ export const VerifyEmailCodeForm: React.FC = () => {
   return (
     <div className="space-y-6 max-w-md mx-auto" dir="rtl">
       <div className="text-center space-y-4">
-        <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Mail className="h-10 w-10 text-blue-500 dark:text-blue-400" />
+        <div className="w-20 h-20 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Mail className="h-10 w-10 text-primary" />
         </div>
         <h2 className="text-2xl font-bold">التحقق من البريد الإلكتروني</h2>
         <div className="space-y-2">
           <p className="text-gray-600 dark:text-gray-300">
             تم إرسال رمز التحقق إلى
           </p>
-          <p className="font-medium text-blue-600 dark:text-blue-400 dir-ltr">
+          <p className="font-medium text-primary dir-ltr">
             {email}
           </p>
         </div>
@@ -120,7 +120,7 @@ export const VerifyEmailCodeForm: React.FC = () => {
                   value={digit}
                   onChange={(e) => handleCodeChange(actualIndex, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(actualIndex, e)}
-                  className="w-12 h-14 text-center text-lg font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all"
+                  className="w-12 h-14 text-center text-lg font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-transparent focus:border-primary focus:outline-none transition-all"
                   disabled={loading}
                 />
               );
@@ -130,7 +130,7 @@ export const VerifyEmailCodeForm: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading}
         >
           {loading ? (
@@ -152,7 +152,7 @@ export const VerifyEmailCodeForm: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/auth/send-email-confirmation')}
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-primary hover:underline font-medium"
             >
               إعادة إرسال
             </button>
