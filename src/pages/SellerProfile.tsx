@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { userService } from "@/services/userService";
 import { auctionService } from "@/services/auctionService";
 import { toast } from "sonner";
+import ContactSellerDialog from '@/components/ContactSellerDialog';
 
 interface Auction {
   id: string;
@@ -29,6 +30,7 @@ const SellerProfile = () => {
   const [sellerAuctions, setSellerAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'auctions' | 'completed'>('auctions');
+  const [showContactDialog, setShowContactDialog] = useState(false);
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -37,6 +39,7 @@ const SellerProfile = () => {
         
         // Fetch seller profile
         const sellerResponse = await userService.getUserProfileByUserId(parseInt(id));
+        // @ts-ignore
         setSeller(sellerResponse.data);
 
         // Fetch seller auctions
@@ -44,7 +47,7 @@ const SellerProfile = () => {
         console.log('استجابة المزادات:', auctionsResponse);
         const auctions = Array.isArray(auctionsResponse)
           ? auctionsResponse
-          : auctionsResponse.data || [];
+          : (auctionsResponse as any).data || [];
         const normalizedAuctions = auctions.map(auction => ({
           id: String(auction.id ?? auction.auctionId ?? auction.AuctionId ?? ''),
           listingId: Number(auction.listingId ?? auction.ListingId ?? 0),
@@ -105,6 +108,7 @@ const SellerProfile = () => {
   }
 
   return (
+    <>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8 rtl">
           {/* معلومات البائع */}
@@ -112,9 +116,9 @@ const SellerProfile = () => {
             <div className="neo-card p-6 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">معلومات البائع</h1>
-                <Link to={`/chat/${seller.id}`} className="text-blue hover:underline text-sm">
+                <button onClick={() => setShowContactDialog(true)} className="text-blue hover:underline text-sm bg-transparent border-0 cursor-pointer">
                   مراسلة
-                </Link>
+                </button>
               </div>
 
               <div className="flex items-center gap-4 mb-6">
@@ -177,8 +181,9 @@ const SellerProfile = () => {
               <h3 className="font-semibold mb-4">روابط سريعة</h3>
               <div className="space-y-2">
                 <Link
-                  to={`/chat/${seller.id}`}
-                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  to="#"
+                  onClick={e => { e.preventDefault(); setShowContactDialog(true); }}
+                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <MessageCircle className="h-5 w-5 text-blue" />
@@ -268,6 +273,16 @@ const SellerProfile = () => {
           </div>
         </div>
       </div>
+      {seller && (
+        <ContactSellerDialog
+          isOpen={showContactDialog}
+          onClose={() => setShowContactDialog(false)}
+          sellerId={seller.id}
+          sellerName={seller.username}
+          showAuctionInfo={false}
+        />
+      )}
+    </>
   );
 };
 

@@ -16,6 +16,7 @@ interface ContactSellerDialogProps {
   auctionId?: number;
   auctionImage?: string;
   auctionPrice?: number;
+  showAuctionInfo?: boolean;
 }
 
 const ContactSellerDialog: React.FC<ContactSellerDialogProps> = ({
@@ -26,7 +27,8 @@ const ContactSellerDialog: React.FC<ContactSellerDialogProps> = ({
   auctionTitle,
   auctionId,
   auctionImage,
-  auctionPrice
+  auctionPrice,
+  showAuctionInfo = true,
 }) => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -95,7 +97,7 @@ const ContactSellerDialog: React.FC<ContactSellerDialogProps> = ({
         ) : (
         <>
         {/* Auction Preview */}
-        {auctionTitle && (
+        {showAuctionInfo && auctionTitle && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-start gap-3">
               {auctionImage && (
@@ -126,7 +128,10 @@ const ContactSellerDialog: React.FC<ContactSellerDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
             <Info className="h-4 w-4 mt-0.5" />
-            <p>اكتب رسالتك للبائع. سيتم إرفاق تفاصيل المزاد تلقائياً مع رسالتك.</p>
+            {showAuctionInfo
+              ? <p>اكتب رسالتك للبائع. سيتم إرفاق تفاصيل المزاد تلقائياً مع رسالتك.</p>
+              : <p>اكتب رسالتك للبائع.</p>
+            }
           </div>
           <Textarea
             placeholder="اكتب رسالتك هنا..."
