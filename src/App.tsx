@@ -32,6 +32,10 @@ import Support from '@/pages/Support';
 import WonAuctions from '@/pages/WonAuctions';
 import PaymentPage from '@/pages/PaymentPage';
 import CategoryPage from '@/pages/CategoryPage';
+import About from '@/pages/About';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import HowItWorks from '@/pages/HowItWorks';
 
 const queryClient = new QueryClient();
 
@@ -193,6 +197,10 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster

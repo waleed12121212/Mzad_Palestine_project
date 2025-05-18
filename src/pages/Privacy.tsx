@@ -1,11 +1,8 @@
-
 import React from "react";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { Shield, LockKeyhole, FileText, Users } from "lucide-react";
 
 const Privacy = () => {
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -107,13 +104,13 @@ const Privacy = () => {
               </p>
               <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                 <p className="text-gray-600 dark:text-gray-300">
-                  البريد الإلكتروني: privacy@mzadpalestine.ps
+                  البريد الإلكتروني: mzadpalestine5@gmail.com
                 </p>
                 <p className="text-gray-600 dark:text-gray-300">
-                  الهاتف: +970 59 123 4567
+                  الهاتف: +970568645283
                 </p>
                 <p className="text-gray-600 dark:text-gray-300">
-                  العنوان: رام الله، فلسطين
+                  العنوان: نابلس، فلسطين
                 </p>
               </div>
             </section>
@@ -128,7 +125,6 @@ const Privacy = () => {
           </div>
         </div>
       </div>
-    </PageWrapper>
   );
 };
 

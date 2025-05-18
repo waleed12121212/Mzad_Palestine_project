@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
@@ -29,7 +28,7 @@ const Footer: React.FC = () => {
               <FooterLink href="/terms">الشروط والأحكام</FooterLink>
               <FooterLink href="/privacy">سياسة الخصوصية</FooterLink>
               <FooterLink href="/how-it-works">الأسئلة الشائعة</FooterLink>
-              <FooterLink href="/contact">اتصل بنا</FooterLink>
+              <FooterLink href="/support">الدعم الفني</FooterLink>
             </ul>
           </div>
 
@@ -51,15 +50,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-center text-gray-600 dark:text-gray-400 rtl">
                 <MapPin className="h-5 w-5 ml-2 text-blue dark:text-blue-light" />
-                <span>رام الله، فلسطين</span>
+                <span>نابلس، فلسطين</span>
               </li>
               <li className="flex items-center text-gray-600 dark:text-gray-400">
                 <Phone className="h-5 w-5 ml-2 text-blue dark:text-blue-light" />
-                <span>+970 59 123 4567</span>
+                <span>+970568645283</span>
               </li>
               <li className="flex items-center text-gray-600 dark:text-gray-400">
                 <Mail className="h-5 w-5 ml-2 text-blue dark:text-blue-light" />
-                <span>info@mzadpalestine.ps</span>
+                <span>mzadpalestine5@gmail.com</span>
               </li>
             </ul>
           </div>

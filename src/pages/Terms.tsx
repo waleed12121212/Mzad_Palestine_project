@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Separator } from "@/components/ui/separator";
 
@@ -196,7 +195,7 @@ const Terms: React.FC = () => {
 
           <h2 className="text-2xl font-semibold mb-4">13. التواصل</h2>
           <p className="mb-6">
-            إذا كان لديك أي أسئلة حول هذه الشروط والأحكام، يرجى التواصل معنا على <a href="mailto:legal@mzadpalestine.ps" className="text-blue hover:underline">legal@mzadpalestine.ps</a>.
+            إذا كان لديك أي أسئلة حول هذه الشروط والأحكام، يرجى التواصل معنا على <a href="mailto:mzadpalestine5@gmail.com" className="text-blue hover:underline">mzadpalestine5@gmail.com</a>.
           </p>
         </div>
       </div>

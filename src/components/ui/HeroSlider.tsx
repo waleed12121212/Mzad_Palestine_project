@@ -12,17 +12,17 @@ const HeroSlider = () => {
 
   const slides: SlideItem[] = [
     {
-      imageUrl: "https://images.unsplash.com/photo-1511883040705-6011fad9edfc?q=80&w=2974&auto=format&fit=crop",
+      imageUrl: "/images/hero/photo-4.png",
       title: "منصة مزاد فلسطين للمزادات الإلكترونية",
       description: "مزادات آمنة وشفافة بتقنيات حديثة"
     },
     {
-      imageUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2970",
+      imageUrl: "/images/hero/photo-1.jpeg",
       title: "أفضل العروض والمزادات",
       description: "فرص استثنائية للفوز بمنتجات مميزة"
     },
     {
-      imageUrl: "https://images.unsplash.com/photo-1607082349566-187342175e2f?q=80&w=2970",
+      imageUrl: "/images/hero/photo-2.avif",
       title: "مزادات عقارية حصرية",
       description: "استثمر في أفضل العقارات بأسعار تنافسية"
     }

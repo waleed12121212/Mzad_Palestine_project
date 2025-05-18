@@ -1,16 +1,13 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Star, Award, Users, ShieldCheck, BarChart3, ArrowRight } from "lucide-react";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const About = () => {
   const isMobile = useIsMobile();
   
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-8 md:py-12">
         {/* القسم الرئيسي */}
         <div className="text-center mb-12 md:mb-16 rtl">
@@ -130,11 +127,11 @@ const About = () => {
         {/* قسم فريق العمل */}
         <div className="mb-12 md:mb-16 rtl">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center">فريق العمل</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="mb-4 mx-auto overflow-hidden rounded-full w-32 h-32 md:w-40 md:h-40 relative">
                 <img
-                  src="/lovable-uploads/712d026b-d27b-4a19-abf9-4951332707d2.png"
+                  src="../../public/images/team/waleed.png"
                   alt="وليد دويكات"
                   className="w-full h-full object-cover"
                 />
@@ -142,41 +139,27 @@ const About = () => {
               <h3 className="text-xl font-semibold mb-1">وليد دويكات</h3>
               <p className="text-gray-600 dark:text-gray-400">المؤسس والرئيس التنفيذي</p>
             </div>
-            
             <div className="text-center">
               <div className="mb-4 mx-auto overflow-hidden rounded-full w-32 h-32 md:w-40 md:h-40 relative">
                 <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-                  alt="سارة عبد الله"
+                  src="../../public/images/team/saed.png"
+                  alt="سعد عودة"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-semibold mb-1">سارة عبد الله</h3>
-              <p className="text-gray-600 dark:text-gray-400">مديرة التسويق</p>
+              <h3 className="text-xl font-semibold mb-1">سعد عودة</h3>
+              <p className="text-gray-600 dark:text-gray-400">مدير العمليات</p>
             </div>
-            
             <div className="text-center">
               <div className="mb-4 mx-auto overflow-hidden rounded-full w-32 h-32 md:w-40 md:h-40 relative">
                 <img
-                  src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-                  alt="محمد خالد"
+                  src="../../public/images/team/kareem.png"
+                  alt="كريم مثقال"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-semibold mb-1">محمد خالد</h3>
-              <p className="text-gray-600 dark:text-gray-400">مدير التكنولوجيا</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="mb-4 mx-auto overflow-hidden rounded-full w-32 h-32 md:w-40 md:h-40 relative">
-                <img
-                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-                  alt="ليلى عمر"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-xl font-semibold mb-1">ليلى عمر</h3>
-              <p className="text-gray-600 dark:text-gray-400">مديرة علاقات العملاء</p>
+              <h3 className="text-xl font-semibold mb-1">كريم مثقال</h3>
+              <p className="text-gray-600 dark:text-gray-400">مدير التقنية</p>
             </div>
           </div>
         </div>
@@ -197,7 +180,6 @@ const About = () => {
           </div>
         </div>
       </div>
-    </PageWrapper>
   );
 };
 

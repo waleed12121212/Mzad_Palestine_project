@@ -17,11 +17,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import PageWrapper from "@/components/layout/PageWrapper";
 
 const HowItWorks: React.FC = () => {
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-12">
         {/* قسم البانر الرئيسي */}
         <div className="text-center mb-16 rtl">
@@ -161,7 +159,6 @@ const HowItWorks: React.FC = () => {
           </Button>
         </div>
       </div>
-    </PageWrapper>
   );
 };
 
