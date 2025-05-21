@@ -40,16 +40,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
-          ${isDragActive ? 'border-blue bg-blue-50' : 'border-gray-300 hover:border-blue'}`}
+          ${isDragActive ? 'border-blue bg-blue-50 dark:bg-blue-950/20' : 'border-gray-300 dark:border-gray-700 hover:border-blue dark:hover:border-blue-400'}`}
       >
         <input {...getInputProps()} />
-        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-        <p className="text-sm text-gray-500">
+        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {isDragActive
             ? 'أفلت الصور هنا...'
             : 'اسحب وأفلت الصور هنا، أو انقر للاختيار'}
         </p>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
           يمكنك تحميل {maxFiles - value.length} صور إضافية
         </p>
       </div>
@@ -74,7 +74,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-1 truncate">{file.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{file.name}</p>
             </div>
           ))}
         </div>

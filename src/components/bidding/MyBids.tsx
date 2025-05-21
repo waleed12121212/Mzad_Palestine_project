@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { bidService, Bid } from '@/services/bidService';
+import { bidService } from '@/services/bidService';
 import { Loader2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -8,14 +8,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { auctionService } from '@/services/auctionService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const MyBids: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['userBids'],
-    queryFn: () => bidService.getUserBids(),
+    queryKey: ['userBids', user?.id],
+    queryFn: () => user?.id ? bidService.getUserBids(Number(user.id)) : Promise.resolve({ success: true, data: [] }),
+    enabled: !!user?.id
   });
-  const bids = Array.isArray(data) ? data : [];
+  
+  // Extract bids from the API response data structure
+  const bids = data?.data || [];
 
   // New: State to hold auction info for each bid
   const [auctionInfo, setAuctionInfo] = useState<{ [auctionId: number]: any }>({});
@@ -109,12 +115,12 @@ export const MyBids: React.FC = () => {
                   {auction ? auction.name : `مزاد #${bid.auctionId}`}
                 </h3>
                 <p className="text-gray-500 text-sm">
-                  {format(new Date(bid.createdAt), 'PPP p', { locale: ar })}
+                  {bid.bidTime ? format(new Date(bid.bidTime), 'PPP p', { locale: ar }) : 'تاريخ غير متوفر'}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-bold text-blue-500">
-                  {bid.bidAmount} ₪
+                  {bid.amount} ₪
                 </p>
                 <Button
                   variant="ghost"

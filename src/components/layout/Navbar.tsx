@@ -89,6 +89,9 @@ const Navbar: React.FC = () => {
             <DesktopNavLink href="/auctions/won" active={location.pathname === "/auctions/won"}>
               المزادات الفائزة
             </DesktopNavLink>
+            <DesktopNavLink href="/buy-now" active={location.pathname === "/buy-now"}>
+              الشراء الفوري
+            </DesktopNavLink>
             <DesktopNavLink href="/categories" active={isActive("/categories")}>
               تصفح الفئات
             </DesktopNavLink>
@@ -217,6 +220,9 @@ const Navbar: React.FC = () => {
               </MobileNavLink>
               <MobileNavLink href="/auctions/won" active={location.pathname === "/auctions/won"}>
                 المزادات الفائزة
+              </MobileNavLink>
+              <MobileNavLink href="/buy-now" active={location.pathname === "/buy-now"}>
+                الشراء الفوري
               </MobileNavLink>
               <MobileNavLink href="/categories" active={isActive("/categories")}>
                 تصفح الفئات

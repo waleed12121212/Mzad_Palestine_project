@@ -1,7 +1,7 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, EffectCards } from 'swiper/modules';
-import { Smartphone, Car, Gem, BookOpen, Camera, Baby, Coffee, Sofa, Shirt, Laptop } from 'lucide-react';
+import { Smartphone, Car, Gem, BookOpen, Camera, Baby, Coffee, Sofa, Shirt, Laptop, Tag, Gavel } from 'lucide-react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -12,6 +12,8 @@ interface Category {
   name: string;
   imageUrl: string;
   count: number;
+  auctionCount?: number;
+  listingCount?: number;
   subcategories?: { id: string; name: string; count: number }[];
 }
 
@@ -24,11 +26,13 @@ interface CategoryCarouselProps {
 const getCategoryIcon = (name: string) => {
   switch (name.toLowerCase()) {
     case "أزياء":
+    case "ملابس رجالية":
       return <Shirt className="w-8 h-8" />;
     case "إلكترونيات":
       return <Smartphone className="w-8 h-8" />;
     case "مركبات":
     case "سيارات":
+    case "سيارات مضروبة":
       return <Car className="w-8 h-8" />;
     case "إكسسوارات":
       return <Gem className="w-8 h-8" />;
@@ -85,9 +89,14 @@ const CategoryCarousel: React.FC<CategoryCarouselProps> = ({
               `}>
                 {/* Background Image */}
                 <img 
-                  src={category.imageUrl} 
+                  src={category.imageUrl || `/category-${category.id}.jpg`} 
                   alt={category.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = '/placeholder.svg';
+                  }}
                 />
               </div>
 
@@ -108,10 +117,26 @@ const CategoryCarousel: React.FC<CategoryCarouselProps> = ({
                   {category.name}
                 </h3>
 
-                {/* Category Count */}
-                <span className="px-2 py-0.5 rounded-full text-xs text-white bg-white/20 backdrop-blur-sm">
-                  {category.count} مزاد
-                </span>
+                {/* Category Count Badges */}
+                <div className="flex flex-row gap-1">
+                  {(category.auctionCount !== undefined) && (
+                    <span className="px-2 py-0.5 rounded-full text-xs text-white bg-blue/30 backdrop-blur-sm flex items-center">
+                      <Gavel className="w-3 h-3 mr-1" />
+                      {category.auctionCount} مزاد
+                    </span>
+                  )}
+                  {(category.listingCount !== undefined) && (
+                    <span className="px-2 py-0.5 rounded-full text-xs text-white bg-green/30 backdrop-blur-sm flex items-center">
+                      <Tag className="w-3 h-3 mr-1" />
+                      {category.listingCount} منتج
+                    </span>
+                  )}
+                  {(category.auctionCount === undefined && category.listingCount === undefined) && (
+                    <span className="px-2 py-0.5 rounded-full text-xs text-white bg-white/20 backdrop-blur-sm">
+                      {category.count} عنصر
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

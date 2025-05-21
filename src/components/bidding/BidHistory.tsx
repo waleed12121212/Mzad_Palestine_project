@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { bidService, Bid } from '@/services/bidService';
+import { auctionService, AuctionBid } from '@/services/auctionService';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -8,20 +8,29 @@ import { ar } from 'date-fns/locale';
 interface BidHistoryProps {
   auctionId: number;
   currentUserId?: number;
+  bids?: AuctionBid[];
 }
 
-export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId }) => {
+export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId, bids: initialBids }) => {
   const queryClient = useQueryClient();
   
-  const { data: bids, isLoading, error } = useQuery({
+  const { data: auctionResponse, isLoading, error } = useQuery({
     queryKey: ['auctionBids', auctionId],
-    queryFn: () => bidService.getAuctionBids(auctionId),
+    queryFn: () => auctionService.getAuctionBids(auctionId),
     refetchInterval: 5000,
     staleTime: 2000,
-    select: (data) => data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    enabled: !initialBids, // Only fetch if bids weren't provided directly
   });
 
-  if (isLoading) {
+  // Use provided bids or fetch them
+  const bids = initialBids || auctionResponse?.data?.bids;
+
+  // Sort bids by bidTime in descending order
+  const sortedBids = bids ? [...bids].sort((a, b) => 
+    new Date(b.bidTime).getTime() - new Date(a.bidTime).getTime()
+  ) : [];
+
+  if (isLoading && !initialBids) {
     return (
       <div className="flex justify-center items-center py-4">
         <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
@@ -29,7 +38,7 @@ export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId
     );
   }
 
-  if (error) {
+  if (error && !initialBids) {
     return (
       <div className="text-red-500 text-center py-4">
         حدث خطأ أثناء تحميل تاريخ المزايدات
@@ -37,7 +46,7 @@ export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId
     );
   }
 
-  if (!bids || bids.length === 0) {
+  if (!sortedBids || sortedBids.length === 0) {
     return (
       <div className="text-gray-500 text-center py-4">
         لا توجد مزايدات حتى الآن
@@ -47,9 +56,8 @@ export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">تاريخ المزايدات</h3>
       <div className="space-y-2">
-        {bids.map((bid) => (
+        {sortedBids.map((bid) => (
           <div
             key={bid.id}
             className={`flex justify-between items-center p-3 rounded-lg transition-colors ${
@@ -58,7 +66,7 @@ export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId
                 : 'bg-gray-50 dark:bg-gray-800'
             }`}
           >
-            <div className="flex-1">
+            <div className="flex-1 rtl">
               <p className="font-medium">
                 {bid.userName || 'مزايد'}
                 {bid.userId === currentUserId && (
@@ -66,11 +74,11 @@ export const BidHistory: React.FC<BidHistoryProps> = ({ auctionId, currentUserId
                 )}
               </p>
               <p className="text-sm text-gray-500">
-                {format(new Date(bid.createdAt), 'PPP p', { locale: ar })}
+                {format(new Date(bid.bidTime), 'PPP p', { locale: ar })}
               </p>
             </div>
-            <div className="text-right">
-              <p className="font-bold text-lg">{bid.bidAmount} ₪</p>
+            <div className="text-left">
+              <p className="font-bold text-lg">{bid.amount} ₪</p>
             </div>
           </div>
         ))}

@@ -11,7 +11,9 @@ import PageWrapper from '@/components/layout/PageWrapper';
 import Index from '@/pages/Index';
 import { AuthPage } from '@/pages/AuthPage';
 import CreateListing from '@/pages/CreateListing';
+import EditListing from '@/pages/EditListing/index';
 import MyListings from '@/pages/MyListings';
+import ListingDetails from '@/pages/ListingDetails';
 import AuctionSearch from '@/pages/AuctionSearch';
 import AuctionDetails from '@/pages/AuctionDetails';
 import EditAuction from '@/pages/EditAuction';
@@ -36,6 +38,7 @@ import About from '@/pages/About';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import HowItWorks from '@/pages/HowItWorks';
+import BuyNow from '@/pages/BuyNow';
 
 const queryClient = new QueryClient();
 
@@ -123,6 +126,15 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/listing/:id" element={<ListingDetails />} />
+                    <Route
+                      path="/listing/:id/edit"
+                      element={
+                        <ProtectedRoute>
+                          <EditListing />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/profile"
                       element={
@@ -189,6 +201,8 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/buy-now" element={<BuyNow />} />
+                    <Route path="/sell-product" element={<Navigate to="/listings/create" replace />} />
                     <Route
                       path="/support"
                       element={

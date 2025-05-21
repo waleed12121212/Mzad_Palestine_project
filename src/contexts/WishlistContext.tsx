@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { wishlistService, WishlistItem } from '@/services/wishlistService';
 import { useAuth } from './AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { categoryService } from '@/services/categoryService';
 
 interface WishlistContextType {
   wishlistItems: WishlistItem[];
@@ -10,7 +11,9 @@ interface WishlistContextType {
   error: Error | null;
   addToWishlist: (listingId: number) => Promise<void>;
   removeFromWishlist: (listingId: number) => Promise<void>;
-  isInWishlist: (listingId: number) => boolean;
+  addListingToWishlist: (listingId: number) => Promise<void>;
+  removeListingFromWishlist: (listingId: number) => Promise<void>;
+  isInWishlist: (listingId: number, type?: 'auction' | 'listing') => boolean;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     queryFn: wishlistService.getWishlist,
     enabled: !!user, // Only fetch if user is logged in
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1, // Only retry once
   });
 
   const addToWishlist = useCallback(async (listingId: number) => {
@@ -37,13 +41,49 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
+      // Optimistically update the UI first
+      const tempId = Date.now(); // Generate a temporary ID
+      const optimisticItem: WishlistItem = {
+        id: tempId,
+        listingId: listingId,
+        userId: user.id.toString(),
+        type: 'auction',
+        listing: {
+          id: listingId,
+          title: "...",
+          description: "...",
+          startingPrice: 0,
+          currentPrice: 0,
+          images: ["/placeholder.svg"],
+          endDate: null,
+          categoryId: 0,
+          categoryName: ""
+        }
+      };
+      
+      // Update the cache immediately
+      queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => {
+        // Don't add if it already exists
+        if (old.some(item => item.listingId === listingId && item.type === 'auction')) {
+          return old;
+        }
+        return [...old, optimisticItem];
+      });
+      
+      // Then make the actual API call
       const newItem = await wishlistService.addToWishlist(listingId);
-      queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => [...old, newItem]);
+      
+      // Update with the real data
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
       toast({
         title: "تمت إضافة المزاد للمفضلة",
         description: "يمكنك الوصول للمفضلة من حسابك الشخصي",
       });
     } catch (error) {
+      // Revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
       toast({
         title: "فشل في إضافة العنصر للمفضلة",
         variant: "destructive",
@@ -56,15 +96,20 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
 
     try {
-      await wishlistService.removeFromWishlist(listingId);
+      // Optimistically update the UI first
       queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => 
-        old.filter(item => item.listingId !== listingId)
+        old.filter(item => !(item.listingId === listingId && item.type === 'auction'))
       );
-      toast({
-        title: "تمت إزالة المزاد من المفضلة",
-        description: "يمكنك إضافته مرة أخرى في أي وقت",
-      });
+      
+      // Then make the actual API call
+      await wishlistService.removeFromWishlist(listingId);
+      
+      // Make sure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
     } catch (error) {
+      // Revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
       toast({
         title: "فشل في إزالة العنصر من المفضلة",
         variant: "destructive",
@@ -73,9 +118,104 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [user, queryClient]);
 
-  const isInWishlist = useCallback((listingId: number) => {
+  const addListingToWishlist = useCallback(async (listingId: number) => {
+    if (!user) {
+      toast({
+        title: "يجب تسجيل الدخول أولاً",
+        description: "قم بتسجيل الدخول لإضافة العناصر إلى المفضلة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Optimistically update the UI first
+      const tempId = Date.now(); // Generate a temporary ID
+      const optimisticItem: WishlistItem = {
+        id: tempId,
+        listingId: listingId,
+        userId: user.id.toString(),
+        type: 'listing',
+        listing: {
+          id: listingId,
+          title: "...",
+          description: "...",
+          startingPrice: 0,
+          currentPrice: 0,
+          images: ["/placeholder.svg"],
+          endDate: null,
+          categoryId: 0,
+          categoryName: ""
+        }
+      };
+      
+      // Update the cache immediately
+      queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => {
+        // Don't add if it already exists
+        if (old.some(item => item.listingId === listingId && item.type === 'listing')) {
+          return old;
+        }
+        return [...old, optimisticItem];
+      });
+      
+      // Then make the actual API call
+      const newItem = await wishlistService.addListingToWishlist(listingId);
+      
+      // Update with the real data
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
+      toast({
+        title: "تمت إضافة العنصر للمفضلة",
+        description: "يمكنك الوصول للمفضلة من حسابك الشخصي",
+      });
+    } catch (error) {
+      // Revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
+      toast({
+        title: "فشل في إضافة العنصر للمفضلة",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [user, queryClient]);
+
+  const removeListingFromWishlist = useCallback(async (listingId: number) => {
+    if (!user) return;
+
+    try {
+      // Optimistically update the UI first
+      queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => 
+        old.filter(item => !(item.listingId === listingId && item.type === 'listing'))
+      );
+      
+      // Then make the actual API call
+      await wishlistService.removeListingFromWishlist(listingId);
+      
+      // Make sure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+    } catch (error) {
+      // Revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
+      toast({
+        title: "فشل في إزالة العنصر من المفضلة",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }, [user, queryClient]);
+
+  const isInWishlist = useCallback((listingId: number, type?: 'auction' | 'listing') => {
     if (!wishlistItems || !Array.isArray(wishlistItems)) return false;
-    return wishlistItems.some(item => item.listingId === listingId);
+    
+    if (type) {
+      // Check for specific type if provided
+      return wishlistItems.some(item => item.listingId === listingId && item.type === type);
+    } else {
+      // Check for any type if not specified
+      return wishlistItems.some(item => item.listingId === listingId);
+    }
   }, [wishlistItems]);
 
   return (
@@ -86,6 +226,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         error: error as Error | null,
         addToWishlist,
         removeFromWishlist,
+        addListingToWishlist,
+        removeListingFromWishlist,
         isInWishlist,
       }}
     >

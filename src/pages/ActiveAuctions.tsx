@@ -19,23 +19,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { auctionService } from "@/services/auctionService";
+import { auctionService, Auction } from "@/services/auctionService";
 import { useSearchParams } from "react-router-dom";
 import { useQuery as useQueryCategories } from "@tanstack/react-query";
 import { categoryService } from "@/services/categoryService";
-
-interface Auction {
-  id: number;
-  title: string;
-  description: string;
-  currentPrice: number;
-  minBidIncrement: number;
-  imageUrl: string;
-  endTime: string;
-  bidders: number;
-  category?: string;
-  userId: number;
-}
 
 const categoryIcons: { [key: string]: React.ReactNode } = {
   "سيارات": <Car className="inline-block ml-2" />,
@@ -76,14 +63,10 @@ const ActiveAuctions: React.FC = () => {
   ];
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data: auctionResponse, isLoading, error } = useQuery({
     queryKey: ["activeAuctions"],
     queryFn: async () => {
-      const response: any = await auctionService.getActiveAuctions();
-      if (Array.isArray(response)) return response;
-      if (response && typeof response === 'object' && Array.isArray(response.data)) return response.data;
-      console.error("Expected array or { data: array } from getActiveAuctions, got:", response);
-      return [];
+      return await auctionService.getActiveAuctions();
     }
   });
 
@@ -92,45 +75,23 @@ const ActiveAuctions: React.FC = () => {
     queryFn: () => categoryService.getAllCategories(),
   });
 
-  console.log("Raw auctions data:", data);
-  const normalizedData = Array.isArray(data)
-    ? data
-        .map(auction => {
-          const normalized = {
-            ...auction,
-            id: Number(auction.id ?? auction.auctionId ?? auction.AuctionId),
-            listingId: Number(auction.listingId ?? auction.ListingId),
-            title: auction.title ?? auction.name ?? auction.Name ?? "",
-            currentPrice: auction.currentBid ?? auction.currentPrice ?? auction.reservePrice ?? auction.ReservePrice ?? 0,
-            reservePrice: auction.reservePrice ?? auction.ReservePrice ?? 0,
-            currentBid: auction.currentBid ?? auction.CurrentBid ?? 0,
-            bidIncrement: auction.bidIncrement ?? auction.BidIncrement ?? 0,
-            Bids: auction.Bids || [],
-            bidsCount: auction.bidsCount ?? auction.BidsCount ?? 0,
-            userId: auction.userId ?? auction.UserId,
-            imageUrl: auction.imageUrl ?? auction.ImageUrl,
-            endTime: auction.endTime ?? auction.EndTime,
-          };
-          console.log('Normalized auction:', normalized);
-          return normalized;
-        })
-        .filter(auction => Number.isFinite(auction.id) && auction.id > 0)
-    : [];
+  // Extract auctions from the response
+  const auctions = auctionResponse?.data || [];
+  
+  console.log("Raw auctions data:", auctions);
 
-  console.log('All normalized auctions:', normalizedData);
-
-  const filteredAuctions = normalizedData.filter((auction) => {
+  const filteredAuctions = auctions.filter((auction) => {
     const matchesQuery = auction.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    const price = (auction.reservePrice && auction.reservePrice > 0) ? auction.reservePrice : auction.currentBid;
+    const price = auction.currentBid || auction.reservePrice;
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     let matchesTime = true;
     if (timeFilter === "ending-soon") {
-      const endTime = new Date(auction.endTime);
+      const endTime = new Date(auction.endDate);
       const now = new Date();
       const diffHours = (endTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       matchesTime = diffHours <= 24;
     } else if (timeFilter === "new") {
-      const endTime = new Date(auction.endTime);
+      const endTime = new Date(auction.endDate);
       const now = new Date();
       const diffHours = (endTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       matchesTime = diffHours >= 72;
@@ -143,14 +104,13 @@ const ActiveAuctions: React.FC = () => {
   const sortedAuctions = [...filteredAuctions].sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.endTime).getTime() - new Date(a.endTime).getTime();
+        return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
       case "priceHigh":
-        return b.currentPrice - a.currentPrice;
+        return b.currentBid - a.currentBid;
       case "priceLow":
-        return a.currentPrice - b.currentPrice;
-      // Remove popularity and bidders sort if not available
+        return a.currentBid - b.currentBid;
       case "endingSoon":
-        return new Date(a.endTime).getTime() - new Date(b.endTime).getTime();
+        return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
       default:
         return 0;
     }
@@ -477,21 +437,22 @@ const ActiveAuctions: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {sortedAuctions.map((auction) => {
                     const bidIncrement = auction.bidIncrement ?? 0;
-                    const minBid = (auction.currentBid != null && auction.currentBid > 0
-                      ? auction.currentBid
-                      : (auction.reservePrice ?? 0)) + bidIncrement;
+                    const currentPrice = auction.currentBid > 0 ? auction.currentBid : auction.reservePrice;
+                    const minBid = currentPrice + bidIncrement;
+                    const bidsCount = auction.bids?.length || auction.bidsCount || 0;
+                    
                     return (
                       <AuctionCard
                         key={auction.id}
                         id={auction.id}
                         listingId={auction.listingId}
                         title={auction.title}
-                        description={""}
-                        currentPrice={((auction.currentPrice && auction.currentPrice > 0) ? auction.currentPrice : (auction.reservePrice ?? 0))}
+                        description={auction.description || ""}
+                        currentPrice={currentPrice}
                         minBidIncrement={minBid}
-                        imageUrl={auction.imageUrl}
-                        endTime={auction.endTime}
-                        bidders={auction.bidsCount ?? 0}
+                        imageUrl={auction.images?.[0] || ""}
+                        endTime={auction.endDate}
+                        bidders={bidsCount}
                         userId={auction.userId}
                       />
                     );

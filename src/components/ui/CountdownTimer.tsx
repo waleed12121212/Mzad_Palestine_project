@@ -3,7 +3,7 @@ import { Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CountdownTimerProps {
-  endTime: Date;
+  endTime?: Date;
   onComplete?: () => void;
   className?: string;
 }
@@ -23,8 +23,13 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    // If no endTime is provided, don't start the timer
+    if (!endTime) {
+      return;
+    }
+    
     const calculateTimeLeft = () => {
-      const difference = new Date(endTime).getTime() - new Date().getTime();
+      const difference = endTime.getTime() - new Date().getTime();
       
       if (difference <= 0) {
         // Timer completed
@@ -57,15 +62,22 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     return value < 10 ? `0${value}` : `${value}`;
   };
 
-  const getTimeDisplay = () => (
-    <>
-      <span>{timeLeft.days}</span>
-      <span className="text-xs mx-1">يوم</span>
-      <span>{formatTime(timeLeft.hours)}</span>:
-      <span>{formatTime(timeLeft.minutes)}</span>:
-      <span>{formatTime(timeLeft.seconds)}</span>
-    </>
-  );
+  const getTimeDisplay = () => {
+    // If no endTime, show a placeholder
+    if (!endTime) {
+      return <span>غير محدد</span>;
+    }
+    
+    return (
+      <>
+        <span>{timeLeft.days}</span>
+        <span className="text-xs mx-1">يوم</span>
+        <span>{formatTime(timeLeft.hours)}</span>:
+        <span>{formatTime(timeLeft.minutes)}</span>:
+        <span>{formatTime(timeLeft.seconds)}</span>
+      </>
+    );
+  };
 
   const urgentClass = isUrgent ? "text-red-500 animate-pulse font-bold" : "";
   const responsiveClass = isMobile ? "text-sm" : "";

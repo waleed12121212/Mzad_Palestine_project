@@ -1,10 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* tailwindcss directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base layer */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -69,6 +71,7 @@
   }
 }
 
+/* Base styles */
 @layer base {
   * {
     @apply border-border;
@@ -110,6 +113,7 @@
   }
 }
 
+/* Component styles */
 @layer components {
   .glass-morphism {
     @apply backdrop-blur-md bg-white/20 dark:bg-black/20 border border-white/10 dark:border-white/5 shadow-lg;
@@ -172,6 +176,7 @@
     @apply max-w-[85%] sm:max-w-[75%] md:max-w-[65%];
   }
 
+  /* Custom scrollbar styles */
   .custom-scrollbar {
     @apply overflow-y-auto;
     scrollbar-width: thin;
@@ -219,6 +224,7 @@
   }
 }
 
+/* RTL and LTR support */
 .rtl {
   direction: rtl;
   text-align: right;
@@ -229,15 +235,14 @@
   text-align: left;
 }
 
-/* Cool focus effect for inputs */
+/* Form element focus styles */
 input:focus, 
 textarea:focus, 
 select:focus {
   @apply outline-none ring-2 ring-blue/50 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 transition-all duration-200;
 }
 
-/* Smooth transition for dark mode */
-/* Add this to your existing CSS */
+/* Dark theme transition */
 .dark-theme-transition,
 .dark-theme-transition * {
   transition: background-color 0.3s ease, 
@@ -247,7 +252,18 @@ select:focus {
               stroke 0.3s ease !important;
 }
 
-/* Override any existing dark mode transitions */
+/* Disable animations for select components */
+.no-animation,
+[data-state="open"], 
+[data-state="closed"], 
+[data-radix-popper-content-wrapper], 
+.radix-select-content, 
+.radix-popper-content {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Override dark mode transitions */
 .dark-mode-transition {
   transition: none !important;
 }
@@ -317,7 +333,7 @@ select:focus {
   @apply ring-2 ring-blue ring-offset-2 outline-none;
 }
 
-/* Chat message animations */
+/* Animation keyframes */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -351,6 +367,7 @@ select:focus {
   }
 }
 
+/* Swiper customization */
 .category-swiper {
   padding: 1.5rem 0.5rem !important;
 }

@@ -4,6 +4,7 @@ export interface Category {
   description?: string;
   imageUrl?: string;
   listingsCount?: number;
+  auctionCount?: number;
   subCategories?: SubCategory[];
 }
 
@@ -13,21 +14,32 @@ export interface SubCategory {
   listingsCount?: number;
 }
 
+export interface AuctionBid {
+  id: number;
+  auctionId: number;
+  userId: number;
+  userName: string | null;
+  amount: number;
+  bidTime: string;
+  isWinningBid: boolean;
+}
+
 export interface Auction {
-  id: string;
-  name: string;
+  id: number;
   title: string;
   description: string;
+  address: string;
+  startDate: string;
+  endDate: string;
+  reservePrice: number;
   currentBid: number;
   bidIncrement: number;
-  imageUrl: string;
-  startTime: string;
-  endTime: string;
-  bidders: number;
-  categoryId: string;
-  sellerId: string;
-  reservePrice?: number;
-  status: 'active' | 'ended' | 'cancelled';
-  bidsCount?: number;
-  auctionId?: string;
+  winnerId: number | null;
+  status: string;
+  categoryId: number;
+  categoryName: string;
+  images: string[];
+  createdAt: string;
+  updatedAt: string;
+  bids: AuctionBid[];
 } 

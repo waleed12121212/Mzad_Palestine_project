@@ -1,28 +1,23 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import PageWrapper from '@/components/layout/PageWrapper';
 
-const SellProduct = () => {
+const SellProduct: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    toast("هذه الميزة ستكون متوفرة قريبًا", {
-      description: "لتجربة أفضل على موقعنا. تابعنا لمعرفة موعد الإطلاق!"
-    });
-    navigate('/');
+    // Redirect to the CreateListing page
+    navigate('/listings/create');
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <main className="flex-grow container mx-auto px-4 py-8 pt-28">
-        <div className="mb-8 rtl">
-          <h1 className="heading-lg mb-2">بيع منتج</h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            قم بإنشاء إعلان بيع جديد لعرض منتجك على منصة مزاد فلسطين
-          </p>
+    <PageWrapper>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="loader">جاري التحويل...</div>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
 

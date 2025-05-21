@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,14 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { listingService, CreateListingDto } from '@/services/listingService';
-import { categoryService } from '@/services/categoryService';
+import { categoryService, Category } from '@/services/categoryService';
 import { useAuth } from '@/contexts/AuthContext';
+import { imageService } from '@/services/imageService';
 
 const formSchema = z.object({
   title: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
   description: z.string().min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
-  startingPrice: z.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
-  category: z.string().min(1, 'يجب اختيار تصنيف'),
+  address: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
+  price: z.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
+  categoryId: z.number().min(1, 'يجب اختيار تصنيف'),
   endDate: z.string().min(1, 'يجب تحديد تاريخ الانتهاء'),
   images: z.array(z.instanceof(File)).min(1, 'يجب إضافة صورة واحدة على الأقل'),
 });
@@ -27,15 +29,17 @@ export const CreateListingForm: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [priceDisplayValue, setPriceDisplayValue] = useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
       description: '',
-      startingPrice: 0,
-      category: '',
+      address: '',
+      price: 0,
+      categoryId: 0,
       endDate: '',
       images: [],
     },
@@ -44,10 +48,13 @@ export const CreateListingForm: React.FC = () => {
   React.useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await categoryService.getActiveCategories();
+        const data = await categoryService.getAllCategories();
         setCategories(data);
       } catch (error) {
-        toast.error('حدث خطأ أثناء تحميل التصنيفات');
+        toast({
+          title: 'حدث خطأ أثناء تحميل التصنيفات',
+          variant: 'destructive',
+        });
       }
     };
     fetchCategories();
@@ -55,23 +62,41 @@ export const CreateListingForm: React.FC = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
-      toast.error('يجب تسجيل الدخول أولاً');
+      toast({
+        title: 'يجب تسجيل الدخول أولاً',
+        variant: 'destructive',
+      });
       navigate('/login');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Upload each image file individually and collect URLs
+      const imageUrls: string[] = [];
+      for (const file of values.images) {
+        const result = await imageService.uploadImage(file);
+        imageUrls.push(result.url);
+      }
+      
       const listingData: CreateListingDto = {
-        ...values,
-        startingPrice: Number(values.startingPrice),
+        title: values.title,
+        description: values.description,
+        address: values.address,
+        price: values.price,
+        categoryId: values.categoryId,
+        endDate: values.endDate,
+        images: imageUrls,
       };
 
       const listing = await listingService.createListing(listingData);
-      toast.success('تم إنشاء الإدراج بنجاح');
-      navigate(`/listing/${listing.id}`);
+      navigate(`/listing/${listing.listingId}`);
     } catch (error) {
-      toast.error('حدث خطأ أثناء إنشاء الإدراج');
+      console.error('Error creating listing:', error);
+      toast({
+        title: 'فشل في إنشاء المنتج',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -85,9 +110,9 @@ export const CreateListingForm: React.FC = () => {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>عنوان الإدراج</FormLabel>
+              <FormLabel>عنوان المنتج</FormLabel>
               <FormControl>
-                <Input placeholder="أدخل عنوان الإدراج" {...field} />
+                <Input placeholder="أدخل عنوان المنتج" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,10 +124,10 @@ export const CreateListingForm: React.FC = () => {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>وصف الإدراج</FormLabel>
+              <FormLabel>وصف المنتج</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="أدخل وصفاً تفصيلياً للإدراج"
+                  placeholder="أدخل وصفاً تفصيلياً للمنتج"
                   className="min-h-[100px]"
                   {...field}
                 />
@@ -112,33 +137,72 @@ export const CreateListingForm: React.FC = () => {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>موقع المنتج</FormLabel>
+              <FormControl>
+                <Input placeholder="المدينة، المنطقة" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="startingPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>السعر الابتدائي</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            name="price"
+            render={({ field }) => {
+              // Initialize display value if needed
+              React.useEffect(() => {
+                setPriceDisplayValue(field.value === 0 ? '' : String(field.value));
+              }, []);
+              
+              const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const val = e.target.value;
+                setPriceDisplayValue(val);
+                
+                const numValue = val === '' ? 0 : Number(val);
+                field.onChange(numValue);
+              };
+              
+              return (
+                <FormItem>
+                  <FormLabel>السعر</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      value={priceDisplayValue}
+                      onChange={handleInputChange}
+                      onBlur={() => {
+                        if (priceDisplayValue === '') {
+                          field.onChange(0);
+                          setPriceDisplayValue('0');
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <FormField
             control={form.control}
-            name="category"
+            name="categoryId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>التصنيف</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={(value) => field.onChange(Number(value))} 
+                  defaultValue={field.value ? String(field.value) : undefined}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر تصنيفاً" />
@@ -146,7 +210,7 @@ export const CreateListingForm: React.FC = () => {
                   </FormControl>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
+                      <SelectItem key={String(category.id)} value={String(category.id)}>
                         {category.name}
                       </SelectItem>
                     ))}
@@ -177,7 +241,7 @@ export const CreateListingForm: React.FC = () => {
           name="images"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>صور الإدراج</FormLabel>
+              <FormLabel>صور المنتج</FormLabel>
               <FormControl>
                 <ImageUpload
                   value={field.value}
@@ -194,7 +258,7 @@ export const CreateListingForm: React.FC = () => {
         />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'جاري الإنشاء...' : 'إنشاء الإدراج'}
+          {isLoading ? 'جاري الإنشاء...' : 'إضافة منتج للبيع'}
         </Button>
       </form>
     </Form>

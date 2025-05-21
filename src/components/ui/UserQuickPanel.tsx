@@ -79,7 +79,6 @@ const UserQuickPanel: React.FC<UserQuickPanelProps> = ({ userName }) => {
 
       <Link 
         to="/sell-product" 
-        onClick={handleSellProduct}
         className="flex items-center bg-white dark:bg-gray-800 rounded-full px-4 py-3 shadow-sm hover:shadow-md transition-shadow"
       >
         <div className="mr-3 text-right">

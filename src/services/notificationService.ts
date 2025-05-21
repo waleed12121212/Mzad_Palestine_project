@@ -6,7 +6,7 @@ export type NotificationType = 'General' | 'BidPlaced' | 'BidOutbid' | 'AuctionE
 
 export interface Notification {
   id: string;
-  userId: number;
+  userId: string | number;
   message: string;
   type: NotificationType;
   isRead: boolean;
@@ -16,7 +16,7 @@ export interface Notification {
 }
 
 export interface CreateNotificationDto {
-  userId: number;
+  userId: string | number;
   message: string;
   type: NotificationType;
 }
@@ -136,7 +136,7 @@ export const notificationService = {
   },
 
   // Create a new notification
-  createNotification: async (userId: number, message: string, type: NotificationType): Promise<boolean> => {
+  createNotification: async (userId: string | number, message: string, type: NotificationType): Promise<boolean> => {
     try {
       const notificationData: CreateNotificationDto = {
         userId,

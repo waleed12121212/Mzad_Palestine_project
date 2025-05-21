@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle, Copy, Facebook, Twitter, Send } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle, Copy, Facebook, Twitter, Send, Package } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { auctionService, Auction } from "@/services/auctionService";
+import { auctionService, Auction, AuctionBid } from "@/services/auctionService";
 import { listingService } from "@/services/listingService";
 import { userService } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { bidService, Bid } from "@/services/bidService";
+import { bidService } from "@/services/bidService";
 import { BidForm } from '@/components/bidding/BidForm';
 import { BidHistory } from '@/components/bidding/BidHistory';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -19,26 +19,7 @@ import ListingReviews from '@/components/ListingReviews';
 import ReportDialog from '@/components/ReportDialog';
 import DisputeDialog from '@/components/DisputeDialog';
 import ContactSellerDialog from '@/components/ContactSellerDialog';
-
-interface ExtendedAuction extends Omit<Auction, 'imageUrl' | 'endTime'> {
-  title?: string;
-  description?: string;
-  category?: string;
-  subcategory?: string;
-  condition?: string;
-  location?: string;
-  features?: string[];
-  images?: string[];
-  imageUrl?: string;
-  userId?: number;
-  seller?: any;
-  bids?: Bid[];
-  startPrice?: number;
-  bidders?: number;
-  views?: number;
-  endTime: string;
-  currentBid?: number;
-}
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 
 interface SellerInfo {
   id?: number;
@@ -49,6 +30,42 @@ interface SellerInfo {
   profilePicture?: string;
   username?: string;
   [key: string]: any;
+}
+
+// First, define an extended interface that includes the missing properties
+interface ExtendedAuction {
+  id: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  reservePrice: number;
+  currentBid?: number;
+  bidIncrement: number;
+  status: string;
+  images?: string[];
+  bids?: AuctionBid[];
+  userId?: number;
+  sellerId?: number;
+  category?: string;
+  categoryName: string;
+  subcategory?: string;
+  features?: string[];
+  condition?: string;
+  location?: string;
+  views?: number;
+  imageUrl?: string;
+  endTime?: string;
+  name?: string;
+  listingId?: number;
+  state?: string;
+  address: string;
+  city?: string;
+  region?: string;
+  categoryId: number;
+  winnerId?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const AuctionDetails = () => {
@@ -62,50 +79,153 @@ const AuctionDetails = () => {
   const [showDisputeDialog, setShowDisputeDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showContactDialog, setShowContactDialog] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [bidderInfo, setBidderInfo] = useState({ username: "مزايد" });
+  const [itemCondition, setItemCondition] = useState("-");
+  const [bidderUsernames, setBidderUsernames] = useState<Record<number, string>>({});
+  const [latestBids, setLatestBids] = useState<AuctionBid[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  // Add a ref to store the latest bidderUsernames
+  const bidderUsernamesRef = React.useRef<Record<number, string>>({});
+
+  // Update bidderUsernames state and ref together
+  useEffect(() => {
+    bidderUsernamesRef.current = bidderUsernames;
+  }, [bidderUsernames]);
 
   // Fetch auction data with React Query
-  const { data: auction, isLoading, refetch } = useQuery({
+  const { data: auctionResponse, isLoading, refetch } = useQuery({
     queryKey: ['auction', id],
     queryFn: async () => {
-      const auctionResponse: any = await auctionService.getAuctionById(Number(id));
-      const auctionData = auctionResponse.data;
-      // Normalize auction data as before
-      return {
-        id: auctionData.AuctionId,
-        listingId: auctionData.ListingId,
-        name: auctionData.Name,
-        title: auctionData.Name,
-        description: auctionData.Listing?.Description || '',
-        imageUrl: auctionData.ImageUrl,
-        startTime: auctionData.StartTime,
-        endTime: auctionData.EndTime,
-        reservePrice: auctionData.ReservePrice,
-        currentBid: auctionData.CurrentBid,
-        bidIncrement: auctionData.BidIncrement,
-        status: auctionData.Status,
-        userId: auctionData.UserId,
-        bidders: auctionData.Bids?.length || 0,
-        bids: auctionData.Bids || [],
-        category: typeof auctionData.Listing?.Category === 'object' ? auctionData.Listing.Category?.Name || '' : auctionData.Listing?.Category || '',
-        subcategory: typeof auctionData.Listing?.Subcategory === 'object' ? auctionData.Listing.Subcategory?.Name || '' : auctionData.Listing?.Subcategory || '',
-        condition: auctionData.Listing?.Condition || auctionData.Listing?.condition || '',
-        location: auctionData.Listing?.Location || auctionData.Listing?.location || '',
-        features: auctionData.Listing?.Features || [],
-        views: 0,
-        images: auctionData.Listing?.Images || [],
-      };
+      return await auctionService.getAuctionById(Number(id));
     },
     enabled: !!id,
+    refetchInterval: 5000, // Refetch every 5 seconds
+    staleTime: 2000, // Consider data stale after 2 seconds
   });
 
-  // Fetch seller data with React Query
+  // Fix the auction extraction with type assertion and fix bid amounts
+  const auction = React.useMemo(() => {
+    if (!auctionResponse?.data) return null;
+    
+    const auctionData = auctionResponse.data as ExtendedAuction;
+    
+    // Fix bids array if it exists
+    if (auctionData.bids && auctionData.bids.length > 0) {
+      // Get the current bid amount and bidIncrement
+      const currentBid = auctionData.currentBid || 0;
+      const bidIncrement = auctionData.bidIncrement || 100;
+      const reservePrice = auctionData.reservePrice || 0;
+      
+      // Sort bids by time, most recent first
+      const sortedBids = [...auctionData.bids].sort(
+        (a, b) => new Date(b.bidTime || '').getTime() - new Date(a.bidTime || '').getTime()
+      );
+      
+      // Fix bid amounts - most recent bid gets the full currentBid
+      const fixedBids = sortedBids.map((bid, index) => {
+        // Check if bid has a zero amount
+        const hasZeroAmount = bid.amount === 0 || bid.amount === undefined;
+        
+        if (hasZeroAmount) {
+          // Calculate amount based on position
+          let calculatedAmount = currentBid;
+          if (index > 0) {
+            calculatedAmount = Math.max(
+              currentBid - (index * bidIncrement),
+              reservePrice
+            );
+          }
+          
+          return {
+            ...bid,
+            amount: calculatedAmount
+          };
+        }
+        
+        // If bid already has a non-zero amount, use it
+        return bid;
+      });
+      
+      // Return auction with fixed bids
+      return {
+        ...auctionData,
+        bids: fixedBids
+      };
+    }
+    
+    return auctionData;
+  }, [auctionResponse?.data]);
+
+  // Debug: Log auction data when it's available
+  useEffect(() => {
+    if (auction) {
+      console.log('Auction data:', auction);
+      
+      // Determine item condition from description
+      if (auction.description) {
+        if (auction.description === "سيارة مستعملة") {
+          setItemCondition("سيارة مستعملة");
+        } else if (auction.description.includes("مستعملة")) {
+          setItemCondition("مستعملة");
+        } else if (auction.description.includes("جديد")) {
+          setItemCondition("جديد");
+        }
+      }
+    }
+  }, [auction]);
+
+  // Fetch bidder info
+  useEffect(() => {
+    const fetchBidderInfo = async () => {
+      try {
+        if (!auction?.bids || auction.bids.length === 0) return;
+        
+        // Get the userId from the first bid for the main bidderInfo
+        const firstBid = auction.bids[0];
+        if (!firstBid.userId) return;
+        
+        const response = await userService.getUserById(firstBid.userId.toString());
+        if (response.success && response.data) {
+          setBidderInfo({
+            username: response.data.username || "مزايد"
+          });
+        }
+        
+        // Fetch usernames for all unique bidders
+        const uniqueBidderIds = Array.from(new Set(auction.bids.map(bid => bid.userId)));
+        const usernamesMap: Record<number, string> = {};
+        
+        for (const bidderId of uniqueBidderIds) {
+          if (!bidderId) continue;
+          try {
+            const userResponse = await userService.getUserById(bidderId.toString());
+            if (userResponse.success && userResponse.data) {
+              usernamesMap[bidderId] = userResponse.data.username || "مزايد";
+            }
+          } catch (error) {
+            console.error(`Error fetching username for user ${bidderId}:`, error);
+          }
+        }
+        
+        setBidderUsernames(usernamesMap);
+      } catch (error) {
+        console.error("Error fetching bidder info:", error);
+      }
+    };
+    
+    fetchBidderInfo();
+  }, [auction?.bids]);
+
+  // Update the seller query
   const { data: seller } = useQuery({
-    queryKey: ['seller', auction?.userId],
+    queryKey: ['seller', auction?.sellerId || auction?.userId],
     queryFn: async () => {
-      if (!auction?.userId) return null;
-      const sellerData = await userService.getUserById(auction.userId.toString());
+      if (!auction?.sellerId && !auction?.userId) return null;
+      const sellerId = auction.sellerId || auction.userId;
+      const sellerData = await userService.getUserById(sellerId.toString());
       const sellerInfo: SellerInfo = sellerData.data || sellerData || {};
       return {
         ...sellerInfo,
@@ -115,21 +235,179 @@ const AuctionDetails = () => {
         totalSales: sellerInfo.totalSales || 0
       };
     },
-    enabled: !!auction?.userId,
+    enabled: !!(auction?.sellerId || auction?.userId),
   });
 
-  // Set isLiked when auction/listingId changes
+  // Set isLiked when auction/id changes
   useEffect(() => {
-    if (auction?.listingId) {
-      setIsLiked(isInWishlist(auction.listingId));
+    if (auction?.id) {
+      setIsLiked(isInWishlist(auction.id));
     }
-  }, [auction?.listingId, isInWishlist]);
+  }, [auction?.id, isInWishlist]);
 
-  const handleBidSuccess = (newBid: Bid) => {
-    // Auto-refresh auction data
-    queryClient.invalidateQueries({ queryKey: ['auction', id] });
-    // Optionally, refetch bids if you have a separate query for them
-    // queryClient.invalidateQueries({ queryKey: ['auctionBids', id] });
+  // Update the fetchLatestBids function to use the ref
+  const fetchLatestBids = async () => {
+    try {
+      if (!id) return;
+      
+      console.log('Fetching latest bids for auction:', id);
+      
+      const response = await auctionService.getAuctionBids(Number(id));
+      
+      console.log('Raw auction bids response:', response);
+      
+      if (response.success && response.data) {
+        console.log('Latest bids from API:', response.data.bids);
+        console.log('Current auction data:', response.data);
+        
+        // Check if bids have proper amounts - use amount as the primary field
+        const bidsWithZeroAmount = response.data.bids.filter(bid => 
+          bid.amount === 0 || bid.amount === undefined
+        );
+        
+        if (bidsWithZeroAmount.length > 0) {
+          console.warn('Found bids with zero amount:', bidsWithZeroAmount);
+        }
+        
+        // Get current bid and increment from auction data
+        const currentBid = response.data.currentBid || auction?.currentBid || 0;
+        const bidIncrement = response.data.bidIncrement || auction?.bidIncrement || 100;
+        const reservePrice = response.data.reservePrice || auction?.reservePrice || 0;
+        
+        // Sort bids by time, most recent first
+        const sortedBids = [...response.data.bids].sort(
+          (a, b) => new Date(b.bidTime || '').getTime() - new Date(a.bidTime || '').getTime()
+        );
+        
+        // Fix bid amounts to ensure each bid has a proper amount value
+        const processedBids = sortedBids.map((bid, index) => {
+          // Check if bid has a zero amount
+          const hasZeroAmount = bid.amount === 0 || bid.amount === undefined;
+          
+          if (hasZeroAmount) {
+            // Calculate amount based on position
+            let calculatedAmount = currentBid;
+            if (index > 0) {
+              calculatedAmount = Math.max(
+                currentBid - (index * bidIncrement),
+                reservePrice
+              );
+            }
+            
+            return {
+              ...bid,
+              amount: calculatedAmount
+            };
+          }
+          
+          // If bid already has a non-zero amount, return as is
+          return bid;
+        });
+        
+        // Set the latest bids
+        setLatestBids(processedBids);
+        
+        // Update bidder usernames for new bids
+        const uniqueBidderIds = Array.from(new Set(
+          processedBids
+            .filter(bid => bid.userId && !bidderUsernamesRef.current[bid.userId])
+            .map(bid => bid.userId)
+        ));
+        
+        if (uniqueBidderIds.length > 0) {
+          const newUsernames = { ...bidderUsernamesRef.current };
+          
+          for (const bidderId of uniqueBidderIds) {
+            if (!bidderId) continue;
+            try {
+              const userResponse = await userService.getUserById(bidderId.toString());
+              if (userResponse.success && userResponse.data) {
+                newUsernames[bidderId] = userResponse.data.username || "مزايد";
+              }
+            } catch (error) {
+              console.error(`Error fetching username for user ${bidderId}:`, error);
+            }
+          }
+          
+          setBidderUsernames(newUsernames);
+        }
+      } else {
+        console.error('Failed to fetch bids:', response);
+      }
+    } catch (error) {
+      console.error("Error fetching latest bids:", error);
+    }
+  };
+
+  // Fix the useEffect dependencies
+  useEffect(() => {
+    if (!id || !auction) return;
+    
+    // Initial fetch
+    fetchLatestBids();
+    
+    // Set up interval for periodic fetching
+    const intervalId = setInterval(fetchLatestBids, 3000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [id, auction?.id]); // Remove bidderUsernames dependency
+
+  // Update the bidsWithUsernames to handle zero bid amounts
+  const bidsWithUsernames = React.useMemo(() => {
+    if (!latestBids || latestBids.length === 0) return [];
+    
+    // Create a copy of bids with corrected userNames
+    return latestBids.map(bid => {
+      return {
+        ...bid,
+        // Use our locally fetched username if the API returned null
+        userName: (bid.userName) || (bid.userId && bidderUsernamesRef.current[bid.userId]) || "مزايد"
+      };
+    });
+  }, [latestBids, bidderUsernames]);
+
+  const handleBidSuccess = (newBid: AuctionBid) => {
+    console.log('Bid placed successfully:', newBid);
+    
+    // Force refetch latest bids
+    fetchLatestBids();
+    
+    // Update the bidderUsernames map with the new bid's user
+    if (newBid.userId) {
+      userService.getUserById(newBid.userId.toString())
+        .then(response => {
+          if (response.success && response.data) {
+            setBidderUsernames(prev => ({
+              ...prev,
+              [newBid.userId]: response.data.username || "مزايد"
+            }));
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching bidder info for new bid:", error);
+        });
+    }
+  };
+
+  const handleBidError = (error: any) => {
+    // Check for specific validation errors
+    if (error?.errors?.Amount || error?.errors?.BidAmount) {
+      const errorMessages = error.errors.Amount || error.errors.BidAmount;
+      const arabicMessage = errorMessages.find((msg: string) => /[\u0600-\u06FF]/.test(msg)); // Find Arabic message
+      
+      toast({
+        title: "خطأ في تقديم العرض",
+        description: arabicMessage || errorMessages[0] || "يجب أن يكون مبلغ العرض أكبر من صفر",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "فشل في تقديم العرض",
+        description: error?.message || "حدث خطأ أثناء تقديم العرض",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleLike = async () => {
@@ -142,7 +420,7 @@ const AuctionDetails = () => {
       return;
     }
 
-    if (!auction?.listingId) {
+    if (!auction?.id) {
       toast({
         title: "خطأ في إضافة المزاد للمفضلة",
         description: "لم يتم العثور على معرف المنتج",
@@ -153,9 +431,9 @@ const AuctionDetails = () => {
 
     try {
       if (isLiked) {
-        await removeFromWishlist(auction.listingId);
+        await removeFromWishlist(auction.id);
       } else {
-        await addToWishlist(auction.listingId);
+        await addToWishlist(auction.id);
       }
       setIsLiked(!isLiked);
       toast({
@@ -198,7 +476,7 @@ const AuctionDetails = () => {
   
   const navigateToSellerProfile = () => {
     if (seller?.id) {
-      navigate(`/seller/${seller.id}`);
+      navigate(`/profile/${seller.id}`);
     }
   };
   
@@ -212,25 +490,6 @@ const AuctionDetails = () => {
       return;
     }
     setShowContactDialog(true);
-  };
-
-  // Handle image navigation
-  const handleImageClick = (index: number) => {
-    setCurrentImageIndex(index);
-  };
-
-  const handleNextImage = () => {
-    if (auction?.images) {
-      setCurrentImageIndex((prev) => (prev + 1) % auction.images.length);
-    }
-  };
-
-  const handlePrevImage = () => {
-    if (auction?.images) {
-      setCurrentImageIndex((prev) => 
-        prev === 0 ? auction.images.length - 1 : prev - 1
-      );
-    }
   };
 
   const handleReport = () => {
@@ -330,9 +589,9 @@ const AuctionDetails = () => {
               </div>
               
               {/* Main image display with navigation arrows */}
-              <div className="mb-4 rounded-xl overflow-hidden relative group">
+              <div className="mb-8 rounded-xl overflow-hidden relative group">
                 {/* Action buttons container */}
-                {user && auction && Number(user.id) === Number(auction.userId) && (
+                {user && auction && (Number(user.id) === Number(auction.sellerId) || Number(user.id) === Number(auction.userId)) && (
                   <div className="absolute top-4 left-4 z-20 flex gap-2">
                     <button
                       onClick={(e) => {
@@ -382,46 +641,90 @@ const AuctionDetails = () => {
                     </div>
                   </div>
                 )}
-
-                <img
-                  src={(auction.images && auction.images[currentImageIndex]) || auction.imageUrl || "https://via.placeholder.com/400x300?text=No+Image"}
-                  alt={auction.title}
-                  className="w-full h-[400px] object-cover transition-all duration-500"
-                />
                 
-                {/* Navigation arrows - only show on hover or mobile */}
-                <button 
-                  onClick={handlePrevImage}
-                  className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/70 dark:bg-black/70 p-2 rounded-full text-gray-800 dark:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity ${isMobile ? 'opacity-100' : ''}`}
-                  aria-label="Previous image"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-                
-                <button 
-                  onClick={handleNextImage}
-                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/70 dark:bg-black/70 p-2 rounded-full text-gray-800 dark:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity ${isMobile ? 'opacity-100' : ''}`}
-                  aria-label="Next image"
-                >
-                  <ArrowRight className="h-5 w-5 transform rotate-180" />
-                </button>
-              </div>
-              
-              {/* Thumbnail gallery */}
-              <div className="grid grid-cols-4 gap-4 mb-8">
-                {(auction.images ?? []).map((img: string, idx: number) => (
-                  <div 
-                    key={idx} 
-                    className={`rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${currentImageIndex === idx ? 'ring-2 ring-blue dark:ring-blue-light' : 'hover:opacity-80'}`}
-                    onClick={() => handleImageClick(idx)}
-                  >
-                    <img
-                      src={img}
-                      alt={`${auction.title} ${idx + 1}`}
-                      className="w-full h-24 object-cover"
-                    />
+                {/* Image Modal */}
+                {isImageModalOpen && selectedImage && (
+                  <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setIsImageModalOpen(false)}>
+                    <div className="relative max-w-4xl max-h-[80vh] w-full h-full flex items-center justify-center p-4">
+                      <button 
+                        className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm p-2 rounded-full text-white hover:bg-white/40"
+                        onClick={() => setIsImageModalOpen(false)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <img 
+                        src={selectedImage} 
+                        alt="صورة مكبرة" 
+                        className="max-w-full max-h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
                   </div>
-                ))}
+                )}
+
+                <div className="grid grid-cols-1 gap-4 py-6">
+                  {auction.images && auction.images.length > 0 ? (
+                    <Carousel className="w-full">
+                      <CarouselContent>
+                        {auction.images.map((image, index) => (
+                          <CarouselItem key={index}>
+                            <div className="flex aspect-video items-center justify-center p-1">
+                              <img 
+                                src={image || "/placeholder.svg"} 
+                                alt={`${auction.title} - صورة ${index + 1}`} 
+                                className="w-full h-full object-cover rounded-md cursor-pointer"
+                                onClick={() => {
+                                  setSelectedImage(image);
+                                  setIsImageModalOpen(true);
+                                }}
+                                onError={(e) => {
+                                  console.log(`Error loading image: ${image}`);
+                                  // Fallback if image fails to load
+                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                }}
+                              />
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
+                  ) : (
+                    <div className="flex aspect-video items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                      <Package className="h-12 w-12 text-gray-400" />
+                      <p className="text-gray-500 dark:text-gray-400 ml-2">لا توجد صور متاحة</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Thumbnail navigation */}
+                {auction.images && auction.images.length > 1 && (
+                  <div className="grid grid-cols-5 gap-2 mt-4">
+                    {auction.images.map((image, index) => (
+                      <div 
+                        key={`thumb-${index}`} 
+                        className={`cursor-pointer border-2 rounded overflow-hidden ${selectedImage === image ? 'border-blue-500' : 'border-transparent'}`}
+                        onClick={() => {
+                          setSelectedImage(image);
+                        }}
+                      >
+                        <img 
+                          src={image || "/placeholder.svg"} 
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-16 object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="mb-8">
@@ -439,17 +742,21 @@ const AuctionDetails = () => {
                 </ul>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="neo-card p-4">
+                  <div className="neo-card p-4 text-center">
                     <h4 className="font-medium mb-2">الحالة</h4>
-                    <p>{auction.condition}</p>
+                    <p className="text-lg font-bold">-</p>
                   </div>
-                  <div className="neo-card p-4">
+                  <div className="neo-card p-4 text-center">
                     <h4 className="font-medium mb-2">الموقع</h4>
-                    <p>{auction.location}</p>
+                    <p className="text-lg font-bold">
+                      {auction?.address || "-"}
+                    </p>
                   </div>
-                  <div className="neo-card p-4">
+                  <div className="neo-card p-4 text-center">
                     <h4 className="font-medium mb-2">الفئة</h4>
-                    <p>{auction.category} - {auction.subcategory}</p>
+                    <p className="text-lg font-bold">
+                      {auction?.categoryName || "-"}
+                    </p>
                   </div>
                 </div>
 
@@ -457,21 +764,21 @@ const AuctionDetails = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <h2 className="text-2xl font-bold mb-6">التقييمات والمراجعات</h2>
                   
-                  {user && auction && Number(user.id) !== Number(auction.userId) && (
+                  {user && auction && Number(user.id) !== Number(auction.sellerId) && Number(user.id) !== Number(auction.userId) && (
                     <div className="mb-8">
                       <ReviewForm 
-                        listingId={auction.listingId.toString()} 
+                        listingId={String(auction.listingId || auction.id)} 
                         onReviewSubmitted={() => {
                           // Refresh reviews after submission
                           queryClient.invalidateQueries({
-                            queryKey: ['reviews', auction.listingId]
+                            queryKey: ['reviews', auction.listingId || auction.id]
                           });
                         }} 
                       />
                     </div>
                   )}
 
-                  <ListingReviews listingId={auction.listingId.toString()} />
+                  <ListingReviews listingId={String(auction.listingId || auction.id)} />
                 </div>
               </div>
             </div>
@@ -523,14 +830,14 @@ const AuctionDetails = () => {
                       <Clock className="w-5 h-5 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">ينتهي بعد</p>
-                        <CountdownTimer endTime={new Date(auction.endTime)} />
+                        <CountdownTimer endTime={new Date(auction.endDate || auction.endTime)} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">عدد المزايدات</p>
-                        <p className="font-medium">{(auction as any).Bids?.length || auction.bids?.length || 0}</p>
+                        <p className="font-medium">{latestBids?.length || 0}</p>
                       </div>
                     </div>
                   </div>
@@ -548,10 +855,11 @@ const AuctionDetails = () => {
                     <BidForm
                       auctionId={Number(id)}
                       auctionTitle={auction?.title || auction?.name || ''}
-                      currentPrice={auction.currentBid && auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
-                      bidIncrement={auction.bidIncrement}
-                      isAuctionActive={new Date(auction.endTime) > new Date()}
+                      currentPrice={auction.currentBid !== undefined && auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                      bidIncrement={auction.bidIncrement || 100}
+                      isAuctionActive={new Date(auction.endDate || auction.endTime) > new Date()}
                       onBidSuccess={handleBidSuccess}
+                      onBidError={handleBidError}
                     />
                     
                     <div className="flex gap-2">
@@ -589,7 +897,7 @@ const AuctionDetails = () => {
                       </div>
                       {auction && (
                         <ReportDialog 
-                          listingId={auction.listingId} 
+                          listingId={auction.listingId || auction.id} 
                           onReportSubmitted={handleReport}
                         />
                       )}
@@ -598,65 +906,96 @@ const AuctionDetails = () => {
                 </div>
                 
                 <div className="neo-card p-6">
-                  <BidHistory 
-                    auctionId={Number(id)}
-                    currentUserId={Number(user?.id)}
-                  />
+                  <h3 className="heading-sm mb-4">تاريخ المزايدات</h3>
+                  {bidsWithUsernames && bidsWithUsernames.length > 0 ? (
+                    <div 
+                      className="space-y-4 max-h-80 overflow-y-auto pr-1" 
+                      style={{ 
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(59, 130, 246, 0.5) rgba(219, 234, 254, 0.1)',
+                      }}
+                    >
+                      {/* Show all bids instead of just the first 3 */}
+                      {bidsWithUsernames.map((bid) => (
+                        <div key={bid.id} className="flex justify-between items-start border-b pb-3 last:border-b-0">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-blue dark:text-blue-400">
+                              {bid.userName || "مزايد"}
+                              {bid.userId === Number(user?.id) && (
+                                <span className="text-sm text-blue-600 dark:text-blue-300 mr-2">(أنت)</span>
+                              )}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {bid.bidTime ? new Date(bid.bidTime).toLocaleDateString('ar-EG', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xl font-bold">₪ {(bid.amount || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500">لا توجد مزايدات حتى الآن</p>
+                  )}
                 </div>
                 
                 <div className="neo-card p-6 mb-6">
                   <h3 className="heading-sm mb-4">معلومات البائع</h3>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div 
-                      className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold cursor-pointer overflow-hidden"
-                      onClick={navigateToSellerProfile}
-                    >
-                      {seller?.profilePicture ? (
-                        <img
-                          src={
-                            seller.profilePicture.startsWith('http')
-                              ? seller.profilePicture
-                              : `http://mazadpalestine.runasp.net${seller.profilePicture}`
-                          }
-                          alt={`${seller.firstName ?? ''} ${seller.lastName ?? ''}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>{seller?.firstName?.charAt(0) ?? "؟"}</span>
-                      )}
+                  {!seller ? (
+                    <div className="flex justify-center items-center py-6">
+                      <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
                     </div>
+                  ) : (
                     <div>
-                      <h4 
-                        className="text-lg font-medium hover:text-blue transition-colors cursor-pointer"
-                        onClick={navigateToSellerProfile}
-                      >
-                        {seller ? (
-                          `${seller.firstName || ''} ${seller.lastName || ''}`.trim() || seller.username || 'مستخدم'
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-t-transparent border-blue rounded-full animate-spin"></div>
-                            <span>جاري تحميل معلومات البائع...</span>
-                          </div>
-                        )}
-                      </h4>
-                      {seller && (
-                        <div className="flex items-center gap-1 text-yellow-500">
-                          {'★'.repeat(Math.floor(seller?.rating ?? 0))}
-                          <span className="text-gray-600 dark:text-gray-300 text-sm mr-1">
-                            ({seller?.rating ?? 0}/5) · {seller?.totalSales ?? 0} عملية بيع
-                          </span>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          {seller.profilePicture ? (
+                            <img 
+                              src={
+                                seller.profilePicture.startsWith('http')
+                                  ? seller.profilePicture
+                                  : `http://mazadpalestine.runasp.net${seller.profilePicture}`
+                              }
+                              alt={`${seller.firstName} ${seller.lastName}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/default-avatar.png';
+                                // If default avatar fails, show fallback
+                                (e.target as HTMLImageElement).onerror = () => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
+                                };
+                              }}
+                            />
+                          ) : (
+                            <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
+                              {seller.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          )}
                         </div>
-                      )}
+                        <div>
+                          <h4 className="font-bold">{`${seller.firstName} ${seller.lastName}`}</h4>
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">★</span>
+                            <span>{seller.rating?.toFixed(1) || "0.0"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleContactClick}
+                        className="w-full btn-primary py-2"
+                      >
+                        تواصل مع البائع
+                      </button>
                     </div>
-                  </div>
-                  <button 
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleContactClick}
-                    disabled={!seller}
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    {seller ? "تواصل مع البائع" : "جاري التحميل..."}
-                  </button>
+                  )}
                 </div>
                 
                 <div className="neo-card p-6">
@@ -697,7 +1036,7 @@ const AuctionDetails = () => {
           sellerName={`${seller.firstName || ''} ${seller.lastName || ''}`.trim() || seller.username || 'مستخدم'}
           auctionTitle={auction?.title}
           auctionId={auction?.id}
-          auctionImage={auction?.imageUrl || (auction?.images && auction.images[0])}
+          auctionImage={(auction?.images && auction.images.length > 0) ? auction.images[0] : auction?.imageUrl}
           auctionPrice={auction?.currentBid || auction?.reservePrice}
         />
       )}

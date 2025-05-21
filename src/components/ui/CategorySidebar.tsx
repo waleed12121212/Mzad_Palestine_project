@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, ArrowUpRight, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowUpRight, Search, Gavel } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -9,7 +8,8 @@ interface Category {
   name: string;
   icon: React.ReactNode;
   count: number;
-  subcategories?: Omit<Category, "subcategories" | "icon">[];
+  auctionCount: number;
+  subcategories?: Omit<Category, "subcategories" | "icon" | "auctionCount">[];
 }
 
 interface CategorySidebarProps {
@@ -66,7 +66,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
 
   const handleCategoryClick = (categoryId: string) => {
     onSelectCategory(categoryId);
-    navigate(`/categories/${categoryId}`);
+    // Remove navigation to prevent redirection
   };
 
   return (
@@ -104,8 +104,9 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                     {category.icon}
                   </span>
                   <span className="text-sm md:text-base">{category.name}</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
-                    ({category.count})
+                  <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center">
+                    <Gavel className="w-3 h-3 mr-1" />
+                    {category.auctionCount}
                   </span>
                 </div>
                 
@@ -139,7 +140,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                       <span>{subcat.name}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400 dark:text-gray-500">
-                          ({subcat.count})
+                          {subcat.count}
                         </span>
                         <ArrowUpRight className="h-3 w-3 text-gray-400" />
                       </div>

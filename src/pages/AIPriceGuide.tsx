@@ -32,7 +32,6 @@ const AIPriceGuide = () => {
           </Link>
           <Link 
             to="/sell-product" 
-            onClick={handleSellProduct}
             className="btn-secondary flex items-center gap-2 mx-2"
           >
             <span>بيع منتج</span>

@@ -113,13 +113,20 @@ const CreateAuction = () => {
 
   const [showPriceSuggestion, setShowPriceSuggestion] = useState(false);
   const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
+  const [showTermsError, setShowTermsError] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const activeCategories = await categoryService.getActiveCategories();
+        console.log('Fetching categories...');
+        const activeCategories = await categoryService.getAllCategories();
         console.log('Fetched categories:', activeCategories);
-        setCategories(activeCategories);
+        
+        if (Array.isArray(activeCategories) && activeCategories.length > 0) {
+          setCategories(activeCategories);
+        } else {
+          console.error('Categories is not an array or is empty:', activeCategories);
+        }
       } catch (error) {
         console.error("Error fetching categories:", error);
         toast({
@@ -141,7 +148,8 @@ const CreateAuction = () => {
         categoryId,
         category,
         formDataCategory: formData.category,
-        type: typeof formData.category
+        type: typeof formData.category,
+        categories
       });
       setSelectedCategory(category || null);
     } else {
@@ -155,6 +163,9 @@ const CreateAuction = () => {
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData({ ...formData, [name]: checked });
+      if (name === 'terms' && checked) {
+        setShowTermsError(false);
+      }
     } else if (name === 'category') {
       // Ensure category is set as a string
       setFormData({ ...formData, [name]: value.toString() });
@@ -207,13 +218,9 @@ const CreateAuction = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setShowTermsError(false);
     if (activeStep === 3 && !formData.terms) {
-      toast({
-        title: "خطأ في النموذج",
-        description: "يجب الموافقة على الشروط والأحكام للمتابعة",
-        variant: "destructive",
-      });
+      setShowTermsError(true);
       return;
     }
     
@@ -224,7 +231,7 @@ const CreateAuction = () => {
         setIsSubmitting(true);
 
         // Validate required fields
-        if (!formData.title || !formData.description || !formData.category || !formData.startingPrice || !formData.endDate || !formData.endTime) {
+        if (!formData.title || !formData.description || !formData.category || !formData.startingPrice || !formData.endDate || !formData.endTime || !formData.location) {
           toast({
             title: "خطأ في النموذج",
             description: "جميع الحقول المطلوبة يجب ملؤها",
@@ -247,83 +254,42 @@ const CreateAuction = () => {
           return;
         }
 
-        // Create listing with exact backend format
-        const listingData = {
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          startingPrice: Number(formData.startingPrice),
-          categoryId: Number(formData.category),
-          endDate: endDate.toISOString(),
-          images: images.length > 0 ? images : ["https://example.com/images/placeholder.jpg"],
-          userId: user?.id?.toString() || "1"
-        };
-
-        const listing = await listingService.createListing(listingData);
-
-        if (!listing || (!listing.id && !listing.listingId)) {
-          throw new Error('Failed to create listing: No listing ID returned');
-        }
-
-        // Wait a moment to ensure the listing is fully created
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // بعد إنشاء listing
-        const plainListing = JSON.parse(JSON.stringify(listing));
-        let listingId = plainListing.listingId ?? plainListing.id;
-        if (typeof listingId === 'string') {
-          listingId = parseInt(listingId, 10);
-        }
-        if (!listingId || isNaN(listingId)) {
-          throw new Error('No valid listingId returned from listing creation');
-        }
-
         // Create auction with exact backend format
         const auctionData = {
-          listingId: listingId,
-          name: formData.title.trim(),
-          startTime: startDate.toISOString(),
-          endTime: endDate.toISOString(),
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          address: formData.location.trim(),
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           reservePrice: Number(formData.startingPrice),
           bidIncrement: Number(formData.incrementAmount || 10),
-          imageUrl: images[0] || "https://example.com/images/placeholder.jpg"
+          categoryId: Number(formData.category),
+          images: images.length > 0 ? images : ["https://example.com/images/placeholder.jpg"],
+          userId: Number(user?.id) || 1
         };
 
         // Validate auction data before sending
-        if (!auctionData.listingId || !auctionData.name || !auctionData.startTime || !auctionData.endTime || 
-            !auctionData.reservePrice || !auctionData.bidIncrement || !auctionData.imageUrl) {
+        if (!auctionData.title || !auctionData.description || !auctionData.address || 
+            !auctionData.startDate || !auctionData.endDate || 
+            !auctionData.reservePrice || !auctionData.bidIncrement || !auctionData.categoryId) {
           throw new Error('Missing required auction fields');
         }
 
-        // Ensure listingId is a number
-        auctionData.listingId = Number(auctionData.listingId);
-        if (isNaN(auctionData.listingId)) {
-          throw new Error('Invalid listing ID');
-        }
-
         // Ensure all numeric fields are valid
-        if (isNaN(auctionData.reservePrice) || isNaN(auctionData.bidIncrement)) {
+        if (isNaN(auctionData.reservePrice) || isNaN(auctionData.bidIncrement) || isNaN(auctionData.categoryId)) {
           throw new Error('Invalid numeric values');
         }
 
         // Ensure dates are valid
-        const startTime = new Date(auctionData.startTime);
-        const endTime = new Date(auctionData.endTime);
-        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        const startDateTime = new Date(auctionData.startDate);
+        const endDateTime = new Date(auctionData.endDate);
+        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
           throw new Error('Invalid date format');
         }
 
-        // Format the data exactly as the backend expects
-        const formattedAuctionData = {
-          listingId: auctionData.listingId,
-          name: auctionData.name,
-          startTime: auctionData.startTime,
-          endTime: auctionData.endTime,
-          reservePrice: auctionData.reservePrice,
-          bidIncrement: auctionData.bidIncrement,
-          imageUrl: auctionData.imageUrl
-        };
-
-        const auction = await auctionService.createAuction(formattedAuctionData);
+        console.log('Creating auction with data:', JSON.stringify(auctionData, null, 2));
+        const auctionResponse = await auctionService.createAuction(auctionData);
+        console.log('Auction creation response:', auctionResponse);
 
         // On successful auction creation, show the modal
         setShowSuccessModal(true);
@@ -558,11 +524,15 @@ const CreateAuction = () => {
                       required
                     >
                       <option value="">اختر فئة</option>
-                      {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
+                      {categories && categories.length > 0 ? (
+                        categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>جاري تحميل الفئات...</option>
+                      )}
                     </select>
                   </div>
 
@@ -993,19 +963,27 @@ const CreateAuction = () => {
                 </div>
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <label className="flex items-start cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer text-base font-medium">
                     <input
                       type="checkbox"
                       name="terms"
                       checked={formData.terms}
                       onChange={handleChange}
-                      className="mt-1"
-                      required
+                      className="w-5 h-5 accent-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="mr-2 text-sm">
-                      أوافق على <a href="/terms" className="text-blue dark:text-blue-light hover:underline">شروط وأحكام</a> المنصة، وأؤكد أن جميع المعلومات المقدمة صحيحة ودقيقة. كما أتحمل المسؤولية الكاملة عن صحة المعلومات والصور المقدمة.
+                    <span>
+                      يرجى الموافقة على&nbsp;
+                      <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                        الشروط والأحكام
+                      </a>
+                      &nbsp;قبل المتابعة
                     </span>
                   </label>
+                  {showTermsError && (
+                    <div className="mt-2 text-red-600 text-sm font-semibold bg-red-50 border border-red-200 rounded-lg p-2">
+                      يجب الموافقة على الشروط والأحكام للمتابعة
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -54,52 +54,103 @@ function parseAuctionBlock(content: string) {
   };
 }
 
+// Utility function to parse the product block
+function parseProductBlock(content: string) {
+  // Flexible regex: matches [منتج: title](url) optionally followed by price, then the rest
+  const productRegex = /^\[منتج: (.+?)\]\((.+?)\)[ \n]*(?:السعر الحالي: ₪(\d+)[ \n]*)?(?:[-]+[ \n]*)?/;
+  const match = content.match(productRegex);
+  if (!match) return null;
+  return {
+    title: match[1],
+    url: match[2],
+    price: match[3],
+    rest: content.replace(productRegex, '').trim(),
+  };
+}
+
 // AuctionMessage component
 const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
   const auction = parseAuctionBlock(content);
-  if (!auction) {
-    return <span>{content}</span>;
-  }
-  return (
-    <div>
-      <div
-        style={{
-          border: '1px solid #2563eb',
-          background: '#f0f6ff',
-          borderRadius: 8,
-          padding: 12,
-          marginBottom: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        {auction.image && (
-          <img
-            src={auction.image}
-            alt={auction.title}
-            style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover' }}
-          />
-        )}
-        <div>
-          <a
-            href={auction.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
-          >
-            {auction.title}
-          </a>
-          {auction.price && (
-            <div style={{ color: '#2563eb', fontSize: 14, marginTop: 2 }}>
-              السعر الحالي: ₪{auction.price}
-            </div>
+  const product = parseProductBlock(content);
+  
+  if (auction) {
+    return (
+      <div>
+        <div
+          style={{
+            border: '1px solid #2563eb',
+            background: '#f0f6ff',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          {auction.image && (
+            <img
+              src={auction.image}
+              alt={auction.title}
+              style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover' }}
+            />
           )}
+          <div>
+            <a
+              href={auction.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+            >
+              {auction.title}
+            </a>
+            {auction.price && (
+              <div style={{ color: '#2563eb', fontSize: 14, marginTop: 2 }}>
+                السعر الحالي: ₪{auction.price}
+              </div>
+            )}
+          </div>
         </div>
+        <div>{auction.rest}</div>
       </div>
-      <div>{auction.rest}</div>
-    </div>
-  );
+    );
+  } else if (product) {
+    return (
+      <div>
+        <div
+          style={{
+            border: '1px solid #22c55e',
+            background: '#f0fff4',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div>
+            <a
+              href={product.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+            >
+              {product.title}
+            </a>
+            {product.price && (
+              <div style={{ color: '#22c55e', fontSize: 14, marginTop: 2 }}>
+                السعر: ₪{product.price}
+              </div>
+            )}
+          </div>
+        </div>
+        <div>{product.rest}</div>
+      </div>
+    );
+  }
+  
+  return <span>{content}</span>;
 };
 
 const Chat: React.FC = () => {

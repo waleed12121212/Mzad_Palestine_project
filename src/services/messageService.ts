@@ -65,7 +65,7 @@ axiosInstance.interceptors.response.use(
 );
 
 export interface MessagePayload {
-  receiverId: number;
+  receiverId: string | number;
   subject?: string;
   content: string;
 }

@@ -29,15 +29,30 @@ import {
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
-import { categoryService, Category } from "@/services/categoryService";
-import { auctionService } from "@/services/auctionService";
+import { categoryService } from "@/services/categoryService";
+import { auctionService, Auction } from "@/services/auctionService";
+import { listingService, Listing } from "@/services/listingService";
+import { Category as ApiCategory } from "@/services/categoryService";
+import { Category, SubCategory } from "@/types";
+
+// Add a custom interface for the sidebar category
+interface SidebarCategory {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  count: number;
+  auctionCount: number;
+  subcategories?: { id: string; name: string; count: number }[];
+}
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [auctions, setAuctions] = useState([]);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [isListingsLoading, setIsListingsLoading] = useState(true);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
@@ -45,32 +60,41 @@ const Index = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       setIsCategoriesLoading(true);
+      
       try {
-        const activeCategories = await categoryService.getActiveCategories();
-        console.log('Active categories:', activeCategories);
+        const apiCategories = await categoryService.getAllCategories();
+        console.log('API categories:', apiCategories);
         
-        // Fetch detailed information for each category
-        const detailedCategories = await Promise.all(
-          activeCategories.map(async (category) => {
-            try {
-              const detailedCategory = await categoryService.getCategoryById(category.id.toString());
-              console.log(`Detailed category ${category.id}:`, detailedCategory);
-              return {
-                ...category,
-                listingsCount: detailedCategory.listingsCount ?? 0
-              };
-            } catch (error) {
-              console.error(`Error fetching details for category ${category.id}:`, error);
-              return {
-                ...category,
-                listingsCount: 0
-              };
-            }
-          })
-        );
+        // Log specific auction count data to debug
+        apiCategories.forEach(cat => {
+          console.log(`Category ${cat.name}: listing count = ${cat.listingCount}, auction count = ${cat.auctionCount}`);
+        });
+        
+        // Convert API categories to UI categories
+        const uiCategories: Category[] = apiCategories.map((apiCat: ApiCategory) => {
+          // Convert subcategories if they exist
+          const subCategories: SubCategory[] = apiCat.subCategories 
+            ? apiCat.subCategories.map(sub => ({
+                id: String(sub.id),
+                name: sub.name,
+                listingsCount: sub.listingCount || 0
+              }))
+            : [];
+            
+          // Create UI category
+          return {
+            id: String(apiCat.id),
+            name: apiCat.name,
+            description: apiCat.description,
+            imageUrl: apiCat.imageUrl,
+            listingsCount: apiCat.listingCount || 0,
+            auctionCount: apiCat.auctionCount || 0,
+            subCategories
+          };
+        });
 
-        console.log("Final detailed categories:", detailedCategories);
-        setCategories(detailedCategories);
+        console.log("UI categories for display:", uiCategories);
+        setCategories(uiCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
         setCategories([]);
@@ -86,15 +110,19 @@ const Index = () => {
     const fetchAuctions = async () => {
       setIsLoading(true);
       try {
-        const response: any = await auctionService.getActiveAuctions();
+        const response = await auctionService.getActiveAuctions();
+        console.log('Active auctions response:', response);
+        
         if (Array.isArray(response)) {
           setAuctions(response);
-        } else if (response && Array.isArray(response.data)) {
+        } else if (response && response.data && Array.isArray(response.data)) {
           setAuctions(response.data);
         } else {
+          console.error('Unexpected auction response format:', response);
           setAuctions([]);
         }
-      } catch {
+      } catch (error) {
+        console.error('Error fetching auctions:', error);
         setAuctions([]);
       } finally {
         setIsLoading(false);
@@ -103,7 +131,40 @@ const Index = () => {
     fetchAuctions();
   }, []);
 
+  useEffect(() => {
+    const fetchListings = async () => {
+      setIsListingsLoading(true);
+      try {
+        // First try to get active listings (requires auth)
+        const response = await listingService.getActiveListings();
+        console.log('Active listings response:', response);
+        setListings(response);
+      } catch (error) {
+        console.error('Error fetching active listings:', error);
+        try {
+          // Fallback to public listings
+          console.log('Falling back to public listings');
+          const publicData = await listingService.getPublicListings();
+          setListings(publicData);
+        } catch (fallbackError) {
+          console.error('Error fetching public listings:', fallbackError);
+          setListings([]);
+        }
+      } finally {
+        setIsListingsLoading(false);
+      }
+    };
+    
+    fetchListings();
+  }, []);
+
   const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    // No navigation here - let the filtering happen without redirection
+  };
+
+  // Add a new handler for carousel category selection with navigation
+  const handleCarouselCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
     navigate(`/categories/${categoryId}`);
   };
@@ -117,7 +178,14 @@ const Index = () => {
 
   const getFilteredAuctions = () => {
     if (!selectedCategory) return auctions;
-    return auctions.filter(auction => auction.category === selectedCategory);
+    console.log(`Filtering auctions for category ID: ${selectedCategory}`);
+    console.log('Available auctions:', auctions);
+    console.log('Auction category IDs:', auctions.map(a => a.categoryId));
+    return auctions.filter(auction => {
+      const match = auction.categoryId?.toString() === selectedCategory;
+      console.log(`Auction ${auction.id}: categoryId=${auction.categoryId}, selected=${selectedCategory}, match=${match}`);
+      return match;
+    });
   };
 
   const getCategoryIcon = (name: string) => {
@@ -211,10 +279,16 @@ const Index = () => {
     },
   ];
 
+  // Sort auctions by bid count or current bid amount
   const featuredAuctions = [...auctions]
-    .filter(auction => auction.bidders && auction.bidders > 0)
-    .sort((a, b) => b.bidders - a.bidders)
+    .filter(auction => (auction.bids?.length > 0))
+    .sort((a, b) => {
+      const aBidCount = a.bids?.length || 0;
+      const bBidCount = b.bids?.length || 0;
+      return bBidCount - aBidCount;
+    })
     .slice(0, 10);
+    
   const filteredAuctions = getFilteredAuctions();
 
   console.log("user from AuthContext:", user);
@@ -305,22 +379,31 @@ const Index = () => {
             <div className="flex justify-center items-center h-40">
               <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : categories.length > 0 && (
+          ) : categories.length > 0 ? (
             <CategoryCarousel
-              categories={categories.map(category => ({
-                id: category.id,
-                name: category.name,
-                imageUrl: category.imageUrl,
-                count: category.listingsCount ?? 0,
-                subcategories: category.subCategories?.map(sub => ({
-                  id: sub.id,
-                  name: sub.name,
-                  count: sub.listingsCount ?? 0
-                }))
-              }))}
+              categories={categories.map(category => {
+                console.log('Mapping category for carousel:', category);
+                return {
+                  id: category.id,
+                  name: category.name,
+                  imageUrl: category.imageUrl || "",
+                  count: (category.listingsCount || 0) + (category.auctionCount || 0),
+                  auctionCount: category.auctionCount || 0,
+                  listingCount: category.listingsCount || 0,
+                  subcategories: category.subCategories?.map(sub => ({
+                    id: sub.id,
+                    name: sub.name,
+                    count: sub.listingsCount || 0
+                  }))
+                };
+              })}
               selectedCategory={selectedCategory}
-              onSelectCategory={handleCategorySelect}
+              onSelectCategory={handleCarouselCategorySelect}
             />
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-lg text-gray-600 dark:text-gray-300">لا توجد فئات متاحة حالياً</p>
+            </div>
           )}
         </div>
       </section>
@@ -356,17 +439,71 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredAuctions.map((auction) => (
                 <AuctionCard
-                  key={auction.auctionId ?? auction.id}
-                  id={auction.auctionId ?? auction.id}
-                  title={auction.name ?? auction.title}
-                  description={auction.description ?? ""}
+                  key={auction.id}
+                  id={auction.id}
+                  title={auction.title}
+                  description={auction.description || ""}
                   currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
                   minBidIncrement={auction.bidIncrement}
-                  imageUrl={auction.imageUrl}
-                  endTime={auction.endTime}
-                  bidders={auction.bidsCount ?? auction.bidders}
+                  imageUrl={auction.images?.[0] || ""}
+                  endTime={auction.endDate}
+                  bidders={auction.bids?.length || 0}
                 />
               ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="py-12 bg-gradient-to-r from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8 rtl">
+            <h2 className="heading-lg">الشراء الفوري</h2>
+            <Link to="/buy-now" className="text-blue dark:text-blue-light hover:underline flex items-center">
+              عرض الكل <ChevronRight className="h-5 w-5" />
+            </Link>
+          </div>
+
+          {isListingsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="neo-card animate-pulse">
+                  <div className="w-full h-56 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-4"></div>
+                    <div className="flex justify-between mb-4">
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                    </div>
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : listings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {listings.slice(0, 8).map((listing) => (
+                <ProductCard
+                  key={listing.listingId}
+                  id={listing.listingId}
+                  title={listing.title}
+                  description={listing.description}
+                  price={listing.price}
+                  imageUrl={listing.images?.[0] || "https://via.placeholder.com/300"}
+                  isNew={new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+                  sellerId={listing.userId}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-bold mb-4">لا توجد منتجات للشراء الفوري حالياً</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">عذراً، لم نتمكن من العثور على منتجات متاحة للشراء الفوري</p>
+              <Link to="/sell-product" className="text-blue dark:text-blue-light hover:underline inline-block">
+                عرض منتج للبيع
+              </Link>
             </div>
           )}
         </div>
@@ -411,11 +548,22 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="lg:w-1/4 w-full">
               <CategorySidebar
-                categories={categories.map(cat => ({
-                  ...cat,
-                  icon: getCategoryIcon(cat.name),
-                  count: cat.listingsCount || 0
-                }))}
+                categories={categories.map(cat => {
+                  console.log('Mapping category for sidebar:', cat);
+                  const sidebarCategory: SidebarCategory = {
+                    id: cat.id,
+                    name: cat.name,
+                    icon: getCategoryIcon(cat.name),
+                    count: cat.listingsCount || 0,
+                    auctionCount: cat.auctionCount || 0,
+                    subcategories: cat.subCategories?.map(sub => ({
+                      id: sub.id,
+                      name: sub.name,
+                      count: sub.listingsCount || 0
+                    }))
+                  };
+                  return sidebarCategory;
+                })}
                 onSelectCategory={handleCategorySelect}
                 selectedCategoryId={selectedCategory || undefined}
               />
@@ -444,15 +592,15 @@ const Index = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredAuctions.map((auction) => (
                     <AuctionCard
-                      key={auction.auctionId ?? auction.id}
-                      id={auction.auctionId ?? auction.id}
-                      title={auction.name ?? auction.title}
-                      description={auction.description ?? ""}
+                      key={auction.id}
+                      id={auction.id}
+                      title={auction.title}
+                      description={auction.description || ""}
                       currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
                       minBidIncrement={auction.bidIncrement}
-                      imageUrl={auction.imageUrl}
-                      endTime={auction.endTime}
-                      bidders={auction.bidsCount ?? auction.bidders}
+                      imageUrl={auction.images?.[0] || ""}
+                      endTime={auction.endDate}
+                      bidders={auction.bids?.length || 0}
                     />
                   ))}
                 </div>

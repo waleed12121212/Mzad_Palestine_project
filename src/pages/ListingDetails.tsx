@@ -1,0 +1,419 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { BuyNowButton } from '@/components/listing/BuyNowButton';
+import { Heart, Share2, MapPin, Calendar, Package, X, AlertTriangle, Edit, Trash2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import PageWrapper from '@/components/layout/PageWrapper';
+import { listingService, Listing } from '@/services/listingService';
+import { wishlistService } from '@/services/wishlistService';
+import { useAuth } from '@/contexts/AuthContext';
+import { ListingContactSellerDialog } from '@/components/listing/ListingContactSellerDialog';
+
+export default function ListingDetails() {
+  const { id } = useParams<{ id: string }>();
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  const listingId = id ? parseInt(id) : 0;
+
+  useEffect(() => {
+    const fetchListingDetails = async () => {
+      if (!listingId) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await listingService.getListingById(listingId);
+        setListing(data);
+        
+        // Check if listing is in user's wishlist
+        if (isAuthenticated) {
+          const wishlistStatus = await wishlistService.isInWishlist(listingId);
+          setIsInWishlist(wishlistStatus);
+        }
+      } catch (error) {
+        console.error('Error fetching listing details:', error);
+        toast({
+          title: 'فشل في تحميل بيانات المنتج',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchListingDetails();
+  }, [listingId, isAuthenticated]);
+
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'يرجى تسجيل الدخول أولاً',
+        variant: 'destructive',
+      });
+      navigate('/login');
+      return;
+    }
+
+    setIsAddingToWishlist(true);
+    try {
+      if (isInWishlist) {
+        await wishlistService.removeListingFromWishlist(listingId);
+        setIsInWishlist(false);
+      } else {
+        await wishlistService.addListingToWishlist(listingId);
+        setIsInWishlist(true);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    } finally {
+      setIsAddingToWishlist(false);
+    }
+  };
+
+  const handleShareListing = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: listing?.title || 'مشاركة منتج',
+        text: listing?.description || 'تفاصيل المنتج',
+        url: window.location.href,
+      }).catch((error) => {
+        console.error('Error sharing:', error);
+      });
+    } else {
+      // Fallback
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: 'تم نسخ الرابط',
+        description: 'يمكنك مشاركة الرابط مع الآخرين',
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (!listing) return;
+      
+      await listingService.deleteListing(listing.listingId);
+      toast({
+        title: "تم حذف المنتج بنجاح",
+        description: "تم حذف المنتج والصور المرتبطة به"
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      toast({
+        title: "فشل حذف المنتج",
+        description: error.message || "حدث خطأ أثناء حذف المنتج",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <PageWrapper>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <div className="loader"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل تفاصيل المنتج...</p>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <PageWrapper>
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto text-center">
+            <div className="mb-6 text-yellow-500 dark:text-yellow-400">
+              <AlertTriangle className="h-24 w-24 mx-auto" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4">لم يتم العثور على المنتج</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              {error || "عذراً، لم نتمكن من العثور على المنتج المطلوب. قد يكون المنتج غير متوفر أو تم حذفه."}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">
+              معرف المنتج: {`${id}`}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button onClick={() => navigate('/buy-now')} className="w-full sm:w-auto">
+                استعراض المنتجات
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/')} 
+                className="w-full sm:w-auto"
+              >
+                العودة للصفحة الرئيسية
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  return (
+    <PageWrapper>
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Main content - images and details */}
+          <div className="md:col-span-2">
+            {/* Image Modal */}
+            {isImageModalOpen && selectedImage && (
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setIsImageModalOpen(false)}>
+                <div className="relative max-w-4xl max-h-[80vh] w-full h-full flex items-center justify-center p-4">
+                  <button 
+                    className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm p-2 rounded-full text-white hover:bg-white/40"
+                    onClick={() => setIsImageModalOpen(false)}
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                  <img 
+                    src={selectedImage} 
+                    alt="صورة مكبرة" 
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Action buttons for owner */}
+            {user && listing && user.id === listing.userId && (
+              <div className="flex gap-2 justify-end mb-4">
+                <Button
+                  onClick={() => navigate(`/listing/${listing.listingId}/edit`)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>تعديل</span>
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  variant="destructive"
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>حذف</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Delete confirmation dialog */}
+            {showDeleteDialog && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+                  <h3 className="text-xl font-bold mb-4">تأكيد حذف المنتج</h3>
+                  <p className="mb-6 text-gray-600 dark:text-gray-300">
+                    هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.
+                  </p>
+                  <div className="flex gap-4 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeleteDialog(false)}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                    >
+                      حذف المنتج
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Image carousel */}
+            <div className="mb-6 rounded-lg overflow-hidden">
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {listing.images && listing.images.length > 0 ? (
+                    listing.images.map((image, index) => (
+                      <CarouselItem key={index}>
+                        <div className="flex aspect-video items-center justify-center p-1">
+                          <img 
+                            src={image} 
+                            alt={`${listing.title} - صورة ${index + 1}`}
+                            className="rounded-md object-cover w-full h-full cursor-pointer"
+                            onClick={() => {
+                              setSelectedImage(image);
+                              setIsImageModalOpen(true);
+                            }}
+                            onError={(e) => {
+                              console.error(`Error loading image at index ${index}: ${image}`);
+                              // Fallback if image fails to load
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))
+                  ) : (
+                    <CarouselItem>
+                      <div className="flex aspect-video items-center justify-center p-1 bg-gray-100 dark:bg-gray-800">
+                        <div className="text-center">
+                          <Package className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                          <span className="text-gray-400">لا توجد صور متاحة</span>
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  )}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+              
+              {/* Thumbnail navigation */}
+              {listing.images && listing.images.length > 1 && (
+                <div className="grid grid-cols-5 gap-2 mt-4">
+                  {listing.images.map((image, index) => (
+                    <div 
+                      key={`thumb-${index}`} 
+                      className={`cursor-pointer border-2 rounded overflow-hidden ${selectedImage === image ? 'border-blue-500' : 'border-transparent'}`}
+                      onClick={() => {
+                        setSelectedImage(image);
+                      }}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-16 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Product details */}
+            <div>
+              <div className="flex justify-between items-start mb-4">
+                <h1 className="text-3xl font-bold">{listing.title}</h1>
+                <div className="flex space-x-2 rtl:space-x-reverse">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleToggleWishlist}
+                    disabled={isAddingToWishlist}
+                  >
+                    <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={handleShareListing}>
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              <Badge className="mb-4">{listing.categoryName}</Badge>
+
+              <div className="flex items-center text-gray-600 mb-4">
+                <MapPin className="h-4 w-4 mr-1 rtl:ml-1" />
+                <span>{listing.address}</span>
+              </div>
+
+              <div className="flex items-center text-gray-600 mb-6">
+                <Calendar className="h-4 w-4 mr-1 rtl:ml-1" />
+                <span>متاح حتى: {formatDate(listing.endDate)}</span>
+              </div>
+
+              <div className="text-3xl font-bold text-green-600 mb-6">
+                {listing.price.toLocaleString('ar-EG')} ₪
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-2">الوصف</h3>
+                <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar - seller info and actions */}
+          <div className="md:col-span-1">
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-4">
+                  <Avatar className="h-10 w-10 mr-3 rtl:ml-3">
+                    <AvatarImage src={`https://avatar.vercel.sh/${listing.userName}`} />
+                    <AvatarFallback>{listing.userName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">{listing.userName}</h3>
+                    <p className="text-sm text-gray-500">البائع</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mt-6">
+                  <BuyNowButton
+                    listingId={listing.listingId}
+                    price={listing.price}
+                    title={listing.title}
+                  />
+                  
+                  <ListingContactSellerDialog 
+                    sellerId={listing.userId}
+                    productName={listing.title} 
+                    productImage={listing.images && listing.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
+                    productPrice={listing.price}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-semibold mb-4">معلومات إضافية</h3>
+                <ul className="space-y-3">
+                  <li className="flex justify-between">
+                    <span className="text-gray-600">حالة المنتج</span>
+                    <span className={`${listing.isActive ? 'text-green-600' : 'text-red-600'} font-medium`}>
+                      {listing.isActive ? 'متاح' : 'غير متاح'}
+                    </span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-600">تاريخ النشر</span>
+                    <span>{formatDate(listing.createdAt)}</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-gray-600">رقم المنتج</span>
+                    <span>#{listing.listingId}</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </PageWrapper>
+  );
+} 
