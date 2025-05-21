@@ -17,16 +17,54 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { CalendarIcon, Upload } from 'lucide-react';
+import axios from 'axios';
 
 interface ApiAuction {
-  AuctionId: number;
-  UserId: number;
-  StartTime: string;
-  EndTime: string;
-  ReservePrice: number;
-  BidIncrement: number;
-  ImageUrl: string;
-  Status: number;
+  id?: number;
+  auctionId?: number;
+  userId?: number;
+  sellerId?: number;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  reservePrice?: number;
+  bidIncrement?: number;
+  currentBid?: number;
+  status?: string | number;
+  imageUrl?: string;
+  images?: string[];
+  title?: string;
+  description?: string;
+  address?: string;
+  categoryId?: number;
+  // API response fields (PascalCase)
+  Id?: number;
+  AuctionId?: number;
+  UserId?: number;
+  SellerId?: number;
+  StartDate?: string;
+  EndDate?: string;
+  StartTime?: string;
+  EndTime?: string;
+  ReservePrice?: number;
+  BidIncrement?: number;
+  CurrentBid?: number;
+  Status?: string | number;
+  ImageUrl?: string;
+  Images?: string[];
+  Title?: string;
+  Description?: string;
+  Address?: string;
+  CategoryId?: number;
+}
+
+// AuctionStatus enum that matches backend expectations
+enum AuctionStatus {
+  Draft = 0,
+  Active = 1,
+  Completed = 2,
+  Cancelled = 3
 }
 
 interface ApiResponse {
@@ -46,6 +84,15 @@ export interface Auction {
 
 // Form validation schema
 const formSchema = z.object({
+  title: z.string().min(2, {
+    message: 'يجب أن يكون العنوان أكثر من حرفين',
+  }),
+  description: z.string().min(10, {
+    message: 'يجب أن يكون الوصف أكثر من 10 أحرف',
+  }),
+  address: z.string().min(2, {
+    message: 'يرجى إدخال العنوان',
+  }),
   startTime: z.date({
     required_error: 'يرجى تحديد وقت بدء المزاد',
   }),
@@ -58,7 +105,10 @@ const formSchema = z.object({
   bidIncrement: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: 'يجب أن تكون قيمة الزيادة رقماً موجباً',
   }),
-  status: z.number().min(0).max(3),
+  categoryId: z.number().min(1, {
+    message: 'يرجى اختيار الفئة',
+  }),
+  status: z.string(),
 });
 
 const EditAuction = () => {
@@ -69,15 +119,20 @@ const EditAuction = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [originalAuction, setOriginalAuction] = useState<ApiAuction | null>(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      title: '',
+      description: '',
+      address: '',
       startTime: new Date(),
       endTime: new Date(),
       reservePrice: '',
       bidIncrement: '',
-      status: 1,
+      categoryId: 1,
+      status: 'Open',
     },
   });
 
@@ -96,8 +151,22 @@ const EditAuction = () => {
 
         console.log('Fetching auction with ID:', id);
         const response = await auctionService.getAuctionById(Number(id));
-        const auctionData = (response as unknown as ApiResponse).data;
-        console.log('Received auction data:', auctionData);
+        console.log('Raw API response:', response);
+        
+        // Handle different API response formats
+        let auctionData;
+        if (response.data) {
+          auctionData = response.data;
+        } else if (response.success && response.data) {
+          auctionData = response.data;
+        } else {
+          auctionData = response;
+        }
+        
+        console.log('Processed auction data:', auctionData);
+        
+        // Store the original auction data
+        setOriginalAuction(auctionData);
         
         if (!auctionData) {
           toast({
@@ -109,7 +178,9 @@ const EditAuction = () => {
           return;
         }
 
-        if (Number(auctionData.UserId) !== Number(user.id)) {
+        // Check user permissions - support both camelCase and PascalCase keys
+        const auctionUserId = auctionData.userId || auctionData.UserId || auctionData.sellerId || auctionData.SellerId;
+        if (Number(auctionUserId) !== Number(user.id)) {
           toast({
             title: "غير مصرح",
             description: "لا يمكنك تعديل هذا المزاد",
@@ -119,14 +190,92 @@ const EditAuction = () => {
           return;
         }
 
-        form.reset({
-          startTime: new Date(auctionData.StartTime),
-          endTime: new Date(auctionData.EndTime),
-          reservePrice: auctionData.ReservePrice.toString(),
-          bidIncrement: auctionData.BidIncrement.toString(),
-          status: auctionData.Status || 1,
+        // Create safe date objects with basic error handling
+        const now = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(now.getDate() + 7);
+        
+        // Try to parse dates carefully (check all possible date fields)
+        let startTime = now;
+        let endTime = futureDate;
+        
+        // Get start date from any available field
+        const startDateStr = 
+          auctionData.startDate || auctionData.StartDate || 
+          auctionData.startTime || auctionData.StartTime;
+          
+        // Get end date from any available field  
+        const endDateStr = 
+          auctionData.endDate || auctionData.EndDate || 
+          auctionData.endTime || auctionData.EndTime;
+        
+        console.log('Parsing dates:', { startDateStr, endDateStr });
+        
+        if (startDateStr) {
+          try {
+            startTime = new Date(startDateStr);
+          } catch (error) {
+            console.error("Error parsing start date:", error);
+          }
+        }
+        
+        if (endDateStr) {
+          try {
+            endTime = new Date(endDateStr);
+          } catch (error) {
+            console.error("Error parsing end date:", error);
+          }
+        }
+        
+        // Validate dates (use fallbacks if invalid)
+        if (isNaN(startTime.getTime())) startTime = now;
+        if (isNaN(endTime.getTime())) endTime = futureDate;
+        
+        // Get price and increment with fallbacks
+        const reservePrice = auctionData.reservePrice || auctionData.ReservePrice || 0;
+        const bidIncrement = auctionData.bidIncrement || auctionData.BidIncrement || 100;
+        
+        console.log('Setting form values:', {
+          startTime,
+          endTime,
+          reservePrice,
+          bidIncrement
         });
-        setPreviewUrl(auctionData.ImageUrl || '');
+        
+        const getStatusString = (status: any): string => {
+          if (typeof status === 'string') return status;
+          
+          // Convert numeric status to string matching our enum
+          switch (Number(status)) {
+            case AuctionStatus.Draft: return 'Draft';
+            case AuctionStatus.Active: return 'Open';
+            case AuctionStatus.Completed: return 'Closed';
+            case AuctionStatus.Cancelled: return 'Cancelled';
+            default: return 'Open';
+          }
+        };
+
+        form.reset({
+          title: auctionData.title || auctionData.Title || '',
+          description: auctionData.description || auctionData.Description || '',
+          address: auctionData.address || auctionData.Address || '',
+          startTime,
+          endTime,
+          reservePrice: String(reservePrice),
+          bidIncrement: String(bidIncrement),
+          categoryId: auctionData.categoryId || auctionData.CategoryId || 1,
+          status: getStatusString(auctionData.status || auctionData.Status || 'Open'),
+        });
+        
+        // Try all possible image URLs
+        setPreviewUrl(
+          auctionData.imageUrl || 
+          auctionData.ImageUrl || 
+          (auctionData.images && auctionData.images.length > 0 ? auctionData.images[0] : '') ||
+          (auctionData.Images && auctionData.Images.length > 0 ? auctionData.Images[0] : '') ||
+          ''
+        );
+        
         setLoading(false);
       } catch (error: any) {
         console.error('Error loading auction:', error);
@@ -181,20 +330,71 @@ const EditAuction = () => {
         }
       }
 
-      const updateData = {
-        startTime: values.startTime.toISOString(),
-        endTime: values.endTime.toISOString(),
-        reservePrice: Number(values.reservePrice),
-        bidIncrement: Number(values.bidIncrement),
-        imageUrl: imageUrl,
-        status: values.status,
+      // Prepare images array
+      const images: string[] = [];
+      if (imageUrl) {
+        images.push(imageUrl);
+      } else if (originalAuction?.images && originalAuction.images.length > 0) {
+        originalAuction.images.forEach(img => images.push(img));
+      } else if (originalAuction?.Images && originalAuction.Images.length > 0) {
+        originalAuction.Images.forEach(img => images.push(img));
+      } else if (originalAuction?.imageUrl) {
+        images.push(originalAuction.imageUrl);
+      } else if (originalAuction?.ImageUrl) {
+        images.push(originalAuction.ImageUrl);
+      }
+
+      // Convert string status to numeric enum value
+      let statusEnum: number;
+      switch (values.status) {
+        case 'Draft': statusEnum = AuctionStatus.Draft; break;
+        case 'Open': statusEnum = AuctionStatus.Active; break;
+        case 'Closed': statusEnum = AuctionStatus.Completed; break;
+        case 'Cancelled': statusEnum = AuctionStatus.Cancelled; break;
+        default: statusEnum = AuctionStatus.Active;
+      }
+
+      // Create the DTO object as required by the API
+      const dto = {
+        Title: values.title,
+        Description: values.description,
+        Address: values.address,
+        StartDate: values.startTime.toISOString(),
+        EndDate: values.endTime.toISOString(),
+        ReservePrice: Number(values.reservePrice),
+        BidIncrement: Number(values.bidIncrement),
+        CategoryId: Number(values.categoryId),
+        Status: statusEnum, // Use the numeric enum value
+        Images: images
       };
 
-      console.log('Sending update data:', updateData);
-      const result = await auctionService.updateAuction(Number(id), updateData);
-      console.log('Update result:', result);
+      console.log('Sending final request data:', { dto });
+      
+      // Get the ID from the URL parameter
+      const auctionId = Number(id);
+      if (isNaN(auctionId)) {
+        throw new Error('Invalid auction ID');
+      }
 
-      if (result) {
+      try {
+        // Use axios directly to ensure proper request format
+        const token = localStorage.getItem('token');
+        
+        console.log('Sending final request data:', { dto });
+        
+        const response = await axios.put(
+          `http://localhost:8081/Auction/${auctionId}`,
+          dto, // Send dto directly as the request body
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        console.log('Update result:', response.data);
+        
         toast({
           title: "تم تحديث المزاد بنجاح",
           description: "تم حفظ التغييرات بنجاح",
@@ -204,6 +404,38 @@ const EditAuction = () => {
         setTimeout(() => {
           navigate(`/auction/${id}`);
         }, 500);
+      } catch (error: any) {
+        console.error('API Error updating auction:', error);
+        
+        // Log full error details
+        console.error('Error response:', error.response);
+        console.error('Error data:', error.response?.data);
+        
+        // Try to extract and display the detailed error message
+        let errorMessage = "حدث خطأ أثناء تحديث المزاد";
+        
+        if (error.response?.data) {
+          const errorData = error.response.data;
+          
+          // Handle specific validation errors
+          if (errorData.errors) {
+            try {
+              // Convert error object to a readable string
+              const errorsString = JSON.stringify(errorData.errors);
+              errorMessage = `خطأ في البيانات: ${errorsString}`;
+            } catch (e) {
+              errorMessage = "خطأ في التحقق من البيانات";
+            }
+          } else if (errorData.title) {
+            errorMessage = errorData.title;
+          }
+        }
+        
+        toast({
+          title: "فشل في تحديث المزاد",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error('Error updating auction:', error);
@@ -281,90 +513,144 @@ const EditAuction = () => {
               </div>
             </div>
 
+            {/* Title Field */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>عنوان المزاد</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="أدخل عنوان المزاد" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Description Field */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>وصف المزاد</FormLabel>
+                  <FormControl>
+                    <textarea 
+                      {...field} 
+                      rows={3}
+                      className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" 
+                      placeholder="أدخل وصف المزاد"
+                    ></textarea>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Address Field */}
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>العنوان</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="أدخل عنوان المزاد" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Start Time Field */}
             <FormField
               control={form.control}
               name="startTime"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>وقت بدء المزاد</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-right font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ar })
-                          ) : (
-                            <span>اختر التاريخ</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date()
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="datetime-local"
+                      value={(() => {
+                        // Safely handle the date
+                        try {
+                          const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
+                            ? field.value 
+                            : new Date();
+                          return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+                            .toISOString()
+                            .slice(0, 16);
+                        } catch (e) {
+                          console.error("Error formatting start date:", e);
+                          return new Date().toISOString().slice(0, 16);
                         }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                      })()}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          try {
+                            field.onChange(new Date(e.target.value));
+                          } catch (error) {
+                            console.error("Error parsing date:", error);
+                            field.onChange(new Date());
+                          }
+                        }
+                      }}
+                      className="w-full"
+                    />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* End Time Field */}
             <FormField
               control={form.control}
               name="endTime"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>وقت نهاية المزاد</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-right font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ar })
-                          ) : (
-                            <span>اختر التاريخ</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < form.getValues("startTime")
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="datetime-local"
+                      value={(() => {
+                        // Safely handle the date
+                        try {
+                          const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
+                            ? field.value 
+                            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                          return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+                            .toISOString()
+                            .slice(0, 16);
+                        } catch (e) {
+                          console.error("Error formatting end date:", e);
+                          return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
                         }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                      })()}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          try {
+                            field.onChange(new Date(e.target.value));
+                          } catch (error) {
+                            console.error("Error parsing date:", error);
+                            // Set to 1 week from now
+                            const futureDate = new Date();
+                            futureDate.setDate(futureDate.getDate() + 7);
+                            field.onChange(futureDate);
+                          }
+                        }
+                      }}
+                      className="w-full"
+                    />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Reserve Price Field */}
             <FormField
               control={form.control}
               name="reservePrice"
@@ -379,6 +665,7 @@ const EditAuction = () => {
               )}
             />
 
+            {/* Bid Increment Field */}
             <FormField
               control={form.control}
               name="bidIncrement"
@@ -393,23 +680,51 @@ const EditAuction = () => {
               )}
             />
 
+            {/* Category ID Field */}
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>الفئة</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر فئة المزاد" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">ملابس رجالية</SelectItem>
+                      <SelectItem value="2">أجهزة إلكترونية</SelectItem>
+                      <SelectItem value="3">أثاث منزلي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Status Field */}
             <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>حالة المزاد</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="اختر حالة المزاد" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="0">مسودة</SelectItem>
-                      <SelectItem value="1">نشط</SelectItem>
-                      <SelectItem value="2">منتهي</SelectItem>
-                      <SelectItem value="3">ملغي</SelectItem>
+                      <SelectItem value="Draft">مسودة</SelectItem>
+                      <SelectItem value="Open">نشط</SelectItem>
+                      <SelectItem value="Closed">منتهي</SelectItem>
+                      <SelectItem value="Cancelled">ملغي</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
