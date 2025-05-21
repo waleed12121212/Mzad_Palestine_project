@@ -4,11 +4,12 @@ import { toast } from 'react-toastify';
 import reviewService from '../services/reviewService';
 
 interface ReviewFormProps {
-  listingId: string;
+  listingId?: string;
+  auctionId?: string;
   onReviewSubmitted?: () => void;
 }
 
-const ReviewForm: React.FC<ReviewFormProps> = ({ listingId, onReviewSubmitted }) => {
+const ReviewForm: React.FC<ReviewFormProps> = ({ listingId, auctionId, onReviewSubmitted }) => {
   const [rating, setRating] = useState<number | null>(0);
   const [comment, setComment] = useState('');
   const [hasReviewed, setHasReviewed] = useState(false);
@@ -16,29 +17,35 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ listingId, onReviewSubmitted })
 
   useEffect(() => {
     checkUserReview();
-  }, [listingId]);
+  }, [listingId, auctionId]);
 
   const checkUserReview = async () => {
-    const reviewed = await reviewService.hasUserReviewed(listingId);
-    setHasReviewed(reviewed);
+    if (auctionId) {
+      // لا يوجد endpoint مباشر للتحقق، يمكن جلب مراجعاتي والتحقق منها أو تجاهل التحقق حالياً
+      setHasReviewed(false); // أو يمكنك لاحقاً جلب مراجعاتي والتحقق
+    } else if (listingId) {
+      const reviewed = await reviewService.hasUserReviewed(listingId);
+      setHasReviewed(reviewed);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!rating) {
       toast.error('الرجاء اختيار تقييم');
       return;
     }
-
     try {
       setIsSubmitting(true);
-      await reviewService.addReview({
-        listingId,
-        rating,
-        comment: comment.trim()
-      });
-      
+      if (auctionId) {
+        await reviewService.addAuctionReview(auctionId, rating, comment.trim());
+      } else if (listingId) {
+        await reviewService.addReview({
+          listingId,
+          rating,
+          comment: comment.trim()
+        });
+      }
       toast.success('تم إضافة تقييمك بنجاح');
       setRating(0);
       setComment('');

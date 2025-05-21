@@ -8,7 +8,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import PageWrapper from "@/components/layout/PageWrapper";
 import { listingService, Listing, SearchListingParams } from "@/services/listingService";
 import { categoryService, Category } from "@/services/categoryService";
 import ProductCard from "@/components/ui/ProductCard";
@@ -210,7 +209,7 @@ const BuyNow: React.FC = () => {
   };
 
   return (
-    <PageWrapper>
+    <>
       <style>{inputStyles}</style>
       
       <div className="container mx-auto px-4 py-8">
@@ -413,7 +412,7 @@ const BuyNow: React.FC = () => {
           </div>
         )}
       </div>
-    </PageWrapper>
+    </>
   );
 };
 

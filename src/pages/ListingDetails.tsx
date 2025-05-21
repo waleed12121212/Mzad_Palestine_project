@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BuyNowButton } from '@/components/listing/BuyNowButton';
-import { Heart, Share2, MapPin, Calendar, Package, X, AlertTriangle, Edit, Trash2 } from 'lucide-react';
+import { Heart, Share2, MapPin, Calendar, Package, X, AlertTriangle, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import PageWrapper from '@/components/layout/PageWrapper';
 import { listingService, Listing } from '@/services/listingService';
 import { wishlistService } from '@/services/wishlistService';
 import { useAuth } from '@/contexts/AuthContext';
 import { ListingContactSellerDialog } from '@/components/listing/ListingContactSellerDialog';
+import ReviewForm from '@/components/ReviewForm';
+import ListingReviews from '@/components/ListingReviews';
+import { userService, UserProfile } from '@/services/userService';
 
 export default function ListingDetails() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +28,9 @@ export default function ListingDetails() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [seller, setSeller] = useState<UserProfile | null>(null);
+  const [sellerLoading, setSellerLoading] = useState(false);
 
   const listingId = id ? parseInt(id) : 0;
 
@@ -56,6 +61,16 @@ export default function ListingDetails() {
 
     fetchListingDetails();
   }, [listingId, isAuthenticated]);
+
+  useEffect(() => {
+    if (listing && listing.userId) {
+      setSellerLoading(true);
+      userService.getUserById(listing.userId.toString())
+        .then(res => setSeller(res.data))
+        .catch(() => setSeller(null))
+        .finally(() => setSellerLoading(false));
+    }
+  }, [listing?.userId]);
 
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
@@ -133,18 +148,15 @@ export default function ListingDetails() {
 
   if (isLoading) {
     return (
-      <PageWrapper>
         <div className="flex justify-center items-center min-h-[50vh]">
           <div className="loader"></div>
           <p className="mt-4 text-gray-600">جاري تحميل تفاصيل المنتج...</p>
         </div>
-      </PageWrapper>
     );
   }
 
   if (error || !listing) {
     return (
-      <PageWrapper>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto text-center">
             <div className="mb-6 text-yellow-500 dark:text-yellow-400">
@@ -171,12 +183,10 @@ export default function ListingDetails() {
             </div>
           </div>
         </div>
-      </PageWrapper>
     );
   }
 
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main content - images and details */}
@@ -251,67 +261,66 @@ export default function ListingDetails() {
               </div>
             )}
             
-            {/* Image carousel */}
+            {/* Image gallery (main image + thumbnails) */}
             <div className="mb-6 rounded-lg overflow-hidden">
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {listing.images && listing.images.length > 0 ? (
-                    listing.images.map((image, index) => (
-                      <CarouselItem key={index}>
-                        <div className="flex aspect-video items-center justify-center p-1">
-                          <img 
-                            src={image} 
-                            alt={`${listing.title} - صورة ${index + 1}`}
-                            className="rounded-md object-cover w-full h-full cursor-pointer"
-                            onClick={() => {
-                              setSelectedImage(image);
-                              setIsImageModalOpen(true);
-                            }}
-                            onError={(e) => {
-                              console.error(`Error loading image at index ${index}: ${image}`);
-                              // Fallback if image fails to load
-                              (e.target as HTMLImageElement).src = '/placeholder.svg';
-                            }}
-                          />
-                        </div>
-                      </CarouselItem>
-                    ))
-                  ) : (
-                    <CarouselItem>
-                      <div className="flex aspect-video items-center justify-center p-1 bg-gray-100 dark:bg-gray-800">
-                        <div className="text-center">
-                          <Package className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                          <span className="text-gray-400">لا توجد صور متاحة</span>
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  )}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
-              
-              {/* Thumbnail navigation */}
-              {listing.images && listing.images.length > 1 && (
-                <div className="grid grid-cols-5 gap-2 mt-4">
-                  {listing.images.map((image, index) => (
-                    <div 
-                      key={`thumb-${index}`} 
-                      className={`cursor-pointer border-2 rounded overflow-hidden ${selectedImage === image ? 'border-blue-500' : 'border-transparent'}`}
+              {listing.images && listing.images.length > 0 ? (
+                <>
+                  {/* Main Image with navigation arrows */}
+                  <div className="relative rounded-2xl overflow-hidden mb-4">
+                    <img
+                      src={listing.images[activeImageIdx] || '/placeholder.svg'}
+                      alt={`${listing.title} - صورة ${activeImageIdx + 1}`}
+                      className="w-full h-96 object-cover cursor-pointer"
                       onClick={() => {
-                        setSelectedImage(image);
+                        setSelectedImage(listing.images[activeImageIdx]);
+                        setIsImageModalOpen(true);
                       }}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-full h-16 object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder.svg';
-                        }}
-                      />
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                    {listing.images.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setActiveImageIdx((prev) => (prev - 1 + listing.images.length) % listing.images.length)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow hover:bg-white z-10"
+                          type="button"
+                        >
+                          <ChevronLeft className="w-6 h-6" />
+                        </button>
+                        <button
+                          onClick={() => setActiveImageIdx((prev) => (prev + 1) % listing.images.length)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow hover:bg-white z-10"
+                          type="button"
+                        >
+                          <ChevronRight className="w-6 h-6" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {/* Thumbnails Row */}
+                  {listing.images.length > 1 && (
+                    <div className="flex gap-2 w-full mt-2">
+                      {listing.images.map((img, idx) => (
+                        <img
+                          key={img + idx}
+                          src={img || '/placeholder.svg'}
+                          alt={`Thumbnail ${idx + 1}`}
+                          onClick={() => setActiveImageIdx(idx)}
+                          className={`h-16 object-cover rounded-lg cursor-pointer border-2 flex-1 ${activeImageIdx === idx ? 'border-blue-500' : 'border-transparent'}`}
+                          style={{ boxSizing: 'border-box' }}
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                      ))}
                     </div>
-                  ))}
+                  )}
+                </>
+              ) : (
+                <div className="flex aspect-video items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <Package className="h-12 w-12 text-gray-400" />
+                  <span className="text-gray-400">لا توجد صور متاحة</span>
                 </div>
               )}
             </div>
@@ -355,6 +364,21 @@ export default function ListingDetails() {
                 <h3 className="text-lg font-semibold mb-2">الوصف</h3>
                 <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
               </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-12">
+                <h2 className="text-2xl font-bold mb-6">التقييمات والمراجعات</h2>
+                {user && listing && user.id !== listing.userId && (
+                  <div className="mb-8">
+                    <ReviewForm
+                      listingId={String(listing.listingId)}
+                      onReviewSubmitted={() => {
+                        // يمكن تحديث التقييمات هنا إذا رغبت
+                      }}
+                    />
+                  </div>
+                )}
+                <ListingReviews listingId={String(listing.listingId)} />
+              </div>
             </div>
           </div>
 
@@ -363,12 +387,34 @@ export default function ListingDetails() {
             <Card className="mb-6">
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
-                  <Avatar className="h-10 w-10 mr-3 rtl:ml-3">
-                    <AvatarImage src={`https://avatar.vercel.sh/${listing.userName}`} />
-                    <AvatarFallback>{listing.userName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{listing.userName}</h3>
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    {sellerLoading ? (
+                      <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+                    ) : seller && seller.profilePicture ? (
+                      <img
+                        src={seller.profilePicture.startsWith('http') ? seller.profilePicture : `http://mazadpalestine.runasp.net${seller.profilePicture}`}
+                        alt={seller.username}
+                        className="w-full h-full object-cover"
+                        onError={e => {
+                          (e.target as HTMLImageElement).src = '/default-avatar.png';
+                          (e.target as HTMLImageElement).onerror = () => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
+                            }
+                          };
+                        }}
+                      />
+                    ) : seller ? (
+                      <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
+                        {seller.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    ) : (
+                      <span className="text-xl font-bold text-gray-400">?</span>
+                    )}
+                  </div>
+                  <div className="ml-3 rtl:mr-3">
+                    <h3 className="font-semibold">{seller ? seller.username : listing.userName}</h3>
                     <p className="text-sm text-gray-500">البائع</p>
                   </div>
                 </div>
@@ -404,16 +450,11 @@ export default function ListingDetails() {
                     <span className="text-gray-600">تاريخ النشر</span>
                     <span>{formatDate(listing.createdAt)}</span>
                   </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-600">رقم المنتج</span>
-                    <span>#{listing.listingId}</span>
-                  </li>
                 </ul>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-    </PageWrapper>
   );
 } 

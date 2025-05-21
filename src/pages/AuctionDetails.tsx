@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle, Copy, Facebook, Twitter, Send, Package } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle, Copy, Facebook, Twitter, Send, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -86,6 +86,7 @@ const AuctionDetails = () => {
   const [latestBids, setLatestBids] = useState<AuctionBid[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   // Add a ref to store the latest bidderUsernames
   const bidderUsernamesRef = React.useRef<Record<number, string>>({});
@@ -583,7 +584,7 @@ const AuctionDetails = () => {
               <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
                 <Link to="/" className="hover:text-blue dark:hover:text-blue-light">الرئيسية</Link>
                 <span className="mx-2">›</span>
-                <span className="text-gray-900 dark:text-gray-100">{auction.category ?? "الفئة"}</span>
+                <span className="text-gray-900 dark:text-gray-100">{auction.categoryName ?? "الفئة"}</span>
                 <span className="mx-2">›</span>
                 <span className="text-gray-900 dark:text-gray-100">{auction.title}</span>
               </div>
@@ -641,19 +642,19 @@ const AuctionDetails = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Image Modal */}
                 {isImageModalOpen && selectedImage && (
                   <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setIsImageModalOpen(false)}>
                     <div className="relative max-w-4xl max-h-[80vh] w-full h-full flex items-center justify-center p-4">
-                      <button 
+                <button 
                         className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm p-2 rounded-full text-white hover:bg-white/40"
                         onClick={() => setIsImageModalOpen(false)}
-                      >
+                >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                      </button>
+                </button>
                       <img 
                         src={selectedImage} 
                         alt="صورة مكبرة" 
@@ -668,32 +669,59 @@ const AuctionDetails = () => {
 
                 <div className="grid grid-cols-1 gap-4 py-6">
                   {auction.images && auction.images.length > 0 ? (
-                    <Carousel className="w-full">
-                      <CarouselContent>
-                        {auction.images.map((image, index) => (
-                          <CarouselItem key={index}>
-                            <div className="flex aspect-video items-center justify-center p-1">
-                              <img 
-                                src={image || "/placeholder.svg"} 
-                                alt={`${auction.title} - صورة ${index + 1}`} 
-                                className="w-full h-full object-cover rounded-md cursor-pointer"
-                                onClick={() => {
-                                  setSelectedImage(image);
-                                  setIsImageModalOpen(true);
-                                }}
-                                onError={(e) => {
-                                  console.log(`Error loading image: ${image}`);
-                                  // Fallback if image fails to load
-                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                                }}
-                              />
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      <CarouselPrevious />
-                      <CarouselNext />
-                    </Carousel>
+                    <>
+                      {/* Main Image with navigation arrows */}
+                      <div className="relative rounded-2xl overflow-hidden mb-4">
+                        <img
+                          src={auction.images[activeImageIdx] || "/placeholder.svg"}
+                          alt={`${auction.title} - صورة ${activeImageIdx + 1}`}
+                          className="w-full h-96 object-cover cursor-pointer"
+                          onClick={() => {
+                            setSelectedImage(auction.images[activeImageIdx]);
+                            setIsImageModalOpen(true);
+                          }}
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                        {auction.images.length > 1 && (
+                          <>
+                <button 
+                              onClick={() => setActiveImageIdx((prev) => (prev - 1 + auction.images.length) % auction.images.length)}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow hover:bg-white z-10"
+                              type="button"
+                            >
+                              <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button 
+                              onClick={() => setActiveImageIdx((prev) => (prev + 1) % auction.images.length)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow hover:bg-white z-10"
+                              type="button"
+                            >
+                              <ChevronRight className="w-6 h-6" />
+                </button>
+                          </>
+                        )}
+              </div>
+                      {/* Thumbnails Row */}
+                      {auction.images.length > 1 && (
+                        <div className="flex gap-2 w-full mt-2">
+                          {auction.images.map((img, idx) => (
+                            <img
+                              key={img + idx}
+                              src={img || "/placeholder.svg"}
+                              alt={`Thumbnail ${idx + 1}`}
+                              onClick={() => setActiveImageIdx(idx)}
+                              className={`h-16 object-cover rounded-lg cursor-pointer border-2 flex-1 ${activeImageIdx === idx ? "border-blue-500" : "border-transparent"}`}
+                              style={{ boxSizing: "border-box" }}
+                              onError={e => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="flex aspect-video items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
                       <Package className="h-12 w-12 text-gray-400" />
@@ -701,30 +729,6 @@ const AuctionDetails = () => {
                     </div>
                   )}
                 </div>
-                
-                {/* Thumbnail navigation */}
-                {auction.images && auction.images.length > 1 && (
-                  <div className="grid grid-cols-5 gap-2 mt-4">
-                    {auction.images.map((image, index) => (
-                      <div 
-                        key={`thumb-${index}`} 
-                        className={`cursor-pointer border-2 rounded overflow-hidden ${selectedImage === image ? 'border-blue-500' : 'border-transparent'}`}
-                        onClick={() => {
-                          setSelectedImage(image);
-                        }}
-                      >
-                        <img 
-                          src={image || "/placeholder.svg"} 
-                          alt={`Thumbnail ${index + 1}`}
-                          className="w-full h-16 object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
               
               <div className="mb-8">
@@ -767,18 +771,18 @@ const AuctionDetails = () => {
                   {user && auction && Number(user.id) !== Number(auction.sellerId) && Number(user.id) !== Number(auction.userId) && (
                     <div className="mb-8">
                       <ReviewForm 
-                        listingId={String(auction.listingId || auction.id)} 
+                        auctionId={String(auction.id)}
                         onReviewSubmitted={() => {
                           // Refresh reviews after submission
                           queryClient.invalidateQueries({
-                            queryKey: ['reviews', auction.listingId || auction.id]
+                            queryKey: ['reviews', auction.id]
                           });
                         }} 
                       />
                     </div>
                   )}
 
-                  <ListingReviews listingId={String(auction.listingId || auction.id)} />
+                  <ListingReviews auctionId={String(auction.id)} />
                 </div>
               </div>
             </div>
@@ -871,13 +875,13 @@ const AuctionDetails = () => {
                         <span>المفضلة</span>
                       </button>
                       <div className="relative">
-                        <button
+                      <button 
                           onClick={() => setShowShareMenu(!showShareMenu)}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700"
-                        >
-                          <Share2 className="h-5 w-5" />
-                          <span>مشاركة</span>
-                        </button>
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <Share2 className="h-5 w-5" />
+                        <span>مشاركة</span>
+                      </button>
                         {showShareMenu && (
                           <div className="absolute z-50 bg-white dark:bg-gray-800 border rounded-lg shadow-lg mt-2 left-0 w-48">
                             <button onClick={handleCopy} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -957,14 +961,14 @@ const AuctionDetails = () => {
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                           {seller.profilePicture ? (
-                            <img 
-                              src={
-                                seller.profilePicture.startsWith('http')
-                                  ? seller.profilePicture
-                                  : `http://mazadpalestine.runasp.net${seller.profilePicture}`
-                              }
+                        <img
+                          src={
+                            seller.profilePicture.startsWith('http')
+                              ? seller.profilePicture
+                              : `http://mazadpalestine.runasp.net${seller.profilePicture}`
+                          }
                               alt={`${seller.firstName} ${seller.lastName}`}
-                              className="w-full h-full object-cover"
+                          className="w-full h-full object-cover"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/default-avatar.png';
                                 // If default avatar fails, show fallback
@@ -973,27 +977,27 @@ const AuctionDetails = () => {
                                   e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
                                 };
                               }}
-                            />
-                          ) : (
+                        />
+                      ) : (
                             <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
                               {seller.username?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
-                          )}
-                        </div>
-                        <div>
+                      )}
+                    </div>
+                    <div>
                           <h4 className="font-bold">{`${seller.firstName} ${seller.lastName}`}</h4>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500">★</span>
                             <span>{seller.rating?.toFixed(1) || "0.0"}</span>
                           </div>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={handleContactClick}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleContactClick}
                         className="w-full btn-primary py-2"
-                      >
+                  >
                         تواصل مع البائع
-                      </button>
+                  </button>
                     </div>
                   )}
                 </div>

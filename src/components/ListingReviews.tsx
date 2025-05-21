@@ -9,7 +9,8 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface ListingReviewsProps {
-  listingId: string;
+  listingId?: string;
+  auctionId?: string;
 }
 
 interface ReviewWithUser extends Review {
@@ -17,7 +18,7 @@ interface ReviewWithUser extends Review {
   userImage?: string;
 }
 
-const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
+const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId, auctionId }) => {
   const [reviews, setReviews] = useState<ReviewWithUser[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -31,22 +32,26 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId }) => {
 
   useEffect(() => {
     fetchReviews();
-  }, [listingId]);
+  }, [listingId, auctionId]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const [reviewsData, ratingData] = await Promise.all([
-        reviewService.getListingReviews(listingId),
-        reviewService.getAverageRating(listingId)
-      ]);
+      let reviewsData: ReviewWithUser[] = [];
+      let ratingData = { averageRating: 0, totalReviews: 0 };
+      if (auctionId) {
+        reviewsData = await reviewService.getAuctionReviews(auctionId);
+        ratingData = await reviewService.getAverageAuctionRating(auctionId);
+      } else if (listingId) {
+        reviewsData = await reviewService.getListingReviews(listingId);
+        ratingData = await reviewService.getAverageRating(listingId);
+      }
       
       // Fetch user information for each review
       const reviewsWithUsers = await Promise.all(
         reviewsData.map(async (review) => {
           try {
             const userDataResponse = await userService.getUserById(review.reviewerId.toString());
-            // @ts-expect-error: userService.getUserById returns an object with a 'data' property
             const userData = userDataResponse.data || userDataResponse || {};
             return {
               ...review,

@@ -32,22 +32,21 @@ interface AverageRatingResponse {
 
 class ReviewService {
   // Add a new review
-  async addReview(review: ReviewInput): Promise<Review> {
+  async addReview(review: ReviewInput): Promise<void> {
     try {
-      const normalizedReview = {
-        listingId: Number(review.listingId),
-        rating: Number(review.rating),
-        comment: review.comment.trim()
-      };
-
-      const response = await axios.post<ApiResponse<Review>>(API_URL, normalizedReview, {
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json'
+      await axios.post(
+        `/Review/listing/${review.listingId}`,
+        {
+          rating: Number(review.rating),
+          comment: review.comment.trim(),
+        },
+        {
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
+          },
         }
-      });
-
-      return response.data.data;
+      );
     } catch (error: any) {
       console.error('Error adding review:', error);
       throw error;
@@ -142,6 +141,70 @@ class ReviewService {
     } catch (error) {
       console.error('Error checking if user has reviewed:', error);
       return false;
+    }
+  }
+
+  // Add a new auction review
+  async addAuctionReview(auctionId: string, rating: number, comment: string): Promise<void> {
+    try {
+      await axios.post(
+        `/Review/auction/${auctionId}`,
+        { rating, comment },
+        {
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error: any) {
+      console.error('Error adding auction review:', error);
+      throw error;
+    }
+  }
+
+  // Get reviews for a specific auction
+  async getAuctionReviews(auctionId: string): Promise<Review[]> {
+    try {
+      const response = await axios.get<ApiResponse<Review[]>>(`/Review/auction/${auctionId}`, {
+        headers: getAuthHeader(),
+      });
+      return response.data.success ? response.data.data : [];
+    } catch (error) {
+      console.error('Error fetching auction reviews:', error);
+      return [];
+    }
+  }
+
+  // Get average rating for an auction
+  async getAverageAuctionRating(auctionId: string): Promise<AverageRatingResponse> {
+    try {
+      const response = await axios.get<ApiResponse<AverageRatingResponse>>(`/Review/auction/${auctionId}/average`, {
+        headers: getAuthHeader(),
+      });
+      return response.data.success ? response.data.data : { averageRating: 0, totalReviews: 0 };
+    } catch (error) {
+      console.error('Error fetching average auction rating:', error);
+      return { averageRating: 0, totalReviews: 0 };
+    }
+  }
+
+  // Update an auction review
+  async updateAuctionReview(reviewId: string, rating: number, comment: string): Promise<void> {
+    try {
+      await axios.put(
+        `/Review/${reviewId}`,
+        { rating, comment },
+        {
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error: any) {
+      console.error('Error updating auction review:', error);
+      throw error;
     }
   }
 }
