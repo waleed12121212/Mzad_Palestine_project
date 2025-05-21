@@ -598,6 +598,12 @@ const AuctionDetails = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        console.log("Edit button clicked", {
+                          auctionId: auction.id,
+                          userId: user.id,
+                          sellerId: auction.sellerId,
+                          auctionUserId: auction.userId
+                        });
                         navigate(`/auction/${auction.id}/edit`);
                       }}
                       className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-blue-50 text-blue-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"

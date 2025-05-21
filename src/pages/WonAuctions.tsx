@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { auctionService } from '@/services/auctionService';
-import { bidService, Bid } from '@/services/bidService';
+import { bidService } from '@/services/bidService';
 import { paymentService } from '@/services/paymentService';
 import { transactionService } from '@/services/transactionService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,7 +37,7 @@ const WonAuctions: React.FC = () => {
   const { data: wonAuctions, isLoading, error } = useQuery({
     queryKey: ['wonAuctions'],
     queryFn: async () => {
-      const response = await auctionService.getClosedAuctions();
+      const response = await auctionService.getCompletedAuctions();
       const auctions = Array.isArray(response) ? response : (response as { data: any[] }).data;
       
       // Normalize the data
@@ -100,9 +100,11 @@ const WonAuctions: React.FC = () => {
 
   if (!wonAuctions?.length) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">المزادات الفائزة</h1>
-        <p>لم تفز بأي مزاد بعد.</p>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">المزادات الفائزة</h1>
+          <p className="text-lg">لم تفز بأي مزاد بعد.</p>
+        </div>
       </div>
     );
   }
