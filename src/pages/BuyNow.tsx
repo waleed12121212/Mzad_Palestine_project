@@ -1,6 +1,6 @@
 import React, { useState, useEffect, CSSProperties } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Filter, ShoppingCart, ChevronDown, Search, Loader2, Sliders, Check, SlidersHorizontal, X, Star, ChevronLeft } from "lucide-react";
+import { Filter, FilterX, ShoppingCart, ChevronDown, Search, Loader2, Sliders, Check, SlidersHorizontal, X, Star, ChevronLeft, Car, Shirt, Smartphone, Book, Gem, CupSoda, Home, Package, Laptop } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,17 @@ import { listingService, Listing, SearchListingParams } from "@/services/listing
 import { categoryService, Category } from "@/services/categoryService";
 import ProductCard from "@/components/ui/ProductCard";
 import { categorizeListings } from "@/utils/categoryUtils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Define the style with correct TypeScript typing
 const hideNumberInputSpinners: CSSProperties = {
@@ -31,11 +42,27 @@ const inputStyles = `
   }
 `;
 
+const categoryIcons: { [key: string]: React.ReactNode } = {
+  "سيارات": <Car className="inline-block ml-2" />,
+  "أزياء": <Shirt className="inline-block ml-2" />,
+  "إلكترونيات": <Smartphone className="inline-block ml-2" />,
+  "هواتف": <Smartphone className="inline-block ml-2" />,
+  "كتب": <Book className="inline-block ml-2" />,
+  "كونتمكس": <Gem className="inline-block ml-2" />,
+  "أثاث": <Package className="inline-block ml-2" />,
+  "مستلزمات منزلية": <CupSoda className="inline-block ml-2" />,
+  "لابتوبات": <Laptop className="inline-block ml-2" />,
+  "عقارات": <Home className="inline-block ml-2" />,
+  "ملابس رجالية": <Shirt className="inline-block ml-2" />,
+  // fallback/default
+};
+
 interface FilterState {
   keyword: string;
   category: string;
   minPrice: number;
   maxPrice: number;
+  timeFilter?: string;
 }
 
 const BuyNow: React.FC = () => {
@@ -45,14 +72,23 @@ const BuyNow: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [filters, setFilters] = useState<FilterState>({
-    keyword: searchParams.get('keyword') || '',
-    category: searchParams.get('category') || '',
-    minPrice: Number(searchParams.get('minPrice')) || 0,
-    maxPrice: Number(searchParams.get('maxPrice')) || 10000
-  });
-  const [tempFilters, setTempFilters] = useState<FilterState>({...filters});
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const initialSearchQuery = searchParams.get("search") || "";
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [timeFilter, setTimeFilter] = useState<"all" | "ending-soon" | "new">("all");
+  const [priceError, setPriceError] = useState<string | null>(null);
+
+  const priceOptions = [
+    { label: "كل الأسعار", value: [0, 1000000] },
+    { label: "0 - 1,000 ₪", value: [0, 1000] },
+    { label: "1,000 - 5,000 ₪", value: [1000, 5000] },
+    { label: "5,000 - 20,000 ₪", value: [5000, 20000] },
+    { label: "20,000 - 100,000 ₪", value: [20000, 100000] },
+    { label: "100,000+ ₪", value: [100000, 1000000] },
+  ];
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -69,42 +105,24 @@ const BuyNow: React.FC = () => {
 
   useEffect(() => {
     // Parse search params when the component mounts or URL changes
-    const keyword = searchParams.get('keyword') || '';
-    const category = searchParams.get('category') || '';
+    const keyword = searchParams.get('search') || '';
+    const category = searchParams.get('category') || 'all';
     const minPrice = Number(searchParams.get('minPrice')) || 0;
-    const maxPrice = Number(searchParams.get('maxPrice')) || 10000;
+    const maxPrice = Number(searchParams.get('maxPrice')) || 1000000;
+    const time = searchParams.get('timeFilter') as "all" | "ending-soon" | "new" || "all";
 
-    setFilters({
-      keyword,
-      category,
-      minPrice,
-      maxPrice
-    });
-
-    setTempFilters({
-      keyword,
-      category,
-      minPrice,
-      maxPrice
-    });
+    setSearchQuery(keyword);
+    setSelectedCategory(category);
+    setPriceRange([minPrice, maxPrice]);
+    setTimeFilter(time);
 
     // Search with these params
-    searchListings({
-      keyword,
-      category,
-      minPrice,
-      maxPrice
-    });
+    searchListings();
   }, [searchParams]);
 
-  const searchListings = async (searchParams: FilterState) => {
+  const searchListings = async () => {
     setIsLoading(true);
-    console.log("Searching with params:", searchParams);
     
-    // If we don't have any filters, fetch all listings
-    if (!searchParams.keyword && !searchParams.category && 
-        searchParams.minPrice <= 0 && searchParams.maxPrice >= 10000) {
-      // Use the exact same approach as Index.tsx
       try {
         // First try to get active listings (requires auth)
         const response = await listingService.getActiveListings();
@@ -124,88 +142,73 @@ const BuyNow: React.FC = () => {
       } finally {
         setIsLoading(false);
       }
-      return;
-    }
-    
-    // If we have filters, we need to fetch all listings first and then filter them
-    try {
-      // First get all listings
-      let allListings: Listing[] = [];
-      
-      try {
-        // Try active listings first (might need auth)
-        allListings = await listingService.getActiveListings();
-      } catch (error) {
-        // Fall back to public listings
-        console.log('Falling back to public listings for search');
-        allListings = await listingService.getPublicListings();
-      }
-      
-      console.log(`Got ${allListings.length} listings for filtering`);
-      
-      // Now filter them manually
-      const filteredListings = allListings.filter(listing => {
-        // Filter by keyword (title only)
-        if (searchParams.keyword && 
-            !listing.title.toLowerCase().includes(searchParams.keyword.toLowerCase())) {
-          return false;
-        }
-        
-        // Filter by category
-        if (searchParams.category && listing.categoryName !== searchParams.category) {
-          return false;
-        }
-        
-        // Filter by price range
-        if (searchParams.minPrice > 0 && listing.price < searchParams.minPrice) {
-          return false;
-        }
-        
-        if (searchParams.maxPrice < 10000 && listing.price > searchParams.maxPrice) {
-          return false;
-        }
-        
-        return true;
-      });
-      
-      console.log(`Filtered down to ${filteredListings.length} listings`);
-      setListings(filteredListings);
-    } catch (error) {
-      console.error('Error during search:', error);
-      setListings([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting search with params:", tempFilters);
-    applyFilters();
+  const filteredListings = listings.filter((listing) => {
+    const matchesQuery = listing.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const price = listing.price;
+    const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+    let matchesTime = true;
+    if (timeFilter === "ending-soon") {
+      const createdDate = new Date(listing.createdAt);
+      const now = new Date();
+      const diffDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+      matchesTime = diffDays <= 3; // Ending soon for listings means recently added (within 3 days)
+    } else if (timeFilter === "new") {
+      const createdDate = new Date(listing.createdAt);
+      const now = new Date();
+      const diffDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+      matchesTime = diffDays <= 7; // New means added within a week
+    }
+    const matchesCategory = selectedCategory === "all" || String(listing.categoryId) === selectedCategory;
+    return matchesQuery && matchesPrice && matchesTime && matchesCategory;
+  });
+
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "priceHigh":
+        return b.price - a.price;
+      case "priceLow":
+        return a.price - b.price;
+      default:
+        return 0;
+    }
+  });
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setPriceRange([0, 1000000]);
+    setSelectedCategory("all");
+    setTimeFilter("all");
+    setSearchParams({});
   };
 
-  const applyFilters = () => {
-    // Update the URL with search params
+  const hasActiveFilters = () => {
+    return searchQuery !== "" || 
+           priceRange[0] !== 0 || 
+           priceRange[1] !== 1000000 || 
+           selectedCategory !== "all" ||
+           timeFilter !== "all";
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setSearchQuery(newQuery);
+    updateSearchParams();
+  };
+
+  const updateSearchParams = () => {
     const params = new URLSearchParams();
     
-    if (tempFilters.keyword) params.append('keyword', tempFilters.keyword);
-    if (tempFilters.category) params.append('category', tempFilters.category);
-    if (tempFilters.minPrice > 0) params.append('minPrice', tempFilters.minPrice.toString());
-    if (tempFilters.maxPrice > 0 && tempFilters.maxPrice < 10000) params.append('maxPrice', tempFilters.maxPrice.toString());
+    if (searchQuery) params.set('search', searchQuery);
+    if (selectedCategory !== "all") params.set('category', selectedCategory);
+    if (priceRange[0] > 0) params.set('minPrice', priceRange[0].toString());
+    if (priceRange[1] < 1000000) params.set('maxPrice', priceRange[1].toString());
+    if (timeFilter !== "all") params.set('timeFilter', timeFilter);
     
-    console.log("Setting search params:", Object.fromEntries(params.entries()));
     setSearchParams(params);
-    setFilters(tempFilters);
-    setIsFilterOpen(false);
-  };
-
-  const resetFilters = () => {
-    setTempFilters({
-      keyword: '',
-      category: '',
-      minPrice: 0,
-      maxPrice: 10000
-    });
   };
 
   return (
@@ -221,162 +224,255 @@ const BuyNow: React.FC = () => {
           </Link>
         </div>
 
-        {/* Search and Filters */}
-        <div className="mb-8">
-          <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-            <Input
-              type="text"
-              placeholder="ابحث عن منتج..."
-              className="flex-grow dark:bg-gray-800 dark:border-gray-700"
-              value={tempFilters.keyword}
-              onChange={(e) => setTempFilters({...tempFilters, keyword: e.target.value})}
-            />
-            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" type="button" className="flex gap-2 dark:border-gray-700 dark:text-gray-200">
-                  <Filter className="h-4 w-4" />
-                  <span>الفلاتر</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] dark:bg-gray-900 dark:border-gray-800">
-                <div className="h-full flex flex-col">
-                  <div className="flex justify-between items-center py-4 border-b dark:border-gray-700">
-                    <h3 className="font-bold text-lg dark:text-white">الفلاتر</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="md:col-span-1 rtl">
+            <Card className="sticky top-20">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold">الفلاتر</h3>
+                  {hasActiveFilters() && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={resetFilters}
-                      className="text-blue-500 dark:text-blue-400 dark:hover:bg-gray-800"
+                      className="text-blue hover:text-blue-700 p-0 h-auto"
+                      onClick={handleResetFilters}
                     >
-                      إعادة ضبط
+                      <FilterX className="h-4 w-4 ml-1" />
+                      <span>إعادة ضبط</span>
                     </Button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-auto py-4 space-y-6">
-                    <div>
-                      <h4 className="font-medium mb-2 dark:text-gray-200">الفئة</h4>
-                      <select
-                        className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
-                        value={tempFilters.category}
-                        onChange={(e) => setTempFilters({...tempFilters, category: e.target.value})}
-                      >
-                        <option value="">جميع الفئات</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.name}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2 dark:text-gray-200">نطاق السعر</h4>
-                      <div className="flex items-center gap-4 mb-6">
-                        <Input
-                          type="number"
-                          placeholder="الحد الأدنى"
-                          value={tempFilters.minPrice || ''}
-                          onChange={(e) => setTempFilters({
-                            ...tempFilters, 
-                            minPrice: e.target.value ? Number(e.target.value) : 0
-                          })}
-                          className="w-1/2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
-                          style={hideNumberInputSpinners}
-                        />
-                        <span className="dark:text-gray-400">-</span>
-                        <Input
-                          type="number"
-                          placeholder="الحد الأقصى"
-                          value={tempFilters.maxPrice || ''}
-                          onChange={(e) => setTempFilters({
-                            ...tempFilters, 
-                            maxPrice: e.target.value ? Number(e.target.value) : 0
-                          })}
-                          className="w-1/2 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
-                          style={hideNumberInputSpinners}
-                        />
+                  )}
+                </div>
+                
+                <Accordion type="multiple" defaultValue={["category", "price", "time"]}>
+                  <AccordionItem value="category">
+                    <AccordionTrigger className="py-3 text-sm hover:no-underline">الفئة</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="px-1">
+                        <Select value={selectedCategory} onValueChange={(value) => {
+                          setSelectedCategory(value);
+                          updateSearchParams();
+                        }}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="اختر الفئة" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">كل الفئات</SelectItem>
+                            {categories.map(cat => (
+                              <SelectItem key={cat.id} value={String(cat.id)}>
+                                {categoryIcons[cat.name] || <Gem className="inline-block ml-2" />} {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="price">
+                    <AccordionTrigger className="py-3 text-sm hover:no-underline">نطاق السعر</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="px-1">
+                        <Select 
+                          value={JSON.stringify(priceRange)} 
+                          onValueChange={val => {
+                            setPriceRange(JSON.parse(val));
+                            updateSearchParams();
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="اختر نطاق السعر" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {priceOptions.map(opt => (
+                              <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="time">
+                    <AccordionTrigger className="py-3 text-sm hover:no-underline">الوقت</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-1">
+                        <Button 
+                          variant={timeFilter === "all" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          onClick={() => {
+                            setTimeFilter("all");
+                            updateSearchParams();
+                          }}
+                        >
+                          جميع المنتجات
+                        </Button>
+                        <Button 
+                          variant={timeFilter === "ending-soon" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                          onClick={() => {
+                            setTimeFilter("ending-soon");
+                            updateSearchParams();
+                          }}
+                        >
+                          أضيفت مؤخرًا (خلال 3 أيام)
+                        </Button>
+                        <Button 
+                          variant={timeFilter === "new" ? "default" : "outline"}
+                          className="w-full justify-start text-right px-2 py-1.5 h-auto"
+                          onClick={() => {
+                            setTimeFilter("new");
+                            updateSearchParams();
+                          }}
+                        >
+                          جديدة (خلال أسبوع)
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="md:col-span-3">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 rtl">
+              <div className="relative w-full md:w-auto md:flex-1">
+                <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="ابحث عن منتج..."
+                  className="pr-10 rtl w-full"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              
+              <div className="flex space-s-2 w-full md:w-auto">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="ترتيب حسب" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">الأحدث</SelectItem>
+                    <SelectItem value="priceHigh">السعر: من الأعلى للأدنى</SelectItem>
+                    <SelectItem value="priceLow">السعر: من الأدنى للأعلى</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {showFilters && (
+              <div className="md:hidden bg-gray-50 dark:bg-gray-900 p-4 rounded-lg mb-6 rtl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold">الفلاتر</h3>
+                  {hasActiveFilters() && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue hover:text-blue-700 p-0 h-auto"
+                      onClick={handleResetFilters}
+                    >
+                      <FilterX className="h-4 w-4 ml-1" />
+                      <span>إعادة ضبط</span>
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">الفئة</h4>
+                    <Select value={selectedCategory} onValueChange={(value) => {
+                      setSelectedCategory(value);
+                      updateSearchParams();
+                    }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="اختر الفئة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الفئات</SelectItem>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.id} value={String(cat.id)}>
+                            {categoryIcons[cat.name] || <Gem className="inline-block ml-2" />} {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                    <div>
+                    <h4 className="text-sm font-medium mb-2">نطاق السعر</h4>
+                    <div className="px-1">
+                      <Select 
+                        value={JSON.stringify(priceRange)} 
+                        onValueChange={val => {
+                          setPriceRange(JSON.parse(val));
+                          updateSearchParams();
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="اختر نطاق السعر" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priceOptions.map(opt => (
+                            <SelectItem key={opt.label} value={JSON.stringify(opt.value)}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   
-                  <div className="border-t py-4 dark:border-gray-700">
-                    <Button 
-                      className="w-full" 
-                      onClick={applyFilters}
-                    >
-                      تطبيق الفلاتر
-                    </Button>
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">الوقت</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge 
+                        variant={timeFilter === "all" ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setTimeFilter("all");
+                          updateSearchParams();
+                        }}
+                      >
+                        جميع المنتجات
+                      </Badge>
+                      <Badge 
+                        variant={timeFilter === "ending-soon" ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setTimeFilter("ending-soon");
+                          updateSearchParams();
+                        }}
+                      >
+                        أضيفت مؤخرًا
+                      </Badge>
+                      <Badge 
+                        variant={timeFilter === "new" ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setTimeFilter("new");
+                          updateSearchParams();
+                        }}
+                      >
+                        جديدة
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-              </SheetContent>
-            </Sheet>
-            <Button type="submit" className="flex gap-2">
-              <Search className="h-4 w-4" />
-              <span>بحث</span>
-            </Button>
-          </form>
-          
-          {/* Active Filters Display */}
-          {(filters.keyword || filters.category || filters.minPrice > 0 || filters.maxPrice < 10000) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {filters.keyword && (
-                <Badge variant="outline" className="flex items-center gap-1 dark:border-gray-700 dark:text-gray-200">
-                  <span>الكلمة: {filters.keyword}</span>
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('keyword');
-                      setSearchParams(newParams);
-                    }}
-                  />
-                </Badge>
-              )}
-              {filters.category && (
-                <Badge variant="outline" className="flex items-center gap-1 dark:border-gray-700 dark:text-gray-200">
-                  <span>الفئة: {filters.category}</span>
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('category');
-                      setSearchParams(newParams);
-                    }}
-                  />
-                </Badge>
-              )}
-              {(filters.minPrice > 0 || filters.maxPrice < 10000) && (
-                <Badge variant="outline" className="flex items-center gap-1 dark:border-gray-700 dark:text-gray-200">
-                  <span>السعر: {filters.minPrice} - {filters.maxPrice}</span>
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('minPrice');
-                      newParams.delete('maxPrice');
-                      setSearchParams(newParams);
-                    }}
-                  />
-                </Badge>
-              )}
-              {(filters.keyword || filters.category || filters.minPrice > 0 || filters.maxPrice < 10000) && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 text-sm dark:hover:bg-gray-800"
-                  onClick={() => {
-                    setSearchParams(new URLSearchParams());
-                  }}
-                >
-                  مسح الكل
-                </Button>
-              )}
             </div>
           )}
-        </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(8)].map((_, index) => (
               <div 
                 key={index} 
@@ -384,9 +480,9 @@ const BuyNow: React.FC = () => {
               />
             ))}
           </div>
-        ) : listings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {listings.map((listing) => (
+            ) : sortedListings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortedListings.map((listing) => (
               <ProductCard
                 key={listing.listingId}
                 id={listing.listingId}
@@ -400,17 +496,17 @@ const BuyNow: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 dark:text-gray-300">
-            <h2 className="text-2xl font-bold mb-4">لا توجد منتجات تطابق معايير البحث</h2>
-            <p className="mb-4 dark:text-gray-400">حاول تغيير معايير البحث أو استعرض جميع المنتجات</p>
-            <Button 
-              onClick={() => setSearchParams(new URLSearchParams())} 
-              className="mx-auto"
-            >
-              عرض جميع المنتجات
-            </Button>
+              <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <Filter className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
+                <h2 className="text-xl font-semibold mb-2">لا توجد منتجات مطابقة</h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                  حاول تغيير معايير البحث أو التصفية للعثور على المنتجات التي تبحث عنها.
+                </p>
+                <Button onClick={handleResetFilters}>إعادة ضبط الفلاتر</Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </>
   );

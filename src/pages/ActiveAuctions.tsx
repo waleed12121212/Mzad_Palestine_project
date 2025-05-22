@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search, Filter, FilterX, SlidersHorizontal, ChevronDown, Car, Shirt, Smartphone, Book, Gem, CupSoda, Home, Package, Laptop, ShoppingBag } from "lucide-react";
+import { Loader2, Search, Filter, FilterX, SlidersHorizontal, ChevronDown, Car, Shirt, Smartphone, Book, Gem, CupSoda, Home, Package, Laptop, ShoppingBag, Clock, AlertCircle } from "lucide-react";
 import AuctionCard from "@/components/ui/AuctionCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,6 +52,7 @@ const ActiveAuctions: React.FC = () => {
   const [auctionView, setAuctionView] = useState<"grid" | "list">("grid");
   const [timeFilter, setTimeFilter] = useState<"all" | "ending-soon" | "new">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "pending">("all");
 
   const priceOptions = [
     { label: "كل الأسعار", value: [0, 1000000] },
@@ -63,10 +64,17 @@ const ActiveAuctions: React.FC = () => {
   ];
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
-  const { data: auctionResponse, isLoading, error } = useQuery({
+  const { data: activeAuctionResponse, isLoading: isLoadingActive } = useQuery({
     queryKey: ["activeAuctions"],
     queryFn: async () => {
       return await auctionService.getActiveAuctions();
+    }
+  });
+
+  const { data: pendingAuctionResponse, isLoading: isLoadingPending } = useQuery({
+    queryKey: ["pendingAuctions"],
+    queryFn: async () => {
+      return await auctionService.getPendingAuctions();
     }
   });
 
@@ -75,12 +83,25 @@ const ActiveAuctions: React.FC = () => {
     queryFn: () => categoryService.getAllCategories(),
   });
 
-  // Extract auctions from the response
-  const auctions = auctionResponse?.data || [];
+  // Extract auctions from the responses
+  const activeAuctions = activeAuctionResponse?.data || [];
+  const pendingAuctions = pendingAuctionResponse?.data || [];
   
-  console.log("Raw auctions data:", auctions);
+  // Combine auctions based on the status filter
+  let allAuctions: Auction[] = [];
+  if (statusFilter === "all") {
+    allAuctions = [...activeAuctions, ...pendingAuctions];
+  } else if (statusFilter === "active") {
+    allAuctions = [...activeAuctions];
+  } else if (statusFilter === "pending") {
+    allAuctions = [...pendingAuctions];
+  }
+  
+  console.log("Active auctions:", activeAuctions.length);
+  console.log("Pending auctions:", pendingAuctions.length);
+  console.log("Combined auctions:", allAuctions.length);
 
-  const filteredAuctions = auctions.filter((auction) => {
+  const filteredAuctions = allAuctions.filter((auction) => {
     const matchesQuery = auction.title?.toLowerCase().includes(searchQuery.toLowerCase());
     const price = auction.currentBid || auction.reservePrice;
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
@@ -152,13 +173,15 @@ const ActiveAuctions: React.FC = () => {
     setMinPrice(0);
     setMaxPrice(1000000);
     setTimeFilter("all");
+    setStatusFilter("all");
   };
 
   const hasActiveFilters = () => {
     return searchQuery !== "" || 
            minPrice !== 0 || 
            maxPrice !== 1000000 || 
-           timeFilter !== "all";
+           timeFilter !== "all" ||
+           statusFilter !== "all";
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,6 +202,8 @@ const ActiveAuctions: React.FC = () => {
     }
   }, [searchParams]);
 
+  const isLoading = isLoadingActive || isLoadingPending;
+
   if (isLoading) {
     return (
       <>
@@ -190,13 +215,13 @@ const ActiveAuctions: React.FC = () => {
         `}</style>
           <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
             <Loader2 className="h-12 w-12 text-blue animate-spin mb-4" />
-            <p className="text-lg text-gray-600 dark:text-gray-400">جاري تحميل المزادات النشطة...</p>
+            <p className="text-lg text-gray-600 dark:text-gray-400">جاري تحميل المزادات...</p>
           </div>
       </>
     );
   }
 
-  if (error) {
+  if (!activeAuctionResponse || !pendingAuctionResponse) {
     return (
       <>
         <style>{`
@@ -223,7 +248,7 @@ const ActiveAuctions: React.FC = () => {
       `}</style>
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8 rtl">
-            <h1 className="text-2xl font-bold">المزادات النشطة</h1>
+            <h1 className="text-2xl font-bold">المزادات</h1>
             <Badge variant={sortedAuctions.length > 0 ? "outline" : "secondary"} className="text-sm px-3 py-1">
               {sortedAuctions.length} مزاد
             </Badge>
@@ -248,7 +273,46 @@ const ActiveAuctions: React.FC = () => {
                     )}
                   </div>
                   
-                  <Accordion type="multiple" defaultValue={["category", "price", "time"]}>
+                  <Accordion type="multiple" defaultValue={["status", "category", "price", "time"]}>
+                    <AccordionItem value="status">
+                      <AccordionTrigger className="py-3 text-sm hover:no-underline">الحالة</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-1">
+                          <Button 
+                            variant={statusFilter === "all" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                            onClick={() => setStatusFilter("all")}
+                          >
+                            جميع المزادات
+                          </Button>
+                          <Button 
+                            variant={statusFilter === "active" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto mb-1"
+                            onClick={() => setStatusFilter("active")}
+                          >
+                            <span className="flex items-center">
+                              المزادات النشطة
+                              <Badge variant="outline" className="mr-2 bg-green-100 text-green-800 text-xs">
+                                {activeAuctions.length}
+                              </Badge>
+                            </span>
+                          </Button>
+                          <Button 
+                            variant={statusFilter === "pending" ? "default" : "outline"}
+                            className="w-full justify-start text-right px-2 py-1.5 h-auto"
+                            onClick={() => setStatusFilter("pending")}
+                          >
+                            <span className="flex items-center">
+                              المزادات المعلقة
+                              <Badge variant="outline" className="mr-2 bg-yellow-100 text-yellow-800 text-xs">
+                                {pendingAuctions.length}
+                              </Badge>
+                            </span>
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
                     <AccordionItem value="category">
                       <AccordionTrigger className="py-3 text-sm hover:no-underline">الفئة</AccordionTrigger>
                       <AccordionContent>
@@ -377,6 +441,33 @@ const ActiveAuctions: React.FC = () => {
                   
                   <div className="space-y-4">
                     <div>
+                      <h4 className="text-sm font-medium mb-2">الحالة</h4>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge 
+                          variant={statusFilter === "all" ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setStatusFilter("all")}
+                        >
+                          جميع المزادات
+                        </Badge>
+                        <Badge 
+                          variant={statusFilter === "active" ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setStatusFilter("active")}
+                        >
+                          المزادات النشطة
+                        </Badge>
+                        <Badge 
+                          variant={statusFilter === "pending" ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setStatusFilter("pending")}
+                        >
+                          المزادات المعلقة
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div>
                       <h4 className="text-sm font-medium mb-2">نطاق السعر</h4>
                       <div className="px-1">
                         <Select value={JSON.stringify(priceRange)} onValueChange={val => setPriceRange(JSON.parse(val))}>
@@ -440,21 +531,31 @@ const ActiveAuctions: React.FC = () => {
                     const currentPrice = auction.currentBid > 0 ? auction.currentBid : auction.reservePrice;
                     const minBid = currentPrice + bidIncrement;
                     const bidsCount = auction.bids?.length || auction.bidsCount || 0;
+                    const isPending = auction.status === "Pending";
+                    
+                    // Create the badge element outside of the props
+                    const badgeElement = isPending ? (
+                      <Badge variant="outline" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> معلق
+                      </Badge>
+                    ) : null;
                     
                     return (
-                      <AuctionCard
-                        key={auction.id}
-                        id={auction.id}
-                        listingId={auction.listingId}
-                        title={auction.title}
-                        description={auction.description || ""}
-                        currentPrice={currentPrice}
-                        minBidIncrement={minBid}
-                        imageUrl={auction.images?.[0] || ""}
-                        endTime={auction.endDate}
-                        bidders={bidsCount}
-                        userId={auction.userId}
-                      />
+                      <div className="relative" key={auction.id}>
+                        {badgeElement}
+                        <AuctionCard
+                          id={auction.id}
+                          listingId={auction.listingId}
+                          title={auction.title}
+                          description={auction.description || ""}
+                          currentPrice={currentPrice}
+                          minBidIncrement={minBid}
+                          imageUrl={auction.images?.[0] || ""}
+                          endTime={auction.endDate}
+                          bidders={bidsCount}
+                          userId={auction.userId}
+                        />
+                      </div>
                     );
                   })}
                 </div>
