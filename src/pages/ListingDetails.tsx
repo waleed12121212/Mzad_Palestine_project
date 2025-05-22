@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BuyNowButton } from '@/components/listing/BuyNowButton';
-import { Heart, Share2, MapPin, Calendar, Package, X, AlertTriangle, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Share2, MapPin, Calendar, Package, X, AlertTriangle, Edit, Trash2, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { listingService, Listing } from '@/services/listingService';
 import { wishlistService } from '@/services/wishlistService';
@@ -188,6 +188,16 @@ export default function ListingDetails() {
 
   return (
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 rtl justify-start" style={{direction: 'rtl'}}>
+            <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">الرئيسية</Link>
+            <span className="mx-2">›</span>
+            <span className="text-gray-900 dark:text-gray-100">{listing.categoryName}</span>
+            <span className="mx-2">›</span>
+            <span className="text-gray-900 dark:text-gray-100">{listing.title}</span>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main content - images and details */}
           <div className="md:col-span-2">
@@ -213,27 +223,6 @@ export default function ListingDetails() {
               </div>
             )}
             
-            {/* Action buttons for owner */}
-            {user && listing && user.id === listing.userId && (
-              <div className="flex gap-2 justify-end mb-4">
-                <Button
-                  onClick={() => navigate(`/listing/${listing.listingId}/edit`)}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>تعديل</span>
-                </Button>
-                <Button
-                  onClick={() => setShowDeleteDialog(true)}
-                  variant="destructive"
-                  className="flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>حذف</span>
-                </Button>
-              </div>
-            )}
 
             {/* Delete confirmation dialog */}
             {showDeleteDialog && (
@@ -267,6 +256,35 @@ export default function ListingDetails() {
                 <>
                   {/* Main Image with navigation arrows */}
                   <div className="relative rounded-2xl overflow-hidden mb-4">
+                    {/* أزرار التعديل والحذف داخل الصورة */}
+                    {user && listing && user.id === listing.userId && (
+                      <div className="absolute top-4 left-4 z-20 flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate(`/listing/${listing.listingId}/edit`);
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-blue-50 text-blue-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          title="تعديل المنتج"
+                        >
+                          <Edit className="h-5 w-5" />
+                          <span className="hidden sm:inline">تعديل</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowDeleteDialog(true);
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-red-50 text-red-600 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          title="حذف المنتج"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                          <span className="hidden sm:inline">حذف</span>
+                        </button>
+                      </div>
+                    )}
                     <img
                       src={listing.images[activeImageIdx] || '/placeholder.svg'}
                       alt={`${listing.title} - صورة ${activeImageIdx + 1}`}
@@ -329,41 +347,33 @@ export default function ListingDetails() {
             <div>
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-3xl font-bold">{listing.title}</h1>
-                <div className="flex space-x-2 rtl:space-x-reverse">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={handleToggleWishlist}
-                    disabled={isAddingToWishlist}
-                  >
-                    <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={handleShareListing}>
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              <Badge className="mb-4">{listing.categoryName}</Badge>
-
-              <div className="flex items-center text-gray-600 mb-4">
-                <MapPin className="h-4 w-4 mr-1 rtl:ml-1" />
-                <span>{listing.address}</span>
-              </div>
-
-              <div className="flex items-center text-gray-600 mb-6">
-                <Calendar className="h-4 w-4 mr-1 rtl:ml-1" />
-                <span>متاح حتى: {formatDate(listing.endDate)}</span>
-              </div>
-
-              <div className="text-3xl font-bold text-green-600 mb-6">
-                {listing.price.toLocaleString('ar-EG')} ₪
               </div>
 
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-2">الوصف</h3>
                 <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
               </div>
+
+              {/* استبدال Badge ببطاقة الفئة */}
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <div className="flex-1 bg-white dark:bg-gray-100/10 rounded-xl p-6 text-center shadow border font-bold">
+                  <div className="text-gray-500 mb-2">الفئة</div>
+                  <div className="text-xl">{listing.categoryName}</div>
+                </div>
+                <div className="flex-1 bg-white dark:bg-gray-100/10 rounded-xl p-6 text-center shadow border font-bold">
+                  <div className="text-gray-500 mb-2">الموقع</div>
+                  <div className="text-xl">{listing.address}</div>
+                </div>
+                <div className="flex-1 bg-white dark:bg-gray-100/10 rounded-xl p-6 text-center shadow border font-bold">
+                  <div className="text-gray-500 mb-2">السعر</div>
+                  <div className="text-xl text-blue-600">{listing.price.toLocaleString('en-US')} ₪</div>
+                </div>
+                <div className="flex-1 bg-white dark:bg-gray-100/10 rounded-xl p-6 text-center shadow border font-bold">
+                  <div className="text-gray-500 mb-2">متاح حتى</div>
+                  <div className="text-xl ">{new Date(listing.endDate).toLocaleDateString('en-US')}</div>
+                </div>
+              </div>
+              
 
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-12">
                 <h2 className="text-2xl font-bold mb-6">التقييمات والمراجعات</h2>
@@ -387,14 +397,14 @@ export default function ListingDetails() {
             <Card className="mb-6">
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <Link to={`/seller/${listing.userId}`} className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group" tabIndex={0}>
                     {sellerLoading ? (
                       <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
                     ) : seller && seller.profilePicture ? (
                       <img
                         src={seller.profilePicture.startsWith('http') ? seller.profilePicture : `http://mazadpalestine.runasp.net${seller.profilePicture}`}
                         alt={seller.username}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:opacity-80 transition"
                         onError={e => {
                           (e.target as HTMLImageElement).src = '/default-avatar.png';
                           (e.target as HTMLImageElement).onerror = () => {
@@ -412,9 +422,11 @@ export default function ListingDetails() {
                     ) : (
                       <span className="text-xl font-bold text-gray-400">?</span>
                     )}
-                  </div>
+                  </Link>
                   <div className="ml-3 rtl:mr-3">
-                    <h3 className="font-semibold">{seller ? seller.username : listing.userName}</h3>
+                    <Link to={`/seller/${listing.userId}`} className="font-semibold text-gray-900 dark:text-white hover:no-underline focus:outline-none">
+                      {seller ? seller.username : listing.userName}
+                    </Link>
                     <p className="text-sm text-gray-500">البائع</p>
                   </div>
                 </div>
@@ -432,24 +444,45 @@ export default function ListingDetails() {
                     productImage={listing.images && listing.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
                     productPrice={listing.price}
                   />
+                  {/* أزرار المفضلة والمشاركة والإبلاغ */}
+                  <div className="flex gap-2 mt-4 justify-center">
+                    <button
+                      onClick={handleToggleWishlist}
+                      disabled={isAddingToWishlist}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200 ${isInWishlist ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
+                    >
+                      <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                      <span>المفضلة</span>
+                    </button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 flex items-center gap-2 justify-center"
+                      onClick={handleShareListing}
+                    >
+                      <Share2 className="h-5 w-5" />
+                      <span>مشاركة</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 flex items-center gap-2 justify-center"
+                      // يمكنك إضافة منطق الإبلاغ لاحقاً
+                    >
+                      <Flag className="h-5 w-5" />
+                      <span>إبلاغ</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
+            {/* بطاقة نصائح للشراء الآمن */}
+            <Card className="mb-6">
               <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4">معلومات إضافية</h3>
-                <ul className="space-y-3">
-                  <li className="flex justify-between">
-                    <span className="text-gray-600">حالة المنتج</span>
-                    <span className={`${listing.isActive ? 'text-green-600' : 'text-red-600'} font-medium`}>
-                      {listing.isActive ? 'متاح' : 'غير متاح'}
-                    </span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-600">تاريخ النشر</span>
-                    <span>{formatDate(listing.createdAt)}</span>
-                  </li>
+                <h3 className="font-semibold mb-4 text-blue-700">نصائح للشراء الآمن</h3>
+                <ul className="list-disc pr-4 text-gray-700 space-y-2 text-sm rtl text-right">
+                  <li>تأكد من فحص المنتج جيداً قبل الدفع.</li>
+                  <li>لا ترسل أي دفعات أو بيانات حساسة قبل التأكد من البائع.</li>
+                  <li>يفضل إتمام المعاملة في مكان عام وآمن.</li>
+                  <li>استخدم وسائل دفع موثوقة.</li>
                 </ul>
               </CardContent>
             </Card>

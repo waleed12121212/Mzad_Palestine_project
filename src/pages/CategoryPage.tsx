@@ -339,23 +339,34 @@ const CategoryPage: React.FC = () => {
   return (
     <PageWrapper>
       <div className="container mx-auto px-4 py-8">
-        {/* Category Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">{category?.name}</h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            {category?.description}
-          </p>
-          <div className="flex justify-center gap-4">
-            <Badge variant="outline" className="text-sm px-3 py-1 flex items-center">
-              <Gavel className="w-4 h-4 ml-1" />
-              {auctions.length} مزاد
-            </Badge>
-            <Badge variant="outline" className="text-sm px-3 py-1 flex items-center">
-              <Tag className="w-4 h-4 ml-1" />
-              {listings.length} منتج
-            </Badge>
+        {/* كارد الفئة الكبير */}
+        {category && (
+          <div className="relative rounded-2xl overflow-hidden shadow-lg mb-10 w-full max-w-sm mx-auto" style={{height: 270}}>
+            <img
+              src={category.imageUrl || '/placeholder.svg'}
+              alt={category.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{zIndex: 1}}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
+            <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 rtl">
+              <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">{category.name}</h2>
+              <p className="text-sm text-white/80 mb-3 line-clamp-2">{category.description}</p>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-white/80 text-xs">{category.listingsCount} منتج</span>
+                <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2 text-sm font-semibold">
+                  تصفح
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+            {/* أيقونة الفئة */}
+            <div className="absolute top-4 left-4 z-30 bg-white/70 rounded-full p-2">
+              {/* يمكن وضع أيقونة هنا حسب الفئة */}
+              {/* مثال: <Smartphone className="h-6 w-6 text-gray-700" /> */}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Filter and Content Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

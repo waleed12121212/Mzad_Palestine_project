@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +8,8 @@ interface Category {
   name: string;
   icon: React.ReactNode;
   count: number;
+  imageUrl?: string;
+  auctionCount?: number;
 }
 
 interface CategorySliderProps {
@@ -69,7 +70,7 @@ const CategorySlider: React.FC<CategorySliderProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full max-w-full overflow-x-auto">
       <button 
         onClick={() => scroll("left")}
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-1.5 md:p-2 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -80,7 +81,8 @@ const CategorySlider: React.FC<CategorySliderProps> = ({
       
       <div 
         ref={sliderRef}
-        className="flex overflow-x-auto gap-3 md:gap-4 py-3 md:py-4 px-6 md:px-8 scrollbar-hide scroll-smooth"
+        className="flex gap-3 md:gap-4 py-3 md:py-4 px-4 md:px-8 scrollbar-hide scroll-smooth w-full"
+        style={{overflowX: 'auto', maxWidth: '100%'}}
       >
         {categories.map((category) => (
           <button
@@ -88,19 +90,29 @@ const CategorySlider: React.FC<CategorySliderProps> = ({
             data-category-id={category.id}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
-              "flex flex-col items-center justify-center min-w-24 md:min-w-36 p-3 md:p-4 rounded-xl transition-all duration-300 border",
+              "flex flex-col items-center justify-center min-w-32 md:min-w-48 p-0 rounded-full transition-all duration-300 border aspect-square bg-white dark:bg-gray-800 overflow-hidden relative",
               selectedCategory === category.id
-                ? "bg-blue/10 border-blue text-blue dark:bg-blue/20 dark:border-blue-light dark:text-blue-light"
-                : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-blue hover:bg-blue/5 dark:hover:border-blue-dark dark:hover:bg-blue-dark/10"
+                ? "ring-4 ring-blue border-blue text-blue dark:ring-blue-light dark:border-blue-light dark:text-blue-light"
+                : "border-gray-100 dark:border-gray-700 hover:border-blue hover:bg-blue/5 dark:hover:border-blue-dark dark:hover:bg-blue-dark/10"
             )}
+            style={{ width: 140, height: 140 }}
           >
-            <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center mb-3 bg-blue/5 dark:bg-blue/10 rounded-full">
-              {category.icon}
+            {/* صورة الخلفية إذا وجدت */}
+            {category.imageUrl && (
+              <img src={category.imageUrl} alt={category.name} className="absolute inset-0 w-full h-full object-cover opacity-80" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            {/* اسم الفئة */}
+            <span className="relative z-10 text-lg md:text-xl font-bold text-white text-center mt-10 mb-2 drop-shadow-lg">{category.name}</span>
+            {/* عدد المنتجات والمزادات */}
+            <div className="relative z-10 flex flex-row items-center justify-center gap-3 mt-auto mb-4">
+              <span className="flex items-center gap-1 text-xs text-white bg-green-700/80 rounded-full px-3 py-1">
+                {typeof category.count !== 'undefined' ? category.count : 0} منتج
+              </span>
+              <span className="flex items-center gap-1 text-xs text-white bg-blue-900/80 rounded-full px-3 py-1">
+                {typeof category.auctionCount !== 'undefined' ? category.auctionCount : 0} مزاد
+              </span>
             </div>
-            <span className="text-sm md:text-base font-medium whitespace-nowrap">{category.name}</span>
-            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-              ({category.count})
-            </span>
           </button>
         ))}
       </div>

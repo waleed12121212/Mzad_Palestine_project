@@ -618,66 +618,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <span className="inline-block bg-blue/10 text-blue dark:bg-blue/20 dark:text-blue-light px-4 py-1 rounded-full text-sm font-medium mb-4">
-              خطوات بسيطة
-            </span>
-            <h2 className="heading-lg mb-4">كيف تعمل منصة مزاد فلسطين؟</h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              المزايدة على منصتنا سهلة وآمنة. اتبع هذه الخطوات البسيطة للبدء في المزايدة والفوز بالمنتجات التي ترغب بها.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 rtl">
-            <HowItWorksCard
-              number={1}
-              title="إنشاء حساب"
-              description="سجل حسابًا جديدًا وأضف معلوماتك الشخصية ووسائل الدفع الآمنة"
-              icon={<User className="h-7 w-7" />}
-            />
-            <HowItWorksCard
-              number={2}
-              title="تصفح المزادات"
-              description="استعرض المزادات النشطة واختر المنتجات التي تهمك للمزايدة عليها"
-              icon={<Search className="h-7 w-7" />}
-            />
-            <HowItWorksCard
-              number={3}
-              title="قدم عرضك"
-              description="ضع مزايدتك بسهولة وتابع حالة المزاد في الوقت الحقيقي"
-              icon={<ArrowRight className="h-7 w-7" />}
-            />
-            <HowItWorksCard
-              number={4}
-              title="استلم مشترياتك"
-              description="عند الفوز بالمزاد، أكمل عملية الدفع واستلم مشترياتك بكل سهولة"
-              icon={<Package className="h-7 w-7" />}
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-gradient-to-r from-blue to-blue-dark text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="heading-lg mb-6">ابدأ المزايدة الآن واحصل على أفضل الصفقات</h2>
-            <p className="text-white/80 mb-8 text-lg">
-              انضم إلى الآلاف من المستخدمين الذين يستفيدون من منصتنا للحصول على منتجات بأسعار تنافسية
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/auth" className="px-8 py-3 bg-white text-blue hover:bg-gray-100 transition-colors duration-300 rounded-lg font-medium shadow-lg">
-                إنشاء حساب
-              </Link>
-              <Link to="/how-it-works" className="px-8 py-3 bg-transparent border-2 border-white hover:bg-white/10 transition-colors duration-300 rounded-lg font-medium">
-                معرفة المزيد
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   );
 };
