@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,6 +22,11 @@ import { useQuery } from '@tanstack/react-query';
 import { auctionService } from '@/services/auctionService';
 import { MyBids } from '@/components/bidding/MyBids';
 import { useNotifications } from '@/hooks/useNotifications';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
+import { Table, TableHeader, TableBody, TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { reportService, Report } from '@/services/reportService';
 
 const Profile = () => {
   const isMobile = useIsMobile();
@@ -384,6 +389,7 @@ const Profile = () => {
           { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
           { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
           { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
+          { id: 'reports', to: "#", label: "بلاغاتي", icon: AlertTriangle },
         ].map((link) => (
           <button
             key={link.id}
@@ -830,9 +836,258 @@ const Profile = () => {
           </ContentWrapper>
         );
       
+      case 'reports':
+        return (
+          <ContentWrapper title="بلاغاتي">
+            <UserReports />
+          </ContentWrapper>
+        );
+      
       default:
         return <ProfileForm />;
     }
+  };
+
+  // Add this component before ProfileForm
+  const UserReports = () => {
+    const [reports, setReports] = useState<Report[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      fetchUserReports();
+    }, []);
+
+    const fetchUserReports = async () => {
+      try {
+        setLoading(true);
+        const response = await reportService.getUserReports();
+        // Make sure we're handling both possible response formats (direct array or object with data property)
+        const reportsData = Array.isArray(response) ? response : 
+                         (response as any)?.data ? (response as any).data : [];
+        console.log('Reports data:', reportsData);
+        setReports(reportsData);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+        toast({
+          title: "خطأ في تحميل البلاغات",
+          description: "حدث خطأ أثناء تحميل البلاغات",
+          variant: "destructive",
+        });
+        setReports([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleViewDetails = (report: Report) => {
+      setSelectedReport(report);
+      setShowDetailsDialog(true);
+    };
+
+    const navigateToReportedItem = (report: Report) => {
+      if (report?.reportedListingId) {
+        navigate(`/listing/${report.reportedListingId}`);
+      } else if (report?.reportedAuctionId) {
+        navigate(`/auction/${report.reportedAuctionId}`);
+      } else {
+        toast({
+          title: "عذراً",
+          description: "لا يمكن الوصول إلى العنصر المبلغ عنه",
+          variant: "destructive",
+        });
+      }
+    };
+
+    const getStatusBadgeClass = (status: string | undefined) => {
+      if (!status) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      
+      switch (status) {
+        case 'Resolved':
+          return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+        case 'Rejected':
+          return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+        case 'Pending':
+        default:
+          return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      }
+    };
+
+    const getStatusText = (status: string | undefined) => {
+      if (!status) return "قيد المراجعة";
+      
+      switch (status) {
+        case 'Resolved':
+          return "تم الحل";
+        case 'Rejected':
+          return "مرفوض";
+        case 'Pending':
+        default:
+          return "قيد المراجعة";
+      }
+    };
+
+    return (
+      <>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue"></div>
+          </div>
+        ) : reports && Array.isArray(reports) && reports.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>نوع البلاغ</TableHead>
+                  <TableHead>سبب البلاغ</TableHead>
+                  <TableHead>تاريخ البلاغ</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reports.map((report) => (
+                  <TableRow key={report?.reportId || Math.random()}>
+                    <TableCell>
+                      <button 
+                        onClick={() => navigateToReportedItem(report)}
+                        className="text-blue-600 hover:underline flex items-center"
+                      >
+                        {report?.reportedListingId ? 'منتج' : report?.reportedAuctionId ? 'مزاد' : 'آخر'}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </button>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{report?.reason || ''}</TableCell>
+                    <TableCell>
+                      {report?.createdAt ? 
+                        format(new Date(report.createdAt), 'dd MMM yyyy', { locale: ar }) : 
+                        '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(report?.status)}`}>
+                        {getStatusText(report?.status)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(report)}
+                          title="عرض التفاصيل"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigateToReportedItem(report)}
+                          className="text-blue-600"
+                          title="الذهاب إلى العنصر المبلغ عنه"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-gray-500 dark:text-gray-400">لا يوجد لديك أي بلاغات</p>
+          </div>
+        )}
+
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>تفاصيل البلاغ</DialogTitle>
+            </DialogHeader>
+            {selectedReport && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium">نوع البلاغ:</h3>
+                  <button 
+                    onClick={() => {
+                      setShowDetailsDialog(false);
+                      navigateToReportedItem(selectedReport);
+                    }}
+                    className="text-blue-600 hover:underline flex items-center"
+                  >
+                    {selectedReport?.reportedListingId ? 'منتج' : selectedReport?.reportedAuctionId ? 'مزاد' : 'آخر'}
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </button>
+                </div>
+                {selectedReport?.reportedListingTitle && (
+                  <div>
+                    <h3 className="font-medium">عنوان المنتج:</h3>
+                    <button 
+                      onClick={() => {
+                        setShowDetailsDialog(false);
+                        navigateToReportedItem(selectedReport);
+                      }}
+                      className="text-blue-600 hover:underline flex items-center"
+                    >
+                      {selectedReport.reportedListingTitle}
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </button>
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-medium">سبب البلاغ:</h3>
+                  <p>{selectedReport?.reason || ''}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium">تاريخ البلاغ:</h3>
+                  <p>{selectedReport?.createdAt ? 
+                    format(new Date(selectedReport.createdAt), 'dd MMMM yyyy', { locale: ar }) :
+                    '-'
+                  }</p>
+                </div>
+                <div>
+                  <h3 className="font-medium">الحالة:</h3>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(selectedReport?.status)}`}>
+                    {getStatusText(selectedReport?.status)}
+                  </span>
+                </div>
+                {selectedReport?.resolverName && (
+                  <div>
+                    <h3 className="font-medium">تم معالجة البلاغ بواسطة:</h3>
+                    <p>{selectedReport.resolverName}</p>
+                  </div>
+                )}
+                {selectedReport?.resolution && (
+                  <div>
+                    <h3 className="font-medium">رد الإدارة:</h3>
+                    <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
+                      {selectedReport.resolution}
+                    </p>
+                  </div>
+                )}
+                
+                <div className="pt-4 flex justify-end">
+                  <Button
+                    onClick={() => {
+                      setShowDetailsDialog(false);
+                      navigateToReportedItem(selectedReport);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>عرض العنصر المبلغ عنه</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </>
+    );
   };
 
   return (

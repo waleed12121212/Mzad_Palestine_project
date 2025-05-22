@@ -239,10 +239,17 @@ class ListingService {
 
   async getUserListings(userId: number): Promise<Listing[]> {
     try {
-      const response = await axios.get(`${API_URL}/user/${userId}`);
+      const response = await axios.get(`${API_URL}/user/${userId}`, {
+        headers: getAuthHeader()
+      });
       return processListingsData(response.data);
     } catch (error: any) {
       console.error(`Get user ${userId} listings error:`, error);
+      if (error.response?.status === 401) {
+        console.log('User not authenticated for fetching listings');
+        // Return empty array instead of throwing error for 401
+        return [];
+      }
       throw error;
     }
   }

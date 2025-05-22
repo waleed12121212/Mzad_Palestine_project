@@ -25,7 +25,9 @@ import {
   BookOpen,
   Camera,
   Baby,
-  Coffee
+  Coffee,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,6 +36,7 @@ import { auctionService, Auction } from "@/services/auctionService";
 import { listingService, Listing } from "@/services/listingService";
 import { Category as ApiCategory } from "@/services/categoryService";
 import { Category, SubCategory } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 // Add a custom interface for the sidebar category
 interface SidebarCategory {
@@ -51,8 +54,10 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [pendingAuctions, setPendingAuctions] = useState<Auction[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [isListingsLoading, setIsListingsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "pending">("all");
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
@@ -110,20 +115,35 @@ const Index = () => {
     const fetchAuctions = async () => {
       setIsLoading(true);
       try {
-        const response = await auctionService.getActiveAuctions();
-        console.log('Active auctions response:', response);
+        // Fetch active auctions
+        const activeResponse = await auctionService.getActiveAuctions();
+        console.log('Active auctions response:', activeResponse);
         
-        if (Array.isArray(response)) {
-          setAuctions(response);
-        } else if (response && response.data && Array.isArray(response.data)) {
-          setAuctions(response.data);
+        if (Array.isArray(activeResponse)) {
+          setAuctions(activeResponse);
+        } else if (activeResponse && activeResponse.data && Array.isArray(activeResponse.data)) {
+          setAuctions(activeResponse.data);
         } else {
-          console.error('Unexpected auction response format:', response);
+          console.error('Unexpected auction response format:', activeResponse);
           setAuctions([]);
+        }
+        
+        // Fetch pending auctions
+        const pendingResponse = await auctionService.getPendingAuctions();
+        console.log('Pending auctions response:', pendingResponse);
+        
+        if (Array.isArray(pendingResponse)) {
+          setPendingAuctions(pendingResponse);
+        } else if (pendingResponse && pendingResponse.data && Array.isArray(pendingResponse.data)) {
+          setPendingAuctions(pendingResponse.data);
+        } else {
+          console.error('Unexpected pending auction response format:', pendingResponse);
+          setPendingAuctions([]);
         }
       } catch (error) {
         console.error('Error fetching auctions:', error);
         setAuctions([]);
+        setPendingAuctions([]);
       } finally {
         setIsLoading(false);
       }
@@ -177,11 +197,21 @@ const Index = () => {
   };
 
   const getFilteredAuctions = () => {
-    if (!selectedCategory) return auctions;
+    // Combine auctions based on the status filter
+    let allAuctions: Auction[] = [];
+    if (statusFilter === "all") {
+      allAuctions = [...auctions, ...pendingAuctions];
+    } else if (statusFilter === "active") {
+      allAuctions = [...auctions];
+    } else if (statusFilter === "pending") {
+      allAuctions = [...pendingAuctions];
+    }
+    
+    if (!selectedCategory) return allAuctions;
     console.log(`Filtering auctions for category ID: ${selectedCategory}`);
-    console.log('Available auctions:', auctions);
-    console.log('Auction category IDs:', auctions.map(a => a.categoryId));
-    return auctions.filter(auction => {
+    console.log('Available auctions:', allAuctions);
+    console.log('Auction category IDs:', allAuctions.map(a => a.categoryId));
+    return allAuctions.filter(auction => {
       const match = auction.categoryId?.toString() === selectedCategory;
       console.log(`Auction ${auction.id}: categoryId=${auction.categoryId}, selected=${selectedCategory}, match=${match}`);
       return match;
@@ -411,7 +441,7 @@ const Index = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">المزادات الرائجة</h2>
+            <h2 className="heading-lg">المزادات</h2>
             <Link to="/auctions" className="text-blue dark:text-blue-light hover:underline flex items-center">
               عرض الكل <ChevronRight className="h-5 w-5" />
             </Link>
@@ -547,6 +577,40 @@ const Index = () => {
 
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="lg:w-1/4 w-full">
+              <div className="mb-6 rtl">
+                <h3 className="font-semibold mb-4">الحالة</h3>
+                <div className="space-y-2">
+                  <button 
+                    className={`w-full text-right px-3 py-2 rounded-lg ${statusFilter === "all" ? "bg-blue text-white" : "bg-gray-100 dark:bg-gray-800"}`}
+                    onClick={() => setStatusFilter("all")}
+                  >
+                    جميع المزادات
+                  </button>
+                  <button 
+                    className={`w-full text-right px-3 py-2 rounded-lg ${statusFilter === "active" ? "bg-blue text-white" : "bg-gray-100 dark:bg-gray-800"}`}
+                    onClick={() => setStatusFilter("active")}
+                  >
+                    <span className="flex items-center">
+                      المزادات النشطة
+                      <Badge variant="outline" className="mr-2 bg-green-100 text-green-800 text-xs">
+                        {auctions.length}
+                      </Badge>
+                    </span>
+                  </button>
+                  <button 
+                    className={`w-full text-right px-3 py-2 rounded-lg ${statusFilter === "pending" ? "bg-blue text-white" : "bg-gray-100 dark:bg-gray-800"}`}
+                    onClick={() => setStatusFilter("pending")}
+                  >
+                    <span className="flex items-center">
+                      المزادات المعلقة
+                      <Badge variant="outline" className="mr-2 bg-yellow-100 text-yellow-800 text-xs">
+                        {pendingAuctions.length}
+                      </Badge>
+                    </span>
+                  </button>
+                </div>
+              </div>
+              
               <CategorySidebar
                 categories={categories.map(cat => {
                   console.log('Mapping category for sidebar:', cat);
@@ -590,19 +654,43 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredAuctions.map((auction) => (
-                    <AuctionCard
-                      key={auction.id}
-                      id={auction.id}
-                      title={auction.title}
-                      description={auction.description || ""}
-                      currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
-                      minBidIncrement={auction.bidIncrement}
-                      imageUrl={auction.images?.[0] || ""}
-                      endTime={auction.endDate}
-                      bidders={auction.bids?.length || 0}
-                    />
-                  ))}
+                  {filteredAuctions.map((auction) => {
+                    const isPending = auction.status === "Pending";
+                    const bidIncrement = auction.bidIncrement ?? 0;
+                    const currentPrice = auction.currentBid > 0 ? auction.currentBid : auction.reservePrice;
+                    const minBid = currentPrice + bidIncrement;
+                    const bidsCount = auction.bids?.length || auction.bidsCount || 0;
+                    
+                    return (
+                      <div className="relative" key={auction.id}>
+                        {isPending && (
+                          <Badge variant="outline" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1 z-20">
+                            <Clock className="h-3 w-3" /> معلق
+                          </Badge>
+                        )}
+                        {isPending && (
+                          <div className="absolute inset-0 bg-yellow-50/80 dark:bg-yellow-900/30 flex items-center justify-center z-10 rounded-xl">
+                            <div className="bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100 px-4 py-2 rounded-lg font-bold text-center">
+                              سيتم عرضه قريبا
+                            </div>
+                          </div>
+                        )}
+                        <AuctionCard
+                          id={auction.id}
+                          listingId={auction.listingId}
+                          title={auction.title}
+                          description={auction.description || ""}
+                          currentPrice={currentPrice}
+                          minBidIncrement={minBid}
+                          imageUrl={auction.images?.[0] || ""}
+                          endTime={isPending ? auction.startDate : auction.endDate}
+                          bidders={bidsCount}
+                          userId={auction.userId}
+                          isPending={isPending}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               

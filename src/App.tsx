@@ -38,7 +38,10 @@ import About from '@/pages/About';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import HowItWorks from '@/pages/HowItWorks';
+import ProductRecommendation from '@/pages/ProductRecommendation';
 import BuyNow from '@/pages/BuyNow';
+import SellProduct from '@/pages/SellProduct';
+import Contact from '@/pages/Contact';
 
 const queryClient = new QueryClient();
 
@@ -215,6 +218,17 @@ function App() {
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/product-recommendation" element={<ProductRecommendation />} />
+                    <Route path="/sell-product" element={<SellProduct />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route
+                      path="/admin/reports"
+                      element={
+                        <ProtectedRoute adminOnly>
+                          <ReportManagement />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster

@@ -495,21 +495,17 @@ const AuctionDetails = () => {
 
   const handleReport = () => {
     if (!user) {
-      console.log('[AuctionDetails] User not logged in, cannot report auction');
       toast({
-        title: "يجب تسجيل الدخول أولاً",
-        description: "قم بتسجيل الدخول للإبلاغ عن المزاد",
-        variant: "destructive",
+        title: "يرجى تسجيل الدخول أولاً",
+        description: "يجب تسجيل الدخول للإبلاغ عن المزاد",
+        variant: "destructive"
       });
+      console.log('[AuctionDetails] User not logged in, cannot report auction');
       return;
     }
 
+    // Report handling is now managed by the ReportDialog component
     console.log('[AuctionDetails] Reporting auction:', id);
-    // TODO: Implement report functionality
-    toast({
-      title: "تم الإبلاغ عن المزاد",
-      description: "سيتم مراجعة البلاغ من قبل فريق العمل",
-    });
   };
 
   const handleDispute = () => {
@@ -907,8 +903,13 @@ const AuctionDetails = () => {
                       </div>
                       {auction && (
                         <ReportDialog 
-                          listingId={auction.listingId || auction.id} 
-                          onReportSubmitted={handleReport}
+                          auctionId={auction.id}
+                          onReportSubmitted={() => {
+                            toast({
+                              title: "تم إرسال البلاغ",
+                              description: "سيتم مراجعة البلاغ من قبل فريق الإدارة"
+                            });
+                          }}
                         />
                       )}
                     </div>

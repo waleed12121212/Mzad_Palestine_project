@@ -6,12 +6,16 @@ interface CountdownTimerProps {
   endTime?: Date;
   onComplete?: () => void;
   className?: string;
+  isStartTime?: boolean;
+  label?: string;
 }
 
 const CountdownTimer: React.FC<CountdownTimerProps> = ({
   endTime,
   onComplete,
   className,
+  isStartTime = false,
+  label
 }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -38,8 +42,10 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
         return;
       }
       
-      // Check if less than 5 minutes left
-      setIsUrgent(difference < 300000);
+      // Check if less than 5 minutes left (only for end times, not start times)
+      if (!isStartTime) {
+        setIsUrgent(difference < 300000);
+      }
       
       // Calculate time units
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -56,7 +62,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     
     // Cleanup on unmount
     return () => clearInterval(timerId);
-  }, [endTime, onComplete]);
+  }, [endTime, onComplete, isStartTime]);
 
   const formatTime = (value: number): string => {
     return value < 10 ? `0${value}` : `${value}`;
@@ -70,7 +76,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     
     return (
       <>
-        <span>{timeLeft.days}</span>
+        <span className="ml-1">{timeLeft.days}</span>
         <span className="text-xs mx-1">يوم</span>
         <span>{formatTime(timeLeft.hours)}</span>:
         <span>{formatTime(timeLeft.minutes)}</span>:
@@ -79,12 +85,15 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     );
   };
 
-  const urgentClass = isUrgent ? "text-red-500 animate-pulse font-bold" : "";
+  // Only show urgent styling for end times, not start times
+  const urgentClass = !isStartTime && isUrgent ? "text-red-500 animate-pulse font-bold" : "";
+  const startTimeClass = isStartTime ? "text-yellow-500 font-medium" : "";
   const responsiveClass = isMobile ? "text-sm" : "";
 
   return (
-    <div className={`flex items-center ${className} ${urgentClass} ${responsiveClass}`}>
-      <Clock className={`h-4 w-4 mr-1 ml-2 ${isUrgent ? "text-red-500" : ""}`} />
+    <div className={`flex items-center ${className} ${urgentClass} ${startTimeClass} ${responsiveClass}`}>
+      <Clock className={`h-4 w-4 mr-1 ml-2 ${isUrgent && !isStartTime ? "text-red-500" : ""} ${isStartTime ? "text-yellow-500" : ""}`} />
+      {label && <span className="ml-1">{label}</span>}
       <div className="font-mono tabular-nums">{getTimeDisplay()}</div>
     </div>
   );

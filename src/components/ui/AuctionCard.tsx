@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Heart, Users, ArrowUpRight, Trash } from "lucide-react";
+import { Heart, Users, ArrowUpRight, Trash, Clock } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ interface AuctionCardProps {
   onFavoriteToggle?: (id: number) => void;
   ownerView?: boolean;
   errorState?: boolean;
+  isPending?: boolean;
 }
 
 const AuctionCard: React.FC<AuctionCardProps> = ({
@@ -45,7 +46,8 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   type = 'auction',
   onFavoriteToggle,
   ownerView = false,
-  errorState = false
+  errorState = false,
+  isPending = false
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,6 +162,30 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
     }
   };
 
+  // Add a helper function to format the date correctly
+  const formatStartDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Format the date in Arabic style
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      
+      // Format time in 24-hour format
+      let hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      // Format as DD/MM/YYYY HH:MM
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString.toString();
+    }
+  };
+
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md relative cursor-pointer ${
@@ -244,10 +270,17 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
             <Users className="h-3 w-3 ml-1" />
             <span>{bidders}</span>
           </div>
-          <CountdownTimer 
-            endTime={endTime ? new Date(endTime) : undefined} 
-            className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm" 
-          />
+          {isPending ? (
+            <div className="bg-yellow-500/30 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center">
+              <Clock className="h-3 w-3 ml-1 text-yellow-300" />
+              <span>يبدأ: {formatStartDate(endTime)}</span>
+            </div>
+          ) : (
+            <CountdownTimer 
+              endTime={endTime ? new Date(endTime) : undefined} 
+              className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm rtl"
+            />
+          )}
         </div>
       </div>
       
@@ -278,7 +311,9 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
             navigate(`/auction/${id}`);
           }}
         >
-          {ownerView ? 'إدارة المزاد' : <><span>المزايدة الآن</span> <ArrowUpRight className="h-4 w-4" /></>}
+          {ownerView ? 'إدارة المزاد' : isPending ? 
+            <><span>عرض التفاصيل</span> <ArrowUpRight className="h-4 w-4" /></> : 
+            <><span>المزايدة الآن</span> <ArrowUpRight className="h-4 w-4" /></>}
         </button>
       </div>
     </div>

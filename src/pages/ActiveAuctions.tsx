@@ -535,25 +535,36 @@ const ActiveAuctions: React.FC = () => {
                     
                     // Create the badge element outside of the props
                     const badgeElement = isPending ? (
-                      <Badge variant="outline" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1">
+                      <Badge variant="outline" className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1 z-20">
                         <Clock className="h-3 w-3" /> معلق
                       </Badge>
                     ) : null;
                     
+                    // Don't modify the description for pending auctions
+                    const description = auction.description || "";
+                    
                     return (
                       <div className="relative" key={auction.id}>
                         {badgeElement}
+                        {isPending && (
+                          <div className="absolute inset-0 bg-yellow-50/80 dark:bg-yellow-900/30 flex items-center justify-center z-10 rounded-xl">
+                            <div className="bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100 px-4 py-2 rounded-lg font-bold text-center">
+                              سيتم عرضه قريبا
+                            </div>
+                          </div>
+                        )}
                         <AuctionCard
                           id={auction.id}
                           listingId={auction.listingId}
                           title={auction.title}
-                          description={auction.description || ""}
+                          description={description}
                           currentPrice={currentPrice}
                           minBidIncrement={minBid}
                           imageUrl={auction.images?.[0] || ""}
-                          endTime={auction.endDate}
+                          endTime={isPending ? auction.startDate : auction.endDate}
                           bidders={bidsCount}
                           userId={auction.userId}
+                          isPending={isPending}
                         />
                       </div>
                     );

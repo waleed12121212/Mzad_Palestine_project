@@ -15,6 +15,7 @@ import { ListingContactSellerDialog } from '@/components/listing/ListingContactS
 import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
 import { userService, UserProfile } from '@/services/userService';
+import ReportDialog from '@/components/ReportDialog';
 
 export default function ListingDetails() {
   const { id } = useParams<{ id: string }>();
@@ -462,14 +463,15 @@ export default function ListingDetails() {
                       <Share2 className="h-5 w-5" />
                       <span>مشاركة</span>
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 flex items-center gap-2 justify-center"
-                      // يمكنك إضافة منطق الإبلاغ لاحقاً
-                    >
-                      <Flag className="h-5 w-5" />
-                      <span>إبلاغ</span>
-                    </Button>
+                    <ReportDialog 
+                      listingId={listing.listingId}
+                      onReportSubmitted={() => {
+                        toast({
+                          title: "تم إرسال البلاغ",
+                          description: "سيتم مراجعة البلاغ من قبل فريق الإدارة"
+                        });
+                      }}
+                    />
                   </div>
                 </div>
               </CardContent>
