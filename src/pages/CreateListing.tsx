@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Calendar, Clock, Info, Tag, MapPin, X, Upload, PlusCircle } from 'lucide-react';
+import { imageService } from '@/services/imageService';
 
 const CreateListing: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +50,11 @@ const CreateListing: React.FC = () => {
   }, [user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    let checked = false;
+    if (type === 'checkbox' && 'checked' in e.target) {
+      checked = (e.target as HTMLInputElement).checked;
+    }
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     setErrors(prev => ({ ...prev, [name]: undefined }));
     if (name === 'terms' && checked) setShowTermsError(false);
@@ -96,8 +101,23 @@ const CreateListing: React.FC = () => {
     if (!validateStep() || !formData.terms) return;
     setIsSubmitting(true);
     try {
-      // رفع الصور (محاكاة)
-      const imageUrls: string[] = images; // استبدل هذا بمنطق رفع الصور الحقيقي إذا لزم
+      // رفع الصور بنفس منطق المزاد
+      const processedImages: string[] = [];
+      for (const imageUrl of images) {
+        if (imageUrl.startsWith('blob:')) {
+          try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'listing-image.jpg', { type: blob.type });
+            const uploadResult = await imageService.uploadImage(file);
+            processedImages.push(uploadResult.url);
+          } catch (error) {
+            toast({ title: 'فشل تحميل الصورة', variant: 'destructive' });
+          }
+        } else {
+          processedImages.push(imageUrl);
+        }
+      }
       const listingData: CreateListingDto = {
         title: formData.title,
         description: formData.description,
@@ -105,7 +125,7 @@ const CreateListing: React.FC = () => {
         price: Number(formData.price),
         categoryId: Number(formData.categoryId),
         endDate: formData.endDate,
-        images: imageUrls,
+        images: processedImages,
       };
       await listingService.createListing(listingData);
       setShowSuccessModal(true);
@@ -123,7 +143,7 @@ const CreateListing: React.FC = () => {
           <h1 className="heading-lg mb-2 text-center">إضافة منتج للبيع</h1>
           <p className="text-gray-600 dark:text-gray-300 text-center">أضف منتجك للبيع مباشرة على المنصة</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden rtl max-w-3xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden rtl w-full mx-auto">
           {/* Stepper */}
           <div className="p-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-center">
@@ -273,7 +293,7 @@ const CreateListing: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 };
 

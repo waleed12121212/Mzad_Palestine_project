@@ -59,7 +59,7 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
     <>
       <Button 
         onClick={handleOpenDialog} 
-        className="w-full bg-green-600 hover:bg-green-700"
+        className="w-full bg-blue-600 hover:bg-blue-700"
         size="lg"
       >
         <ShoppingCart className="mr-2 h-5 w-5" />
@@ -78,7 +78,7 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
             <AlertDialogAction 
               onClick={handlePurchase} 
               disabled={isLoading} 
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isLoading ? 'جاري الشراء...' : 'تأكيد الشراء'}
             </AlertDialogAction>

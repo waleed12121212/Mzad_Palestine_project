@@ -965,7 +965,7 @@ const AuctionDetails = () => {
                   ) : (
                     <div>
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <Link to={`/seller/${seller.id}`} className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group" tabIndex={0}>
                           {seller.profilePicture ? (
                         <img
                           src={
@@ -974,13 +974,14 @@ const AuctionDetails = () => {
                               : `http://mazadpalestine.runasp.net${seller.profilePicture}`
                           }
                               alt={`${seller.firstName} ${seller.lastName}`}
-                          className="w-full h-full object-cover"
+                              className="w-full h-full object-cover group-hover:opacity-80 transition"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/default-avatar.png';
-                                // If default avatar fails, show fallback
                                 (e.target as HTMLImageElement).onerror = () => {
                                   e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
+                                  if (e.currentTarget.parentElement) {
+                                    e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
+                                  }
                                 };
                               }}
                         />
@@ -989,9 +990,11 @@ const AuctionDetails = () => {
                               {seller.username?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
                       )}
-                    </div>
+                        </Link>
                     <div>
-                          <h4 className="font-bold">{`${seller.firstName} ${seller.lastName}`}</h4>
+                          <Link to={`/seller/${seller.id}`} className="font-bold text-gray-900 dark:text-white hover:no-underline focus:outline-none">
+                            {`${seller.firstName} ${seller.lastName}`}
+                          </Link>
                           <div className="flex items-center gap-1">
                             <span className="text-yellow-500">★</span>
                             <span>{seller.rating?.toFixed(1) || "0.0"}</span>

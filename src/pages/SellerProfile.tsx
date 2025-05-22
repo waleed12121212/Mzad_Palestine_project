@@ -130,9 +130,9 @@ const SellerProfile = () => {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="bg-gray-200 dark:bg-gray-700 h-full w-full flex items-center justify-center text-3xl font-bold">
+                  <div className="bg-gray-200 dark:bg-gray-700 h-full w-full flex items-center justify-center text-3xl font-bold">
                       {seller.username.charAt(0)}
-                    </div>
+                  </div>
                   )}
                 </Avatar>
                 <div>
@@ -251,16 +251,16 @@ const SellerProfile = () => {
                 {completedAuctions.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">لا توجد مزادات مكتملة حالياً</p>
-                  </div>
+                </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {completedAuctions.map((auction) => (
                       <AuctionCard
                         key={auction.id}
                         {...auction}
-                      />
-                    ))}
-                  </div>
+                            />
+                          ))}
+                        </div>
                 )}
               </TabsContent>
 

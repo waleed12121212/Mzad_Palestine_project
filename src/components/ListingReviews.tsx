@@ -7,6 +7,7 @@ import { userService } from '@/services/userService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface ListingReviewsProps {
   listingId?: string;
@@ -52,7 +53,7 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId, auctionId })
         reviewsData.map(async (review) => {
           try {
             const userDataResponse = await userService.getUserById(review.reviewerId.toString());
-            const userData = userDataResponse.data || userDataResponse || {};
+            const userData: any = userDataResponse.data || userDataResponse || {};
             return {
               ...review,
               userName: userData ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username || 'مستخدم' : 'مستخدم',
@@ -268,11 +269,10 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId, auctionId })
                 <>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={review.userImage || '/default-avatar.png'}
-                        alt={review.userName}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                      />
+                      <Avatar className="w-10 h-10 border-2 border-gray-200 dark:border-gray-700">
+                        <AvatarImage src={review.userImage} alt={review.userName} />
+                        <AvatarFallback>{review.userName ? review.userName.charAt(0) : '؟'}</AvatarFallback>
+                      </Avatar>
                       <div>
                         <h3 className="font-medium text-gray-900 dark:text-white">
                           {review.userName}
@@ -282,7 +282,7 @@ const ListingReviews: React.FC<ListingReviewsProps> = ({ listingId, auctionId })
                         </p>
                       </div>
                     </div>
-                    {user && user.id === review.reviewerId && (
+                    {user && Number(user.id) === Number(review.reviewerId) && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(review)}

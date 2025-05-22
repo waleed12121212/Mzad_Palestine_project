@@ -479,7 +479,7 @@ const Categories = () => {
     <div className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0">
       {/* صورة الخلفية */}
       <img
-        src={category.imageUrl || category.image || 'https://placehold.co/600x400?text=No+Image'}
+        src={category.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
         alt={category.name}
         className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
         onError={(e) => {
@@ -495,13 +495,13 @@ const Categories = () => {
         </span>
         <span className="text-lg font-bold text-white drop-shadow">{category.name}</span>
       </div>
-      {/* الوصف في الأسفل */}
-      <div className="absolute bottom-8 right-4 left-4 z-10">
-        <p className="text-sm text-gray-200 line-clamp-2">{category.description}</p>
-      </div>
-      {/* عدد المنتجات في الأسفل يمين */}
-      <div className="absolute bottom-3 right-4 z-10">
-        <span className="text-xs text-gray-200">{category.count ? `${category.count} منتج` : ''}</span>
+      {/* تفاصيل الفئة وعدد المنتجات والمزادات في الأسفل */}
+      <div className="absolute bottom-0 right-0 left-0 z-10 flex flex-col gap-1 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+        <p className="text-xs text-gray-100 mb-1 min-h-[18px]">{category.description || 'لا يوجد وصف'}</p>
+        <div className="flex gap-3 items-center">
+          <span className="text-xs text-gray-200 bg-black/30 rounded-full px-2 py-1">{typeof category.listingCount !== 'undefined' ? `${category.listingCount} منتج` : '0 منتج'}</span>
+          <span className="text-xs text-gray-200 bg-black/30 rounded-full px-2 py-1">{typeof category.auctionCount !== 'undefined' ? `${category.auctionCount} مزاد` : '0 مزاد'}</span>
+        </div>
       </div>
       {/* أزرار الأدمن (إن وجد) */}
       {isAdmin && (
