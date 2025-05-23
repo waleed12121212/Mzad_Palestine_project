@@ -13,6 +13,7 @@ export interface Notification {
   createdAt: string;
   formattedDate?: string;
   relatedId?: number;
+  status?: string;
 }
 
 export interface CreateNotificationDto {

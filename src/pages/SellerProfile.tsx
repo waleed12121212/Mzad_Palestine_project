@@ -403,7 +403,7 @@ const SellerProfile = () => {
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                {new Date(review.date).toLocaleDateString('ar-EG')}
+                {new Date(review.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: '2-digit' })}
               </div>
             </div>
             
@@ -496,23 +496,11 @@ const SellerProfile = () => {
                 </Avatar>
                 <div>
                   <h2 className="text-xl font-bold mb-1">{seller.username}</h2>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(seller.rating || 0)
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
+                  {seller.bio && (
+                    <div className="mt-2 text-gray-600 dark:text-gray-300 text-center max-w-xs">
+                      {seller.bio}
                     </div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      ({seller.rating || 0}) · {seller.totalSales || 0} عملية بيع
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -533,56 +521,6 @@ const SellerProfile = () => {
                   <Clock className="h-5 w-5 text-gray-500" />
                   <span>رقم الهاتف: {seller.phoneNumber}</span>
                 </div>
-              </div>
-            </div>
-
-            <div className="neo-card p-6">
-              <h3 className="font-semibold mb-4">روابط سريعة</h3>
-              <div className="space-y-2">
-                <Link
-                  to="#"
-                  onClick={e => { e.preventDefault(); setShowContactDialog(true); }}
-                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <MessageCircle className="h-5 w-5 text-blue" />
-                    <span>مراسلة البائع</span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </Link>
-                <Link
-                  to="#reviews"
-                  onClick={e => { e.preventDefault(); setActiveTab('reviews'); }}
-                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Star className="h-5 w-5 text-yellow-400" />
-                    <span>التقييمات</span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </Link>
-                <Link
-                  to="#auctions"
-                  onClick={e => { e.preventDefault(); setActiveTab('auctions'); }}
-                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Package className="h-5 w-5 text-green" />
-                    <span>المزادات النشطة</span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </Link>
-                <Link
-                  to="#products"
-                  onClick={e => { e.preventDefault(); setActiveTab('products'); }}
-                  className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <ShoppingBag className="h-5 w-5 text-purple-500" />
-                    <span>المنتجات</span>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </Link>
               </div>
             </div>
           </div>

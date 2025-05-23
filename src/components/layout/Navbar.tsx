@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -143,10 +144,7 @@ const Navbar: React.FC = () => {
                 )}
               </Link>
 
-              <Link to="/notifications" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                <span className="absolute top-1 rtl:left-1 ltr:right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Link>
+              <NotificationDropdown />
 
               <Link 
                 to="/support" 

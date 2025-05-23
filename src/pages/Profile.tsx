@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink, Award, AlertCircle, Clock, Tag, MessageCircle, BellRing, CheckCheck, Trash2, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -352,6 +352,11 @@ const Profile = () => {
         />
       </div>
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{userData.firstName + ' ' + userData.lastName}</h1>
+      {userData.bio && (
+        <div className="mt-2 text-gray-600 dark:text-gray-300 text-center max-w-md">
+          {userData.bio}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2 justify-center">
         <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
         <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
@@ -467,31 +472,62 @@ const Profile = () => {
       icon: Icon, 
       value, 
       onChange, 
-      type = "text", 
+      type,
       readonly = false 
-    }) => (
-      <div>
-        <label htmlFor={id} className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">
+    }) => {
+      if (id === "dateOfBirth" && readonly) {
+        const formatted = value ? new Date(value).toISOString().slice(0, 10) : '';
+        return (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={id} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200 text-right pr-2">
+              {label}
+            </label>
+            <div className="relative">
+              <div className="w-full py-3 px-5 pr-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right text-base shadow-sm flex items-center min-h-[48px]">
+                <span className="flex-1">{formatted}</span>
+                <Icon className="ml-2 h-5 w-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        );
+      }
+      if (id === "createdAt" && readonly) {
+        const formatted = value ? new Date(value).toISOString().slice(0, 10) : '';
+        return (
+          <div className="flex flex-col gap-1">
+            <label htmlFor={id} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200 text-right pr-2">
+              {label}
+            </label>
+            <div className="relative">
+              <div className="w-full py-3 px-5 pr-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-right text-base shadow-sm flex items-center min-h-[48px]">
+                <span className="flex-1">{formatted}</span>
+                <Icon className="ml-2 h-5 w-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        );
+      }
+      const inputType = id === "dateOfBirth" && !readonly ? "date" : "text";
+      return (
+        <div className="flex flex-col gap-1">
+          <label htmlFor={id} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200 text-right pr-2">
           {label}
         </label>
         <div className="relative">
           <input
             id={id}
             name={id}
-            type={type}
+              type={inputType}
             value={value ?? ''}
             onChange={onChange}
             readOnly={readonly}
-            className={`w-full py-3 px-5 pr-12 rounded-xl border ${
-              !readonly && isEditing 
-                ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' 
-                : 'bg-gray-50 dark:bg-gray-700 border-transparent'
-            } focus:ring-2 focus:ring-blue focus:border-transparent transition-colors`}
-          />
-          <Icon className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+              className={`w-full py-3 px-5 pr-10 rounded-xl border-0 ${readonly ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold' : 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white'} text-right text-base shadow-sm focus:ring-2 focus:ring-blue focus:border-transparent transition-colors`}
+            />
+            <Icon className="absolute top-1/2 transform -translate-y-1/2 right-3 h-5 w-5 text-gray-400 pointer-events-none" />
         </div>
       </div>
     );
+    };
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
@@ -520,9 +556,10 @@ const Profile = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSaveChanges} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSaveChanges} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <InputField
+              key="firstName"
               id="firstName"
               label="الاسم الأول"
               icon={User}
@@ -531,6 +568,7 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="lastName"
               id="lastName"
               label="الاسم الأخير"
               icon={User}
@@ -539,6 +577,7 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="username"
               id="username"
               label="اسم المستخدم"
               icon={User}
@@ -547,6 +586,7 @@ const Profile = () => {
               readonly={true}
             />
             <InputField
+              key="email"
               id="email"
               label="البريد الإلكتروني"
               icon={Mail}
@@ -556,6 +596,7 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="phoneNumber"
               id="phoneNumber"
               label="رقم الهاتف"
               icon={Phone}
@@ -565,6 +606,7 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="address"
               id="address"
               label="العنوان"
               icon={MapPin}
@@ -573,15 +615,17 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="dateOfBirth"
               id="dateOfBirth"
               label="تاريخ الميلاد"
               icon={Calendar}
-              type="date"
-              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData.dateOfBirth ? userData.dateOfBirth.substring(0, 10) : '')}
+              type={isEditing ? "date" : "text"}
+              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData.dateOfBirth ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
             <InputField
+              key="bio"
               id="bio"
               label="نبذة عنك"
               icon={User}
@@ -590,14 +634,16 @@ const Profile = () => {
               readonly={!isEditing}
             />
             <InputField
+              key="createdAt"
               id="createdAt"
               label="تاريخ الانضمام"
               icon={Calendar}
-              value={userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('ar-EG') : ''}
+              value={userData.createdAt ?? ''}
               onChange={() => {}}
               readonly={true}
             />
             <InputField
+              key="role"
               id="role"
               label="نوع الحساب"
               icon={User}
@@ -606,6 +652,7 @@ const Profile = () => {
               readonly={true}
             />
             <InputField
+              key="isActive"
               id="isActive"
               label="حالة الحساب"
               icon={User}
@@ -768,69 +815,222 @@ const Profile = () => {
           clearAllNotifications,
         } = useNotifications();
         const [notifFilter, setNotifFilter] = useState('all');
-        const filteredNotifications = notifFilter === 'all' ? notifications : notifications.filter(n => n.type === notifFilter);
+        // ترتيب الإشعارات من الأحدث للأقدم
+        const sortedNotifications = [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const filteredNotifications = notifFilter === 'all' ? sortedNotifications : sortedNotifications.filter(n => n.type === notifFilter);
+
+        // NotificationItem بنفس نمط صفحة Notifications
+        const NotificationItem = ({ notification, onClick }) => {
+          const getNotificationContent = (type) => {
+            switch (type) {
+              case 'AuctionWon':
+                return {
+                  icon: <Award className="h-5 w-5 text-green-500" />,
+                  bgColor: 'bg-green-500/10',
+                  title: 'تهانينا! لقد فزت بالمزاد'
+                };
+              case 'BidOutbid':
+                return {
+                  icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+                  bgColor: 'bg-red-500/10',
+                  title: 'تم تجاوز مزايدتك'
+                };
+              case 'AuctionEnded':
+                return {
+                  icon: <Clock className="h-5 w-5 text-orange-500" />,
+                  bgColor: 'bg-orange-500/10',
+                  title: 'المزاد انتهى'
+                };
+              case 'BidPlaced':
+                return {
+                  icon: <Tag className="h-5 w-5 text-blue-500" />,
+                  bgColor: 'bg-blue-500/10',
+                  title: 'تمت مزايدة جديدة'
+                };
+              case 'MassageReceived':
+                return {
+                  icon: <MessageCircle className="h-5 w-5 text-purple-500" />,
+                  bgColor: 'bg-purple-500/10',
+                  title: 'رسالة جديدة'
+                };
+              case 'AuctionCancelled':
+                return {
+                  icon: <BellRing className="h-5 w-5 text-red-500" />,
+                  bgColor: 'bg-red-500/10',
+                  title: 'تم إلغاء المزاد'
+                };
+              default:
+                return {
+                  icon: <BellRing className="h-5 w-5 text-gray-500" />,
+                  bgColor: 'bg-gray-500/10',
+                  title: 'إشعار'
+                };
+            }
+          };
+          const content = getNotificationContent(notification.type);
+          const unreadBg = notification.status === "Read" ? "bg-white dark:bg-gray-800" : "bg-blue-50 dark:bg-blue-900/30";
+          const handleClick = () => {
+            if (notification.status !== "Read") {
+              markAsRead(notification.id);
+            }
+            if (onClick) onClick();
+          };
+          return (
+            <div
+              className={`rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${unreadBg}`}
+              onClick={handleClick}
+              tabIndex={0}
+              role="button"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className={`w-10 h-10 rounded-full ${content.bgColor} flex items-center justify-center`}>
+                    {content.icon}
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {content.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={e => { e.stopPropagation(); deleteNotification(notification.id); }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                        title="حذف الإشعار"
+                      >
+                        <X className="h-4 w-4 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                    {notification.message}
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    {notification.formattedDate || new Date(notification.createdAt).toLocaleDateString('ar-EG', {
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
         return (
           <ContentWrapper title="الإشعارات">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-4">
-                  <button onClick={() => setNotifFilter('all')} className={`px-4 py-2 rounded-lg ${notifFilter === 'all' ? 'bg-blue/10 text-blue dark:text-blue-light' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>الكل</button>
-                  <button onClick={() => setNotifFilter('AuctionWon')} className={`px-4 py-2 rounded-lg ${notifFilter === 'AuctionWon' ? 'bg-green-500/10 text-green-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>فوز بمزاد</button>
-                  <button onClick={() => setNotifFilter('BidOutbid')} className={`px-4 py-2 rounded-lg ${notifFilter === 'BidOutbid' ? 'bg-red-500/10 text-red-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>تم تجاوز مزايدتك</button>
-                  <button onClick={() => setNotifFilter('AuctionEnded')} className={`px-4 py-2 rounded-lg ${notifFilter === 'AuctionEnded' ? 'bg-orange-500/10 text-orange-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>مزادات منتهية</button>
-                  <button onClick={() => setNotifFilter('BidPlaced')} className={`px-4 py-2 rounded-lg ${notifFilter === 'BidPlaced' ? 'bg-blue/10 text-blue' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>مزايدات جديدة</button>
-                  <button onClick={() => setNotifFilter('MassageReceived')} className={`px-4 py-2 rounded-lg ${notifFilter === 'MassageReceived' ? 'bg-purple-500/10 text-purple-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>رسائل جديدة</button>
-                  <button onClick={() => setNotifFilter('General')} className={`px-4 py-2 rounded-lg ${notifFilter === 'General' ? 'bg-gray-600/10 text-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}>إشعارات عامة</button>
+            <div className="container mx-auto px-0 py-0 rtl">
+              <div className="flex justify-between items-center mb-8 rtl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue/10 dark:bg-blue/20 rounded-full flex items-center justify-center text-blue dark:text-blue-light">
+                    <BellRing className="w-5 h-5" />
+                  </div>
+                  <h1 className="heading-lg">الإشعارات</h1>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   {notifications.length > 0 && (
-                    <>
-                      <button onClick={clearAllNotifications} className="text-red-500 hover:text-red-600 transition-colors">حذف الكل</button>
-                      <button onClick={markAllAsRead} className="text-blue hover:text-blue-light transition-colors">تعليم الكل كمقروء</button>
-                    </>
+                    <button 
+                      onClick={clearAllNotifications}
+                      className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>حذف الكل</span>
+                    </button>
+                  )}
+                  {notifications.some(n => !n.isRead) && (
+                    <button 
+                      onClick={markAllAsRead}
+                      className="flex items-center gap-2 text-blue hover:text-blue-light transition-colors"
+                    >
+                      <CheckCheck className="h-4 w-4" />
+                      <span>تعليم الكل كمقروء</span>
+                    </button>
                   )}
                 </div>
               </div>
-              <div className="p-4">
-                {notifLoading ? (
-                  <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
-                ) : filteredNotifications.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredNotifications.map((notification) => (
-                      <div key={notification.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${!notification.isRead ? 'border-blue-200 dark:border-blue-400' : ''}`}
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Bell className="h-5 w-5 text-blue-500" />
-                            </div>
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex justify-between items-start">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {notification.message}
-                              </h3>
-                              <div className="flex items-center gap-2">
-                                {!notification.isRead && (
-                                  <button onClick={e => { e.stopPropagation(); markAsRead(notification.id); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="تعيين كمقروء">✔️</button>
-                                )}
-                                <button onClick={e => { e.stopPropagation(); deleteNotification(notification.id); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors" title="حذف الإشعار">🗑️</button>
-                              </div>
-                            </div>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                              {notification.formattedDate || new Date(notification.createdAt).toLocaleDateString('ar-EG', {
-                                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="border-b border-gray-100 dark:border-gray-700 p-4 rtl">
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    <button 
+                      onClick={() => setNotifFilter('all')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'all' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      الكل
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('AuctionWon')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'AuctionWon' ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      فوز بمزاد
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('BidOutbid')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'BidOutbid' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      تم تجاوز مزايدتك
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('AuctionEnded')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'AuctionEnded' ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      مزادات منتهية
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('BidPlaced')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'BidPlaced' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      مزايدات جديدة
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('MassageReceived')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'MassageReceived' ? 'bg-purple-500 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      رسائل جديدة
+                    </button>
+                    <button 
+                      onClick={() => setNotifFilter('General')}
+                      className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${notifFilter === 'General' ? 'bg-gray-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors'}`}
+                    >
+                      إشعارات عامة
+                    </button>
+                  </div>
+                </div>
+                <div className="p-4">
+                  {notifLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="animate-pulse flex items-start gap-4 p-4 rounded-lg rtl">
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <EmptyState message="لا يوجد إشعارات جديدة" icon={Bell} />
-                )}
+                  ) : filteredNotifications.length > 0 ? (
+                    <div className="space-y-4">
+                      {filteredNotifications.map((notification) => (
+                        <NotificationItem
+                          key={notification.id}
+                          notification={notification}
+                          onClick={() => markAsRead(notification.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <BellRing className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">لا توجد إشعارات</h3>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        ستظهر هنا الإشعارات المتعلقة بمزايداتك ونشاطاتك على المنصة
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </ContentWrapper>

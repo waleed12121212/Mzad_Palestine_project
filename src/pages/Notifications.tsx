@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BellRing, CheckCheck, Clock, Award, Tag, AlertCircle, ArrowUpRight, Trash2, MessageCircle } from "lucide-react";
+import { BellRing, CheckCheck, Clock, Award, Tag, AlertCircle, ArrowUpRight, Trash2, MessageCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { notificationService, NotificationType, Notification } from "@/services/notificationService";
 import { toast } from "sonner";
@@ -34,7 +34,7 @@ const Notifications = () => {
       if (success) {
         setNotifications(notifications.map(notification => ({
           ...notification,
-          isRead: true
+          status: "Read"
         })));
       }
     } catch (error) {
@@ -47,7 +47,7 @@ const Notifications = () => {
       const success = await notificationService.markAsRead(id);
       if (success) {
         setNotifications(notifications.map(notification => 
-          notification.id === id ? { ...notification, isRead: true } : notification
+          notification.id === id ? { ...notification, status: "Read" } : notification
         ));
       }
     } catch (error) {
@@ -82,6 +82,9 @@ const Notifications = () => {
   const filteredNotifications = filter === "all" 
     ? notifications 
     : notifications.filter(notification => notification.type === filter);
+
+  // ترتيب الإشعارات من الأحدث إلى الأقدم
+  const sortedFilteredNotifications = [...filteredNotifications].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
@@ -176,11 +179,21 @@ const Notifications = () => {
     };
 
     const content = getNotificationContent(notification.type);
+    // لون خلفية مختلف لغير المقروءة
+    const unreadBg = notification.status === "Read" ? "bg-white dark:bg-gray-800" : "bg-blue-50 dark:bg-blue-900/30";
+
+    // عند الضغط: markAsRead ثم onClick
+    const handleClick = () => {
+      if (notification.status !== "Read") {
+        markAsRead(notification.id);
+      }
+      onClick();
+    };
 
     return (
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-        onClick={onClick}
+        className={`rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 rtl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${unreadBg}`}
+        onClick={handleClick}
         tabIndex={0}
         role="button"
       >
@@ -196,21 +209,12 @@ const Notifications = () => {
                 {content.title}
               </h3>
               <div className="flex items-center gap-2">
-                {!notification.isRead && (
-                  <button
-                    onClick={e => { e.stopPropagation(); markAsRead(notification.id); }}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    title="تعيين كمقروء"
-                  >
-                    <CheckCheck className="h-4 w-4 text-blue-500" />
-                  </button>
-                )}
                 <button
                   onClick={e => { e.stopPropagation(); deleteNotification(notification.id); }}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                   title="حذف الإشعار"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <X className="h-4 w-4 text-red-500" />
                 </button>
               </div>
             </div>
@@ -253,7 +257,7 @@ const Notifications = () => {
               </button>
             )}
             
-            {notifications.some(n => !n.isRead) && (
+            {notifications.some(n => n.status !== "Read") && (
               <button 
                 onClick={markAllAsRead}
                 className="flex items-center gap-2 text-blue hover:text-blue-light transition-colors"
@@ -364,7 +368,7 @@ const Notifications = () => {
               </div>
             ) : filteredNotifications.length > 0 ? (
               <div className="space-y-4">
-                {filteredNotifications.map((notification) => (
+                {sortedFilteredNotifications.map((notification) => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}

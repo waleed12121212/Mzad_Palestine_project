@@ -10,7 +10,7 @@ export const useNotifications = () => {
     try {
       const data = await notificationService.getAllNotifications();
       setNotifications(data);
-      setUnreadCount(data.filter(n => !n.isRead).length);
+      setUnreadCount(data.filter(n => n.status !== "Read").length);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
@@ -23,7 +23,7 @@ export const useNotifications = () => {
       await notificationService.markAsRead(id);
       setNotifications(prev => 
         prev.map(notification => 
-          notification.id === id ? { ...notification, isRead: true } : notification
+          notification.id === id ? { ...notification, status: "Read" } : notification
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -36,7 +36,7 @@ export const useNotifications = () => {
     try {
       await notificationService.markAllAsRead();
       setNotifications(prev => 
-        prev.map(notification => ({ ...notification, isRead: true }))
+        prev.map(notification => ({ ...notification, status: "Read" }))
       );
       setUnreadCount(0);
     } catch (error) {
@@ -50,7 +50,7 @@ export const useNotifications = () => {
       setNotifications(prev => {
         const notification = prev.find(n => n.id === id);
         const newNotifications = prev.filter(n => n.id !== id);
-        if (notification && !notification.isRead) {
+        if (notification && notification.status !== "Read") {
           setUnreadCount(count => Math.max(0, count - 1));
         }
         return newNotifications;

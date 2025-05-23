@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { User, Search, Edit2, Trash2, Eye } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { userService, UserProfile } from '@/services/userService';
-import Footer from "@/components/layout/Footer";
 
 const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -108,7 +107,6 @@ const UserManagement = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -263,7 +261,6 @@ const UserManagement = () => {
         </div>
       )}
       
-      <Footer />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 export const NotificationDropdown = () => {
@@ -37,8 +37,8 @@ export const NotificationDropdown = () => {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-            {unreadCount}
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
@@ -120,7 +120,7 @@ export const NotificationDropdown = () => {
           {notifications.length > 5 && (
             <div className="p-2 border-t border-gray-200 dark:border-gray-700">
               <Link
-                href="/notifications"
+                to="/notifications"
                 className="block text-center text-sm text-blue hover:text-blue-light transition-colors"
                 onClick={() => setIsOpen(false)}
               >
