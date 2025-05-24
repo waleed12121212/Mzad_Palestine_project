@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { listingService } from '@/services/listingService';
 import { paymentService } from '@/services/paymentService';
 import { transactionService } from '@/services/transactionService';
-import { TransactionType } from '@/types/transaction';
+import { TransactionType, Transaction } from '@/types/transaction';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -23,15 +13,15 @@ interface BuyNowButtonProps {
   listingId: number;
   price: number;
   title: string;
+  transactionId: string;
 }
 
 export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, title }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const handleOpenDialog = () => {
+  const handlePurchase = async () => {
     if (!isAuthenticated) {
       toast({
         title: "يرجى تسجيل الدخول أولاً",
@@ -40,10 +30,7 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
       navigate('/login');
       return;
     }
-    setIsDialogOpen(true);
-  };
 
-  const handlePurchase = async () => {
     setIsLoading(true);
     try {
       console.log('Starting purchase process for listing:', listingId);
@@ -57,19 +44,19 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
       });
       
       console.log('Transaction created:', transaction);
+      console.log('Transaction ID:', transaction.transactionId);
       
       // 2. Create a payment for this listing
       const payment = await paymentService.createListingPayment({
         listingId: listingId,
         amount: price,
         paymentMethod: 'CreditCard',
-        notes: `Payment for: ${title}`
+        notes: `Payment for: ${title}`,
+        transactionId: transaction.transactionId.toString()
       });
       
       console.log('Payment created:', payment);
-      
-      // Close the dialog immediately
-      setIsDialogOpen(false);
+      console.log('Payment with transaction ID:', payment.transactionId);
       
       // Navigate to payment page
       if (payment && payment.id) {
@@ -103,41 +90,18 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
       });
     } finally {
       setIsLoading(false);
-      setIsDialogOpen(false);
     }
   };
 
   return (
-    <>
-      <Button 
-        onClick={handleOpenDialog} 
-        className="w-full bg-blue-600 hover:bg-blue-700"
-        size="lg"
-      >
-        <ShoppingCart className="mr-2 h-5 w-5" />
-        الشراء الآن
-      </Button>
-
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent className="text-right">
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد عملية الشراء</AlertDialogTitle>
-            <AlertDialogDescription>
-              هل أنت متأكد من رغبتك في شراء "{title}" بسعر {price} ₪؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row-reverse justify-start gap-2">
-            <AlertDialogAction 
-              onClick={handlePurchase} 
-              disabled={isLoading} 
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? 'جاري الشراء...' : 'تأكيد الشراء'}
-            </AlertDialogAction>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <Button 
+      onClick={handlePurchase} 
+      className="w-full bg-blue-600 hover:bg-blue-700"
+      size="lg"
+      disabled={isLoading}
+    >
+      <ShoppingCart className="mr-2 h-5 w-5" />
+      {isLoading ? 'جاري الشراء...' : 'الشراء الآن'}
+    </Button>
   );
 }; 

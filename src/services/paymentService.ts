@@ -88,6 +88,7 @@ export interface CreateListingPaymentDto {
   amount: number;
   paymentMethod: string;
   notes: string;
+  transactionId?: string;
 }
 
 export interface CreateAuctionPaymentDto {
@@ -95,6 +96,7 @@ export interface CreateAuctionPaymentDto {
   amount: number;
   paymentMethod: string;
   notes: string;
+  transactionId?: string;
 }
 
 export interface UpdatePaymentDto {
@@ -117,15 +119,19 @@ class PaymentService {
   async createListingPayment(data: CreateListingPaymentDto): Promise<Payment> {
     try {
       console.log('Creating listing payment:', data);
+      console.log('Listing payment transactionId:', data.transactionId);
       
       const response = await axiosInstance.post<PaymentResponse>('/listing/' + data.listingId, {
         listingId: data.listingId,
         amount: data.amount,
         paymentMethod: data.paymentMethod,
-        notes: data.notes
+        notes: data.notes,
+        transactionId: data.transactionId
       });
       
       console.log('Payment creation response:', response.data);
+      console.log('Payment response data with transactionId:', 
+        (response.data.data as Payment).transactionId);
       
       if (!response.data || !response.data.data) {
         throw new Error('Invalid response from payment creation');
@@ -140,12 +146,21 @@ class PaymentService {
 
   // Create an auction payment
   async createAuctionPayment(data: CreateAuctionPaymentDto): Promise<Payment> {
+    console.log('Creating auction payment:', data);
+    console.log('Auction payment transactionId:', data.transactionId);
+    
     const response = await axiosInstance.post<PaymentResponse>('/auction/' + data.auctionId, {
       auctionId: data.auctionId,
       amount: data.amount,
       paymentMethod: data.paymentMethod,
-      notes: data.notes
+      notes: data.notes,
+      transactionId: data.transactionId
     });
+    
+    console.log('Auction payment creation response:', response.data);
+    console.log('Auction payment response data with transactionId:', 
+      (response.data.data as Payment).transactionId);
+    
     return response.data.data as Payment;
   }
 

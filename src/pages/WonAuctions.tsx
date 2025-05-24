@@ -141,17 +141,24 @@ const WonAuctions: React.FC = () => {
       const transaction = await transactionService.createTransaction({
         amount: amount,
         type: TransactionType.AuctionPayment,
-        description: `Payment for auction #${auctionId}`,
+        description: `Payment for: ${wonAuction.name}`,
         auctionId: auctionId
       });
+
+      console.log('Transaction created for auction payment:', transaction);
+      console.log('Auction payment transaction ID:', transaction.transactionId);
 
       // 2. Create payment with the transactionId from the transaction
       const payment = await paymentService.createAuctionPayment({
         auctionId: auctionId,
         amount: amount,
         paymentMethod: 'CreditCard',
-        notes: `Payment for auction #${auctionId}`
+        notes: `Payment for: ${wonAuction.name}`,
+        transactionId: transaction.transactionId.toString()
       });
+
+      console.log('Auction payment created:', payment);
+      console.log('Auction payment with transaction ID:', payment.transactionId);
 
       // 3. Navigate to payment page
       navigate(`/payment/${payment.id}`);

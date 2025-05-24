@@ -9,13 +9,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
-import { CreditCard, Wallet, Banknote } from 'lucide-react';
+import { CreditCard, Wallet, Building2, Truck } from 'lucide-react';
 
 const PaymentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState('CreditCard');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch payment details
   const { data: payment, isLoading, error } = useQuery({
@@ -25,14 +26,31 @@ const PaymentPage: React.FC = () => {
   });
 
   const handleUpdatePayment = async () => {
+    if (!payment) return;
+    
+    setIsProcessing(true);
     try {
       await paymentService.updatePayment(Number(id), {
         paymentMethod: selectedMethod,
       });
-      toast.success('تم تحديث طريقة الدفع بنجاح');
-      navigate('/auctions/won');
+      
+      // Prepare checkout data
+      const checkoutData = {
+        id: payment.auctionId || payment.listingId,
+        type: payment.auctionId ? 'auction' : 'listing',
+        amount: payment.amount,
+        title: payment.notes?.replace('Payment for: ', '') || `${payment.auctionId ? 'Auction' : 'Listing'} #${payment.id}`,
+        paymentMethod: selectedMethod
+      };
+
+      // Navigate to checkout with payment data
+      navigate(`/checkout/${id}`, { 
+        state: { checkoutData }
+      });
     } catch (error) {
       toast.error('حدث خطأ أثناء تحديث طريقة الدفع');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -40,9 +58,9 @@ const PaymentPage: React.FC = () => {
     if (!payment) return;
     setIsCancelling(true);
     try {
-      // 1. Delete the payment
+      // Delete the payment
       await paymentService.deletePayment(payment.id);
-      // 2. Cancel the transaction if there's a transaction ID
+      // Cancel the transaction if there's a transaction ID
       if (payment.transactionId) {
         await transactionService.updateTransaction(Number(payment.transactionId), { status: TransactionStatus.Cancelled });
       }
@@ -104,9 +122,17 @@ const PaymentPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2 space-x-reverse p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                    <RadioGroupItem value="BankTransfer" id="bank-transfer" />
+                    <Label htmlFor="bank-transfer" className="flex items-center gap-2 cursor-pointer">
+                      <Building2 className="w-5 h-5" />
+                      تحويل بنكي
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 space-x-reverse p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
                     <RadioGroupItem value="CashOnDelivery" id="cash" />
                     <Label htmlFor="cash" className="flex items-center gap-2 cursor-pointer">
-                      <Banknote className="w-5 h-5" />
+                      <Truck className="w-5 h-5" />
                       الدفع عند الاستلام
                     </Label>
                   </div>
@@ -115,11 +141,11 @@ const PaymentPage: React.FC = () => {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handleCancelPayment} disabled={isCancelling}>
+            <Button variant="outline" onClick={handleCancelPayment} disabled={isCancelling || isProcessing}>
               {isCancelling ? 'جاري الإلغاء...' : 'إلغاء'}
             </Button>
-            <Button onClick={handleUpdatePayment}>
-              تأكيد طريقة الدفع
+            <Button onClick={handleUpdatePayment} disabled={isCancelling || isProcessing}>
+              {isProcessing ? 'جاري المعالجة...' : 'متابعة الدفع'}
             </Button>
           </CardFooter>
         </Card>
