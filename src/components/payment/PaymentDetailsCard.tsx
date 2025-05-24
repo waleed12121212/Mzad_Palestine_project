@@ -2,7 +2,7 @@ import React from 'react';
 import { Payment } from '@/services/paymentService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Wallet, Banknote, Clock, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { CreditCard, Wallet, Banknote, Clock, CheckCircle, AlertTriangle, XCircle, Building2, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -23,8 +23,10 @@ const PaymentDetailsCard: React.FC<PaymentDetailsCardProps> = ({
         return <CreditCard className="h-5 w-5 text-blue-500" />;
       case 'PayPal':
         return <Wallet className="h-5 w-5 text-blue-500" />;
+      case 'BankTransfer':
+        return <Building2 className="h-5 w-5 text-blue-500" />;
       case 'CashOnDelivery':
-        return <Banknote className="h-5 w-5 text-green-500" />;
+        return <Truck className="h-5 w-5 text-green-500" />;
       default:
         return <CreditCard className="h-5 w-5 text-gray-500" />;
     }
@@ -61,7 +63,7 @@ const PaymentDetailsCard: React.FC<PaymentDetailsCardProps> = ({
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'PPP', { locale: ar });
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ar });
     } catch (error) {
       return dateString;
     }
@@ -98,8 +100,9 @@ const PaymentDetailsCard: React.FC<PaymentDetailsCardProps> = ({
             <span className="font-medium">
               {payment.method === 'CreditCard' && 'بطاقة ائتمان'}
               {payment.method === 'PayPal' && 'باي بال'}
+              {payment.method === 'BankTransfer' && 'تحويل بنكي'}
               {payment.method === 'CashOnDelivery' && 'الدفع عند الاستلام'}
-              {!['CreditCard', 'PayPal', 'CashOnDelivery'].includes(payment.method) && payment.method}
+              {!['CreditCard', 'PayPal', 'BankTransfer', 'CashOnDelivery'].includes(payment.method) && payment.method}
             </span>
           </div>
 

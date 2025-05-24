@@ -30,7 +30,7 @@ const TransactionWithPaymentDetails: React.FC<TransactionWithPaymentDetailsProps
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'PPP', { locale: ar });
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ar });
     } catch (error) {
       return dateString;
     }

@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '@/utils/formatters';
@@ -124,6 +125,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
+  const formatDateTime = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ar });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-4">جاري التحميل...</div>;
   }
@@ -209,7 +218,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(transaction.transactionDate).toLocaleDateString('ar-EG')}
+                    {formatDateTime(transaction.transactionDate)}
                   </TableCell>
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>
