@@ -411,7 +411,7 @@ const Index = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">المزادات</h2>
+            <h2 className="heading-lg">المزادات الرائجة</h2>
             <Link to="/auctions" className="text-blue dark:text-blue-light hover:underline flex items-center">
               عرض الكل <ChevronRight className="h-5 w-5" />
             </Link>

@@ -56,6 +56,20 @@ export interface CreateAuctionDto {
   userId: number;
 }
 
+interface UpdateAuctionDto {
+  title?: string;
+  description?: string;
+  address?: string;
+  startDate?: string;
+  endDate?: string;
+  reservePrice?: number;
+  bidIncrement?: number;
+  categoryId?: number;
+  status?: number;
+  imagesToDelete?: string[];
+  newImages?: string[];
+}
+
 class AuctionService {
   async createAuction(data: CreateAuctionDto): Promise<ApiResponse<Auction>> {
     try {
@@ -215,13 +229,13 @@ class AuctionService {
     }
   }
 
-  async updateAuction(auctionId: number, data: Partial<CreateAuctionDto>): Promise<ApiResponse<Auction>> {
+  async updateAuction(auctionId: number, data: UpdateAuctionDto): Promise<ApiResponse<Auction>> {
     try {
-      // Handle image upload if there are blob URLs
-      const processedImages: string[] = [];
+      // Handle new images if they are blob URLs
+      const processedNewImages: string[] = [];
       
-      if (data.images && data.images.length > 0) {
-        for (const imageUrl of data.images) {
+      if (data.newImages && data.newImages.length > 0) {
+        for (const imageUrl of data.newImages) {
           if (imageUrl.startsWith('blob:')) {
             try {
               // Convert blob URL to File object
@@ -231,21 +245,21 @@ class AuctionService {
               
               // Upload the image
               const uploadResult = await imageService.uploadImage(file);
-              processedImages.push(uploadResult.url);
+              processedNewImages.push(uploadResult.url);
             } catch (error) {
               console.error('Image upload error:', error);
               throw new Error('فشل تحميل الصورة');
             }
           } else {
-            processedImages.push(imageUrl);
+            processedNewImages.push(imageUrl);
           }
         }
       }
 
-      // Prepare update data
+      // Prepare update data with processed images
       const updateData = {
         ...data,
-        ...(data.images && { images: processedImages })
+        newImages: processedNewImages
       };
 
       const response = await axios.put<ApiResponse<Auction>>(
