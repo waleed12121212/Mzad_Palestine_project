@@ -148,15 +148,19 @@ const HowItWorks: React.FC = () => {
         </div>
 
         {/* قسم الدعم */}
-        <div className="text-center bg-blue/5 dark:bg-blue/10 p-10 rounded-xl rtl">
-          <HelpCircle className="h-16 w-16 mx-auto text-blue mb-4" />
-          <h2 className="text-2xl font-bold mb-4">هل تحتاج إلى مساعدة إضافية؟</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-xl mx-auto">
-            فريق خدمة العملاء لدينا متاح لمساعدتك في أي استفسارات أو مشاكل قد تواجهها.
-          </p>
-          <Button asChild>
-            <Link to="/contact">تواصل معنا</Link>
-          </Button>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-l from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-10 rounded-2xl shadow-lg mt-16 rtl animate-fade-in">
+          <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-right">
+            <HelpCircle className="h-20 w-20 text-blue-700 dark:text-blue-300 mb-4 animate-bounce-slow" />
+            <p className="text-gray-600 dark:text-gray-300 max-w-md text-lg">
+              فريق خدمة العملاء لدينا متاح لمساعدتك في أي استفسارات أو مشاكل قد تواجهها.
+            </p>
+          </div>
+          <div className="flex-1 flex flex-col items-center md:items-end text-center md:text-right">
+            <h2 className="text-3xl font-extrabold mb-4 text-blue-900 dark:text-blue-100">هل تحتاج إلى مساعدة إضافية؟</h2>
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3 rounded-xl shadow-md">
+              <Link to="/contact">تواصل مع الدعم الفني</Link>
+            </Button>
+          </div>
         </div>
       </div>
   );
@@ -179,22 +183,18 @@ const StepCard: React.FC<StepCardProps> = ({
 }) => {
   return (
     <div className={`
-      relative p-6 rounded-lg transition-all ${
-        variant === "light" 
-          ? "bg-white dark:bg-gray-800 shadow-sm hover:shadow" 
-          : "border border-gray-200 dark:border-gray-800 hover:border-blue dark:hover:border-blue"
-      }
-    `}>
-      <div className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center bg-blue/10 dark:bg-blue/20 rounded-full">
-        <span className="text-blue font-medium">{number}</span>
+      relative group bg-gradient-to-br ${variant === "light" ? "from-green-50 to-green-100 dark:from-green-900 dark:to-green-800" : "from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800"} rounded-2xl p-8 shadow-lg hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 flex flex-col items-center text-center min-h-[320px]`}
+    >
+      <div className={`absolute -top-7 right-7 w-14 h-14 flex items-center justify-center rounded-full shadow-lg border-4 border-white dark:border-gray-900 text-2xl font-bold z-10 ${variant === "light" ? "bg-gradient-to-tr from-green-400 to-green-600 text-white" : "bg-gradient-to-tr from-blue-400 to-blue-600 text-white"}`}>
+        {number}
       </div>
-      <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-700 inline-block mb-4">
-        <div className="h-6 w-6">
+      <div className="mb-4 mt-6">
+        <span className={`inline-flex items-center justify-center w-16 h-16 rounded-full shadow-lg text-3xl ${variant === "light" ? "bg-white dark:bg-gray-800 text-green-600" : "bg-white dark:bg-gray-800 text-blue-600"}`}>
           {icon}
-        </div>
+        </span>
       </div>
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600 dark:text-gray-400">{description}</p>
+      <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-200">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300 text-center">{description}</p>
     </div>
   );
 };

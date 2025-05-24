@@ -407,7 +407,27 @@ const Index = () => {
           )}
         </div>
       </section>
-
+      <section className="py-12 bg-gradient-to-r from-blue/5 to-green/5 dark:from-blue/10 dark:to-green/10">
+        <div className="container mx-auto px-4">
+          {/* بطاقة الإعلان الأولى في صف منفصل */}
+          <div className="mb-6">
+            <div className="relative rounded-xl overflow-hidden shadow-lg w-full">
+              <Link to={ads[1].link}>
+                <div className="w-full h-full">
+                  <AdCard
+                    id={ads[1].id}
+                    title={ads[1].title}
+                    description={ads[1].description}
+                    imageUrl={ads[1].imageUrl}
+                    link={ads[1].link}
+                    linkText={ads[1].linkText || "عرض التفاصيل"}
+                  />
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8 rtl">
@@ -511,27 +531,22 @@ const Index = () => {
 
       <section className="py-12 bg-gradient-to-r from-blue/5 to-green/5 dark:from-blue/10 dark:to-green/10">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">عروض خاصة</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {ads.map(ad => (
-              <div key={ad.id} className="relative rounded-xl overflow-hidden shadow-lg">
-                <Link to={ad.link}>
-                  <div className="w-full h-full">
-                    <AdCard
-                      id={ad.id}
-                      title={ad.title}
-                      description={ad.description}
-                      imageUrl={ad.imageUrl}
-                      link={ad.link}
-                      linkText={ad.linkText || "عرض التفاصيل"}
-                    />
-                  </div>
-                </Link>
-              </div>
-            ))}
+          {/* بطاقة الإعلان الأولى في صف منفصل */}
+          <div className="mb-6">
+            <div className="relative rounded-xl overflow-hidden shadow-lg w-full">
+              <Link to={ads[0].link}>
+                <div className="w-full h-full">
+                  <AdCard
+                    id={ads[0].id}
+                    title={ads[0].title}
+                    description={ads[0].description}
+                    imageUrl={ads[0].imageUrl}
+                    link={ads[0].link}
+                    linkText={ads[0].linkText || "عرض التفاصيل"}
+                  />
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
