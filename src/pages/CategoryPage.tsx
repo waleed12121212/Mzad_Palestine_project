@@ -35,7 +35,6 @@ import {
   Tag
 } from 'lucide-react';
 
-import PageWrapper from '@/components/layout/PageWrapper';
 import AuctionCard from '@/components/ui/AuctionCard';
 import ProductCard from '@/components/ui/ProductCard';
 import { categoryService } from '@/services/categoryService';
@@ -381,20 +380,17 @@ const CategoryPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <PageWrapper>
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-center items-center h-64">
             <Loader2 className="w-12 h-12 text-blue animate-spin" />
             <span className="mr-2">جاري تحميل البيانات...</span>
           </div>
         </div>
-      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <PageWrapper>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-red-600 mb-4">{error}</h2>
@@ -406,12 +402,10 @@ const CategoryPage: React.FC = () => {
             </Button>
           </div>
         </div>
-      </PageWrapper>
     );
   }
 
   return (
-    <PageWrapper>
       <div className="container mx-auto px-4 py-8">
         {/* Filter and Content Area */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -679,7 +673,6 @@ const CategoryPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </PageWrapper>
   );
 };
 

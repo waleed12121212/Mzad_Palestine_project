@@ -4,7 +4,6 @@ import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle, HelpCircle, Cr
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/LanguageContext';
-import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
@@ -132,7 +131,6 @@ const Navbar: React.FC = () => {
               </button>
             </form>
 
-            <LanguageSwitcher />
             <DarkModeToggle />
 
             <div className="flex items-center gap-2">
@@ -264,7 +262,6 @@ const Navbar: React.FC = () => {
               )}
               <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between">
-                  <LanguageSwitcher />
                   <DarkModeToggle />
                 </div>
               </div>
