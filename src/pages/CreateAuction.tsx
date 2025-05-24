@@ -329,7 +329,7 @@ const CreateAuction = () => {
     try {
       let price: number;
 
-      if (formData.category === "15") { // Laptop category
+      if (formData.category === "8") { // Laptop category
         // Format laptop data according to API requirements
         const formattedLaptopData = {
           brand: laptopData.brand,
@@ -379,7 +379,7 @@ const CreateAuction = () => {
 
         console.log('Sending car data:', formattedCarData);
         price = await predictionService.predictCarPrice(formattedCarData);
-      } else if (formData.category === "10") { // Mobile category
+      } else if (formData.category === "5") { // Mobile category
         // Format mobile data according to API requirements
         const formattedMobileData = {
           deviceName: mobileData.deviceName,
@@ -519,14 +519,14 @@ const CreateAuction = () => {
                       id="category"
                       name="category"
                       value={formData.category}
-                      onChange={handleChange}
+                      onChange={e => { handleChange(e); console.log('Selected category value:', e.target.value); }}
                       className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                       required
                     >
                       <option value="">اختر فئة</option>
                       {categories && categories.length > 0 ? (
                         categories.map(category => (
-                          <option key={category.id} value={category.id}>
+                          <option key={category.id} value={category.id.toString()}>
                             {category.name}
                           </option>
                         ))
@@ -596,7 +596,7 @@ const CreateAuction = () => {
                   )}
 
                   {/* AI Price Prediction Button */}
-                  {(formData.category === "15" || formData.category === "2" || formData.category === "10") && (
+                  {(formData.category === "8" || formData.category === "2" || formData.category === "5") && (
                     <div className="mt-4">
                       <button
                         type="button"

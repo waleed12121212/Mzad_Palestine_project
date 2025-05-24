@@ -362,37 +362,7 @@ const Index = () => {
 
       <section className="py-8 -mt-6 relative z-20">
         <div className="container mx-auto px-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-5 glass-morphism animate-slide-up">
-            <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row items-center gap-4 rtl">
-              <div className="relative flex-grow">
-                <input
-                  type="text"
-                  placeholder="ابحث عن منتجات، عقارات، سيارات..."
-                  className="w-full py-3 px-5 pl-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute top-1/2 transform -translate-y-1/2 left-4">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </button>
-              </div>
-              <select 
-                className="py-3 px-5 rounded-xl bg-gray-100 dark:bg-gray-700 border-none w-full md:w-48 text-base focus:ring-2"
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
-                value={selectedCategory || ""}
-              >
-                <option value="">كل الفئات</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="btn-primary rounded-xl py-3 w-full md:w-auto md:px-8">
-                بحث
-              </button>
-            </form>
-          </div>
+          {/* تم حذف فورم البحث بناءً على طلب المستخدم */}
         </div>
       </section>
 

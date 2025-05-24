@@ -27,6 +27,25 @@ interface AuctionCardProps {
   ownerView?: boolean;
   errorState?: boolean;
   isPending?: boolean;
+  categoryName?: string;
+  phoneData?: {
+    deviceName: string;
+    batteryCapacity: number;
+    displaySize: number;
+    storage: number;
+    ram: number;
+    rearCamera: string;
+    chargingSpeed: number;
+  };
+  laptopData?: {
+    brand: string;
+    processorName: string;
+    displayType: string;
+    gpu: string;
+    ramSize: number;
+    displaySize: number;
+    ssdSize: number;
+  };
 }
 
 const AuctionCard: React.FC<AuctionCardProps> = ({
@@ -47,7 +66,10 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   onFavoriteToggle,
   ownerView = false,
   errorState = false,
-  isPending = false
+  isPending = false,
+  categoryName,
+  phoneData,
+  laptopData
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -286,6 +308,29 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
       
       <div className="p-4">
         <h3 className="text-lg font-semibold mb-2 line-clamp-1">{title}</h3>
+        {/* مواصفات الهاتف */}
+        {categoryName === "هواتف" && phoneData && (
+          <div className="mb-2 text-xs text-gray-700 dark:text-gray-300 grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>اسم الجهاز: <span className="font-semibold">{phoneData.deviceName}</span></span>
+            <span>بطارية: <span className="font-semibold">{phoneData.batteryCapacity}mAh</span></span>
+            <span>شاشة: <span className="font-semibold">{phoneData.displaySize}"</span></span>
+            <span>تخزين: <span className="font-semibold">{phoneData.storage}GB</span></span>
+            <span>رام: <span className="font-semibold">{phoneData.ram}GB</span></span>
+            <span>كاميرا: <span className="font-semibold">{phoneData.rearCamera}</span></span>
+            <span>شحن سريع: <span className="font-semibold">{phoneData.chargingSpeed}W</span></span>
+          </div>
+        )}
+        {/* مواصفات اللابتوب */}
+        {categoryName === "لابتوبات" && laptopData && (
+          <div className="mb-2 text-xs text-gray-700 dark:text-gray-300 grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>الماركة: <span className="font-semibold">{laptopData.brand}</span></span>
+            <span>المعالج: <span className="font-semibold">{laptopData.processorName}</span></span>
+            <span>الشاشة: <span className="font-semibold">{laptopData.displayType} - {laptopData.displaySize}"</span></span>
+            <span>كرت الشاشة: <span className="font-semibold">{laptopData.gpu}</span></span>
+            <span>رام: <span className="font-semibold">{laptopData.ramSize}GB</span></span>
+            <span>SSD: <span className="font-semibold">{laptopData.ssdSize}GB</span></span>
+          </div>
+        )}
         <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">{description}</p>
         
         <div className="flex justify-between items-center mb-4">

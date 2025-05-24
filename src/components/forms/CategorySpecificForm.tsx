@@ -84,7 +84,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
   const labelClasses = "block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300";
   const requiredStar = <span className="text-red-500 ml-1">*</span>;
 
-  if (category === "15") { // Laptop
+  const cat = category?.toString();
+  if (cat === "8") { // Laptop
     return (
       <div className={formClasses}>
         <div className="col-span-2 mb-4 flex items-center gap-2 text-blue-600 dark:text-blue-400">
@@ -252,7 +253,7 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
     );
   }
 
-  if (category === "2") { // Car
+  if (cat === "2") { // Car
     return (
       <div className={formClasses}>
         <div className="col-span-2 mb-4 flex items-center gap-2 text-blue-600 dark:text-blue-400">
@@ -650,7 +651,7 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
     );
   }
 
-  if (category === "10") { // Mobile
+  if (cat === "5") { // Mobile
     return (
       <div className={formClasses}>
         <div className="col-span-2 mb-4 flex items-center gap-2 text-blue-600 dark:text-blue-400">

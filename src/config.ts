@@ -1,1 +1,1 @@
-export const API_BASE_URL = import.meta.env.DEV ? '' : 'http://mazadpalestine.runasp.net'; 
+export const API_BASE_URL = 'http://mazadpalestine.runasp.net'; 

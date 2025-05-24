@@ -124,7 +124,7 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
       },
-      '/PhonePrediction': {
+      '/Phone': {
         target: API_URL,
         changeOrigin: true,
         secure: false,

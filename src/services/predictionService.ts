@@ -150,7 +150,8 @@ class PredictionService {
 
   async predictMobilePrice(data: MobilePredictionData): Promise<number> {
     try {
-      const response = await predictionAxios.post('/PhonePrediction/predict', data);
+      const response = await predictionAxios.post('/Phone/predict', data);
+      // Check if response.data exists and has the predictedPrice property
       if (!response.data || typeof response.data !== 'object') {
         throw new Error('Invalid response format from server');
       }
