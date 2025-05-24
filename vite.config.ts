@@ -118,16 +118,43 @@ export default defineConfig(({ mode }) => ({
         target: API_URL,
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/LaptopPrediction/, '/LaptopPrediction'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       },
       '/CarPrediction': {
         target: API_URL,
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/CarPrediction/, '/CarPrediction'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       },
       '/Phone': {
         target: API_URL,
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/Phone/, '/Phone'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       },
       '/Image': {
         target: API_URL,

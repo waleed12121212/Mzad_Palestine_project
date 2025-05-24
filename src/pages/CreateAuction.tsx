@@ -16,7 +16,26 @@ import {
   X,
   Upload,
   Lightbulb,
-  MapPin
+  MapPin,
+  Laptop,
+  Cpu,
+  Monitor,
+  Tv,
+  Maximize,
+  Gauge,
+  HardDrive,
+  Database,
+  Layers,
+  Plus,
+  Battery,
+  RefreshCw,
+  Zap,
+  Droplets,
+  Wind,
+  DoorOpen,
+  Cog,
+  Settings,
+  Ruler
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AIPriceSuggestion from "@/components/ui/AIPriceSuggestion";
@@ -38,6 +57,8 @@ const CreateAuction = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCategoryForm, setShowCategoryForm] = useState(false); // New state for form visibility
+  const [errors, setErrors] = useState<any>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -152,8 +173,12 @@ const CreateAuction = () => {
         categories
       });
       setSelectedCategory(category || null);
+      
+      // Reset form visibility when category changes
+      setShowCategoryForm(false);
     } else {
       setSelectedCategory(null);
+      setShowCategoryForm(false);
     }
   }, [formData.category, categories]);
 
@@ -179,7 +204,8 @@ const CreateAuction = () => {
     if (type === 'checkbox') {
       setLaptopData({ ...laptopData, [name]: (e.target as HTMLInputElement).checked });
     } else if (type === 'number') {
-      setLaptopData({ ...laptopData, [name]: parseFloat(value) || 0 });
+      // Allow empty values (will be converted to '' which is falsy)
+      setLaptopData({ ...laptopData, [name]: value === '' ? '' : parseFloat(value) });
     } else {
       setLaptopData({ ...laptopData, [name]: value });
     }
@@ -188,7 +214,8 @@ const CreateAuction = () => {
   const handleCarDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'number') {
-      setCarData({ ...carData, [name]: parseFloat(value) || 0 });
+      // Allow empty values (will be converted to '' which is falsy)
+      setCarData({ ...carData, [name]: value === '' ? '' : parseFloat(value) });
     } else {
       setCarData({ ...carData, [name]: value });
     }
@@ -199,7 +226,8 @@ const CreateAuction = () => {
     if (type === 'checkbox') {
       setMobileData({ ...mobileData, [name]: (e.target as HTMLInputElement).checked });
     } else if (type === 'number') {
-      setMobileData({ ...mobileData, [name]: parseFloat(value) || 0 });
+      // Allow empty values (will be converted to '' which is falsy)
+      setMobileData({ ...mobileData, [name]: value === '' ? '' : parseFloat(value) });
     } else {
       setMobileData({ ...mobileData, [name]: value });
     }
@@ -216,16 +244,50 @@ const CreateAuction = () => {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  const validateStep = () => {
+    let stepErrors: any = {};
+    
+    if (activeStep === 1) {
+      if (!formData.title.trim()) stepErrors.title = 'عنوان المزاد مطلوب';
+      if (!formData.description.trim()) stepErrors.description = 'وصف المزاد مطلوب';
+      if (!formData.category) stepErrors.category = 'يجب اختيار تصنيف';
+      if (!formData.location.trim()) stepErrors.location = 'موقع المزاد مطلوب';
+      
+      // Skip category-specific validation if the form isn't visible
+      // This allows users to proceed without filling in detailed fields
+    } else if (activeStep === 2) {
+      if (!formData.startingPrice || isNaN(Number(formData.startingPrice)) || Number(formData.startingPrice) <= 0) {
+        stepErrors.startingPrice = 'سعر البدء يجب أن يكون أكبر من 0';
+      }
+      if (!formData.incrementAmount || isNaN(Number(formData.incrementAmount)) || Number(formData.incrementAmount) <= 0) {
+        stepErrors.incrementAmount = 'الحد الأدنى للمزايدة يجب أن يكون أكبر من 0';
+      }
+      if (!formData.startDate) stepErrors.startDate = 'تاريخ بدء المزاد مطلوب';
+      if (!formData.startTime) stepErrors.startTime = 'وقت بدء المزاد مطلوب';
+      if (!formData.endDate) stepErrors.endDate = 'تاريخ انتهاء المزاد مطلوب';
+      if (!formData.endTime) stepErrors.endTime = 'وقت انتهاء المزاد مطلوب';
+      if (images.length === 0) stepErrors.images = 'يجب إضافة صورة واحدة على الأقل';
+    } else if (activeStep === 3) {
+      if (!formData.terms) setShowTermsError(true);
+    }
+    
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowTermsError(false);
+    
     if (activeStep === 3 && !formData.terms) {
       setShowTermsError(true);
       return;
     }
     
     if (activeStep < 3) {
-      setActiveStep(activeStep + 1);
+      if (validateStep()) {
+        setActiveStep(activeStep + 1);
+      }
     } else {
       try {
         setIsSubmitting(true);
@@ -433,6 +495,21 @@ const CreateAuction = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow container mx-auto px-4 py-8 pt-28">
+        <style>
+          {`
+            /* Chrome, Safari, Edge, Opera */
+            input[type=number]::-webkit-inner-spin-button,
+            input[type=number]::-webkit-outer-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+            
+            /* Firefox */
+            input[type=number] {
+              -moz-appearance: textfield;
+            }
+          `}
+        </style>
         <div className="mb-8 rtl">
           <h1 className="heading-lg mb-2">إنشاء مزاد جديد</h1>
           <p className="text-gray-600 dark:text-gray-300">
@@ -493,6 +570,7 @@ const CreateAuction = () => {
                       className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                       required
                     />
+                    {errors.title && <div className="text-red-500 text-sm mt-1">{errors.title}</div>}
                   </div>
 
                   <div>
@@ -509,6 +587,7 @@ const CreateAuction = () => {
                       className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                       required
                     />
+                    {errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
                   </div>
 
                   <div>
@@ -534,6 +613,7 @@ const CreateAuction = () => {
                         <option value="" disabled>جاري تحميل الفئات...</option>
                       )}
                     </select>
+                    {errors.category && <div className="text-red-500 text-sm mt-1">{errors.category}</div>}
                   </div>
 
                   <div>
@@ -580,7 +660,44 @@ const CreateAuction = () => {
                       className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                       required
                     />
+                    {errors.location && <div className="text-red-500 text-sm mt-1">{errors.location}</div>}
                   </div>
+
+                  {/* Button to show/hide category-specific form */}
+                  {formData.category && (formData.category === "8" || formData.category === "2" || formData.category === "5") && (
+                    <div className="mt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowCategoryForm(prev => !prev)}
+                        className={`
+                          w-full flex items-center justify-center gap-2 py-4 px-6 
+                          ${showCategoryForm 
+                            ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100" 
+                            : "bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white"
+                          } 
+                          rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1
+                          font-semibold text-base
+                        `}
+                      >
+                        {showCategoryForm ? (
+                          <>
+                            <span>إخفاء التفاصيل المتقدمة</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="animate-pulse">✨</span>
+                            <span>إظهار التفاصيل المتقدمة</span>
+                            <span className="animate-pulse">✨</span>
+                          </>
+                        )}
+                      </button>
+                      {!showCategoryForm && (
+                        <div className="text-center mt-2 text-sm text-blue-600">
+                          (قم بإدخال المزيد من التفاصيل للحصول على سعر مقترح)
+                    </div>
+                  )}
+                    </div>
+                  )}
 
                   {/* Category Specific Form */}
                   {formData.category && (
@@ -592,11 +709,12 @@ const CreateAuction = () => {
                       onLaptopDataChange={handleLaptopDataChange}
                       onCarDataChange={handleCarDataChange}
                       onMobileDataChange={handleMobileDataChange}
+                      showForm={showCategoryForm}
                     />
                   )}
 
-                  {/* AI Price Prediction Button */}
-                  {(formData.category === "8" || formData.category === "2" || formData.category === "5") && (
+                  {/* AI Price Prediction Button - Only show when category form is visible */}
+                  {showCategoryForm && (formData.category === "8" || formData.category === "2" || formData.category === "5") && (
                     <div className="mt-4">
                       <button
                         type="button"
@@ -623,23 +741,28 @@ const CreateAuction = () => {
 
                 <div className="grid grid-cols-1 gap-6">
                   {/* AI Price Info Banner */}
+                  {(formData.category === "8" || formData.category === "2" || formData.category === "5") && (
                   <div className="bg-blue/5 dark:bg-blue/10 rounded-lg p-4 border border-blue/20 flex items-start gap-3 mb-2">
                     <Lightbulb className="h-5 w-5 text-blue shrink-0 mt-1" />
                     <div>
                       <h3 className="font-medium text-blue">تحديد السعر التلقائي باستخدام الذكاء الاصطناعي</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        يمكنك الاستفادة من خوارزمية الذكاء الاصطناعي لتحليل السوق واقتراح السعر المثالي لمزادك.
+                          يمكنك العودة للخطوة السابقة واظهار التفاصيل المتقدمة لاستخدام خوارزمية الذكاء الاصطناعي لتحليل السوق واقتراح السعر المثالي لمزادك.
                       </p>
-                      <Link to="/ai-price-guide" target="_blank" className="text-sm text-blue hover:underline">
+                      <Link to="/ai-price-guide" className="text-sm text-blue hover:underline">
                         معرفة المزيد حول كيفية عمل هذه الميزة →
                       </Link>
                     </div>
                   </div>
+                  )}
 
                   {/* Show AI Price Suggestion */}
-                  {showPriceSuggestion && predictedPrice && (
-                  <AIPriceSuggestion
-                      suggestedPrice={predictedPrice}
+                  {showPriceSuggestion && (
+                    <AIPriceSuggestion
+                      category={formData.category}
+                      laptopData={laptopData}
+                      carData={carData}
+                      mobileData={mobileData}
                       onClose={() => setShowPriceSuggestion(false)}
                       onPriceSelect={(price) => {
                         setFormData(prev => ({
@@ -663,12 +786,14 @@ const CreateAuction = () => {
                           placeholder="0"
                           value={formData.startingPrice}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          step="0.01"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           required
                           min="1"
                         />
                         <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₪</span>
                       </div>
+                      {errors.startingPrice && <div className="text-red-500 text-sm mt-1">{errors.startingPrice}</div>}
                     </div>
 
                     <div>
@@ -683,12 +808,14 @@ const CreateAuction = () => {
                           placeholder="0"
                           value={formData.incrementAmount}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          step="0.01"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           required
                           min="1"
                         />
                         <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₪</span>
                       </div>
+                      {errors.incrementAmount && <div className="text-red-500 text-sm mt-1">{errors.incrementAmount}</div>}
                     </div>
                   </div>
 
@@ -704,12 +831,14 @@ const CreateAuction = () => {
                           name="startDate"
                           value={formData.startDate}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
                           min={new Date().toISOString().split('T')[0]}
+                          placeholder=""
                         />
                         <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>
+                      {errors.startDate && <div className="text-red-500 text-sm mt-1">{errors.startDate}</div>}
                     </div>
 
                     <div>
@@ -723,11 +852,13 @@ const CreateAuction = () => {
                           name="startTime"
                           value={formData.startTime}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
+                          placeholder=""
                         />
                         <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>
+                      {errors.startTime && <div className="text-red-500 text-sm mt-1">{errors.startTime}</div>}
                     </div>
                   </div>
 
@@ -743,12 +874,14 @@ const CreateAuction = () => {
                           name="endDate"
                           value={formData.endDate}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
                           min={new Date().toISOString().split('T')[0]}
+                          placeholder=""
                         />
                         <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>
+                      {errors.endDate && <div className="text-red-500 text-sm mt-1">{errors.endDate}</div>}
                     </div>
 
                     <div>
@@ -762,11 +895,13 @@ const CreateAuction = () => {
                           name="endTime"
                           value={formData.endTime}
                           onChange={handleChange}
-                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
+                          placeholder=""
                         />
                         <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>
+                      {errors.endTime && <div className="text-red-500 text-sm mt-1">{errors.endTime}</div>}
                     </div>
                   </div>
 
@@ -846,6 +981,7 @@ const CreateAuction = () => {
                       <Info className="h-4 w-4 mr-1" />
                       يجب إضافة صورة واحدة على الأقل لإنشاء المزاد
                     </p>
+                    {errors.images && <div className="text-red-500 text-sm mt-2">{errors.images}</div>}
                   </div>
                 </div>
               </div>
@@ -1003,9 +1139,15 @@ const CreateAuction = () => {
               )}
               
               <button
-                type="submit"
+                type={activeStep === 3 ? "submit" : "button"}
                 className="btn-primary flex items-center gap-2"
                 disabled={isSubmitting}
+                onClick={(e) => {
+                  if (activeStep < 3) {
+                    e.preventDefault();
+                    validateStep() && setActiveStep(prev => prev + 1);
+                  }
+                }}
               >
                 {isSubmitting ? (
                   <>

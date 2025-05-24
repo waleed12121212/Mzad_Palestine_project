@@ -6,9 +6,23 @@ import {
   Monitor,
   Gauge,
   Car,
-  Fuel,
   Battery,
-  Smartphone
+  Smartphone,
+  Ruler,
+  Droplets,
+  Settings,
+  Wind,
+  DoorOpen,
+  Cog,
+  RefreshCw,
+  Camera,
+  Zap,
+  Plus,
+  Tv,
+  Maximize,
+  Database,
+  Layers,
+  Tag
 } from 'lucide-react';
 
 interface CategorySpecificFormProps {
@@ -68,6 +82,7 @@ interface CategorySpecificFormProps {
   onLaptopDataChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onCarDataChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onMobileDataChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  showForm?: boolean;
 }
 
 const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
@@ -77,10 +92,14 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
   mobileData,
   onLaptopDataChange,
   onCarDataChange,
-  onMobileDataChange
+  onMobileDataChange,
+  showForm = false
 }) => {
+  if (!showForm) return null;
+
   const formClasses = "grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm";
   const inputClasses = "w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const numberInputClasses = `${inputClasses} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
   const labelClasses = "block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300";
   const requiredStar = <span className="text-red-500 ml-1">*</span>;
 
@@ -94,7 +113,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Tag className="h-4 w-4 text-gray-500" />
             العلامة التجارية {requiredStar}
           </label>
           <input
@@ -109,7 +129,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Cpu className="h-4 w-4 text-gray-500" />
             اسم المعالج {requiredStar}
           </label>
           <input
@@ -124,7 +145,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Tv className="h-4 w-4 text-gray-500" />
             نوع الشاشة {requiredStar}
           </label>
           <select
@@ -141,7 +163,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Monitor className="h-4 w-4 text-gray-500" />
             كرت الشاشة {requiredStar}
           </label>
           <input
@@ -156,15 +179,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Gauge className="h-4 w-4 text-gray-500" />
             سرعة المعالج (GHz) {requiredStar}
           </label>
           <input
             type="number"
             name="processorSpeed"
-            value={laptopData.processorSpeed}
+            value={laptopData.processorSpeed || ''}
             onChange={onLaptopDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 3.5"
             step="0.1"
             min="0"
@@ -173,15 +197,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Maximize className="h-4 w-4 text-gray-500" />
             حجم الشاشة (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             name="displaySize"
-            value={laptopData.displaySize}
+            value={laptopData.displaySize || ''}
             onChange={onLaptopDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 15.6"
             step="0.1"
             min="0"
@@ -190,15 +215,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <HardDrive className="h-4 w-4 text-gray-500" />
             حجم SSD (GB) {requiredStar}
           </label>
           <input
             type="number"
             name="ssdSize"
-            value={laptopData.ssdSize}
+            value={laptopData.ssdSize || ''}
             onChange={onLaptopDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 512"
             min="0"
             required
@@ -206,15 +232,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Database className="h-4 w-4 text-gray-500" />
             حجم HDD (GB) {requiredStar}
           </label>
           <input
             type="number"
             name="hddSize"
-            value={laptopData.hddSize}
+            value={laptopData.hddSize || ''}
             onChange={onLaptopDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 1000"
             min="0"
             required
@@ -222,15 +249,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Layers className="h-4 w-4 text-gray-500" />
             حجم الرام (GB) {requiredStar}
           </label>
           <input
             type="number"
             name="ramSize"
-            value={laptopData.ramSize}
+            value={laptopData.ramSize || ''}
             onChange={onLaptopDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 16"
             min="0"
             required
@@ -245,7 +273,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
             onChange={onLaptopDataChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <label className="mr-2 text-sm text-gray-700 dark:text-gray-300">
+          <label className="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            <Plus className="h-4 w-4 text-gray-500" />
             الرام قابل للتوسعة
           </label>
         </div>
@@ -265,7 +294,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         <input type="hidden" name="symboling" value="3" />
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Car className="h-4 w-4 text-gray-500" />
             العلامة التجارية {requiredStar}
           </label>
           <input
@@ -279,7 +309,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Car className="h-4 w-4 text-gray-500" />
             الموديل {requiredStar}
           </label>
           <input
@@ -293,7 +324,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Droplets className="h-4 w-4 text-gray-500" />
             نوع الوقود {requiredStar}
           </label>
           <select
@@ -310,7 +342,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Wind className="h-4 w-4 text-gray-500" />
             نوع الشحن {requiredStar}
           </label>
           <select
@@ -327,7 +360,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <DoorOpen className="h-4 w-4 text-gray-500" />
             عدد الأبواب {requiredStar}
           </label>
           <select
@@ -344,7 +378,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Car className="h-4 w-4 text-gray-500" />
             نوع الهيكل {requiredStar}
           </label>
           <select
@@ -364,7 +399,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Cog className="h-4 w-4 text-gray-500" />
             نظام الدفع {requiredStar}
           </label>
           <select
@@ -382,7 +418,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Settings className="h-4 w-4 text-gray-500" />
             موقع المحرك {requiredStar}
           </label>
           <select
@@ -398,81 +435,87 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             قاعدة العجلات (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             id="wheelBase"
             name="wheelBase"
-            value={carData.wheelBase}
+            value={carData.wheelBase || ''}
             onChange={onCarDataChange}
             step="0.1"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             طول السيارة (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             id="carLength"
             name="carLength"
-            value={carData.carLength}
+            value={carData.carLength || ''}
             onChange={onCarDataChange}
             step="0.1"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             عرض السيارة (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             id="carWidth"
             name="carWidth"
-            value={carData.carWidth}
+            value={carData.carWidth || ''}
             onChange={onCarDataChange}
             step="0.1"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             ارتفاع السيارة (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             id="carHeight"
             name="carHeight"
-            value={carData.carHeight}
+            value={carData.carHeight || ''}
             onChange={onCarDataChange}
             step="0.1"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Gauge className="h-4 w-4 text-gray-500" />
             وزن السيارة (كجم) {requiredStar}
           </label>
           <input
             type="number"
             id="curbWeight"
             name="curbWeight"
-            value={carData.curbWeight}
+            value={carData.curbWeight || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Settings className="h-4 w-4 text-gray-500" />
             نوع المحرك {requiredStar}
           </label>
           <select
@@ -491,7 +534,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             عدد الاسطوانات {requiredStar}
           </label>
           <select
@@ -512,21 +556,24 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Ruler className="h-4 w-4 text-gray-500" />
             حجم المحرك (CC) {requiredStar}
           </label>
           <input
             type="number"
             id="engineSize"
             name="engineSize"
-            value={carData.engineSize}
+            value={carData.engineSize || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            step="0.1"
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Droplets className="h-4 w-4 text-gray-500" />
             نظام الوقود {requiredStar}
           </label>
           <select
@@ -547,103 +594,110 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Settings className="h-4 w-4 text-gray-500" />
             نسبة التجويف {requiredStar}
           </label>
           <input
             type="number"
             id="boreRatio"
             name="boreRatio"
-            value={carData.boreRatio}
+            value={carData.boreRatio || ''}
             onChange={onCarDataChange}
             step="0.01"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Settings className="h-4 w-4 text-gray-500" />
             الشوط {requiredStar}
           </label>
           <input
             type="number"
             id="stroke"
             name="stroke"
-            value={carData.stroke}
+            value={carData.stroke || ''}
             onChange={onCarDataChange}
             step="0.01"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Settings className="h-4 w-4 text-gray-500" />
             نسبة الانضغاط {requiredStar}
           </label>
           <input
             type="number"
             id="compressionRatio"
             name="compressionRatio"
-            value={carData.compressionRatio}
+            value={carData.compressionRatio || ''}
             onChange={onCarDataChange}
             step="0.1"
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Gauge className="h-4 w-4 text-gray-500" />
             القوة الحصانية {requiredStar}
           </label>
           <input
             type="number"
             id="horsepower"
             name="horsepower"
-            value={carData.horsepower}
+            value={carData.horsepower || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Gauge className="h-4 w-4 text-gray-500" />
             الدوران الأقصى (RPM) {requiredStar}
           </label>
           <input
             type="number"
             id="peakRPM"
             name="peakRPM"
-            value={carData.peakRPM}
+            value={carData.peakRPM || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Droplets className="h-4 w-4 text-gray-500" />
             استهلاك الوقود في المدينة (MPG) {requiredStar}
           </label>
           <input
             type="number"
             id="cityMPG"
             name="cityMPG"
-            value={carData.cityMPG}
+            value={carData.cityMPG || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Droplets className="h-4 w-4 text-gray-500" />
             استهلاك الوقود على الطريق السريع (MPG) {requiredStar}
           </label>
           <input
             type="number"
             id="highwayMPG"
             name="highwayMPG"
-            value={carData.highwayMPG}
+            value={carData.highwayMPG || ''}
             onChange={onCarDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             required
           />
         </div>
@@ -660,7 +714,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Smartphone className="h-4 w-4 text-gray-500" />
             اسم الجهاز {requiredStar}
           </label>
           <input
@@ -675,15 +730,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Battery className="h-4 w-4 text-gray-500" />
             سعة البطارية (mAh) {requiredStar}
           </label>
           <input
             type="number"
             name="batteryCapacity"
-            value={mobileData.batteryCapacity}
+            value={mobileData.batteryCapacity || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 5000"
             min="0"
             required
@@ -691,15 +747,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Monitor className="h-4 w-4 text-gray-500" />
             حجم الشاشة (بوصة) {requiredStar}
           </label>
           <input
             type="number"
             name="displaySize"
-            value={mobileData.displaySize}
+            value={mobileData.displaySize || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 6.9"
             step="0.1"
             min="0"
@@ -708,15 +765,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
-            سعة التخزين (GB) {requiredStar}
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <HardDrive className="h-4 w-4 text-gray-500" />
+            حجم التخزين (GB) {requiredStar}
           </label>
           <input
             type="number"
             name="storage"
-            value={mobileData.storage}
+            value={mobileData.storage || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 256"
             min="0"
             required
@@ -724,15 +782,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Cpu className="h-4 w-4 text-gray-500" />
             حجم الرام (GB) {requiredStar}
           </label>
           <input
             type="number"
             name="ram"
-            value={mobileData.ram}
+            value={mobileData.ram || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 12"
             min="0"
             required
@@ -740,15 +799,16 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <RefreshCw className="h-4 w-4 text-gray-500" />
             معدل تحديث الشاشة (Hz) {requiredStar}
           </label>
           <input
             type="number"
             name="refreshRate"
-            value={mobileData.refreshRate}
+            value={mobileData.refreshRate || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 120"
             min="0"
             required
@@ -756,7 +816,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Camera className="h-4 w-4 text-gray-500" />
             الكاميرا الأمامية {requiredStar}
           </label>
           <input
@@ -771,7 +832,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Camera className="h-4 w-4 text-gray-500" />
             الكاميرا الخلفية {requiredStar}
           </label>
           <input
@@ -780,21 +842,22 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
             value={mobileData.rearCamera}
             onChange={onMobileDataChange}
             className={inputClasses}
-            placeholder="مثال: 200 MP"
+            placeholder="مثال: 108 MP, 12 MP, 10 MP"
             required
           />
         </div>
 
         <div>
-          <label className={labelClasses}>
+          <label className={`${labelClasses} flex items-center gap-1`}>
+            <Zap className="h-4 w-4 text-gray-500" />
             سرعة الشحن (واط) {requiredStar}
           </label>
           <input
             type="number"
             name="chargingSpeed"
-            value={mobileData.chargingSpeed}
+            value={mobileData.chargingSpeed || ''}
             onChange={onMobileDataChange}
-            className={inputClasses}
+            className={numberInputClasses}
             placeholder="مثال: 45"
             min="0"
             required
@@ -809,7 +872,8 @@ const CategorySpecificForm: React.FC<CategorySpecificFormProps> = ({
             onChange={onMobileDataChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <label className="mr-2 text-sm text-gray-700 dark:text-gray-300">
+          <label className="ml-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+            <Plus className="h-4 w-4 text-gray-500" />
             الرام قابل للتوسعة
           </label>
         </div>

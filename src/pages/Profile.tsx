@@ -147,7 +147,7 @@ const Profile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/auth/login');
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الخروج",

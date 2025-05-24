@@ -44,6 +44,7 @@ import SellProduct from '@/pages/SellProduct';
 import Contact from '@/pages/Contact';
 import TransactionsPage from '@/pages/TransactionsPage';
 import TransactionDetailsPage from '@/pages/TransactionDetailsPage';
+import AIPriceGuide from '@/pages/AIPriceGuide';
 
 const queryClient = new QueryClient();
 
@@ -220,6 +221,7 @@ function App() {
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/ai-price-guide" element={<AIPriceGuide />} />
                     <Route path="/product-recommendation" element={<ProductRecommendation />} />
                     <Route path="/sell-product" element={<SellProduct />} />
                     <Route path="/contact" element={<Contact />} />
