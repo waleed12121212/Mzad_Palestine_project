@@ -42,4 +42,7 @@ export interface Auction {
   createdAt: string;
   updatedAt: string;
   bids: AuctionBid[];
-} 
+}
+
+// Export all transaction types
+export * from './transaction'; 

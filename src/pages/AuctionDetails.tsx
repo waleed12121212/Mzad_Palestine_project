@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, MessageCircle, Copy, Facebook, Twitter, Send, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -449,32 +449,26 @@ const AuctionDetails = () => {
     }
   };
 
-  const auctionUrl = window.location.href;
-  const handleCopy = () => {
-    navigator.clipboard.writeText(auctionUrl);
-    toast({
-      title: "تم نسخ الرابط",
-      description: "تم نسخ رابط المزاد إلى الحافظة",
-    });
+  const handleShareListing = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: auction?.title || 'مشاركة مزاد',
+        text: auction?.description || 'تفاصيل المزاد',
+        url: window.location.href,
+      }).catch((error) => {
+        console.error('Error sharing:', error);
+      });
+    } else {
+      // Fallback
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: 'تم نسخ الرابط',
+        description: 'يمكنك مشاركة الرابط مع الآخرين',
+      });
+    }
     setShowShareMenu(false);
   };
-  const handleShareWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(auctionUrl)}`, "_blank");
-    setShowShareMenu(false);
-  };
-  const handleShareTelegram = () => {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(auctionUrl)}`, "_blank");
-    setShowShareMenu(false);
-  };
-  const handleShareMessenger = () => {
-    window.open(`https://www.facebook.com/dialog/send?link=${encodeURIComponent(auctionUrl)}&app_id=YOUR_FACEBOOK_APP_ID&redirect_uri=${encodeURIComponent(auctionUrl)}`, "_blank");
-    setShowShareMenu(false);
-  };
-  const handleShareTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(auctionUrl)}`, "_blank");
-    setShowShareMenu(false);
-  };
-  
+
   const navigateToSellerProfile = () => {
     if (seller?.id) {
       navigate(`/profile/${seller.id}`);
@@ -876,31 +870,13 @@ const AuctionDetails = () => {
                         <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                         <span>المفضلة</span>
                       </button>
-                      <div className="relative">
                       <button 
-                          onClick={() => setShowShareMenu(!showShareMenu)}
+                        onClick={handleShareListing}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700"
                       >
                         <Share2 className="h-5 w-5" />
                         <span>مشاركة</span>
                       </button>
-                        {showShareMenu && (
-                          <div className="absolute z-50 bg-white dark:bg-gray-800 border rounded-lg shadow-lg mt-2 left-0 w-48">
-                            <button onClick={handleCopy} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                              <Copy className="h-4 w-4" /> نسخ الرابط
-                            </button>
-                            <button onClick={handleShareWhatsApp} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-green-50 dark:hover:bg-green-900/20">
-                              <MessageCircle className="h-4 w-4 text-green-600" /> واتساب
-                            </button>
-                            <button onClick={handleShareTelegram} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                              <Send className="h-4 w-4 text-blue-400" /> تيليجرام
-                            </button>
-                            <button onClick={handleShareMessenger} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                              <Facebook className="h-4 w-4 text-blue-600" /> ماسنجر
-                            </button>
-                          </div>
-                        )}
-                      </div>
                       {auction && (
                         <ReportDialog 
                           auctionId={auction.id}

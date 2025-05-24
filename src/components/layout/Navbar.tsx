@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle, HelpCircle } from "lucide-react";
+import { Menu, X, Search, Bell, MessageCircle, Heart, PlusCircle, HelpCircle, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -95,6 +95,11 @@ const Navbar: React.FC = () => {
             <DesktopNavLink href="/categories" active={isActive("/categories")}>
               تصفح الفئات
             </DesktopNavLink>
+            {isAuthenticated && (
+              <DesktopNavLink href="/transactions" active={isActive("/transactions")}>
+                المعاملات المالية
+              </DesktopNavLink>
+            )}
           </nav>
 
           {/* Search, User Actions */}
@@ -223,6 +228,14 @@ const Navbar: React.FC = () => {
               <MobileNavLink href="/categories" active={isActive("/categories")}>
                 تصفح الفئات
               </MobileNavLink>
+              {isAuthenticated && (
+                <MobileNavLink href="/transactions" active={isActive("/transactions")}>
+                  <div className="flex items-center">
+                    <CreditCard className="h-4 w-4 ml-2" />
+                    المعاملات المالية
+                  </div>
+                </MobileNavLink>
+              )}
               <MobileNavLink href="/support" active={isActive("/support")}>
                 الدعم الفني
               </MobileNavLink>

@@ -5,6 +5,7 @@ import { auctionService } from '@/services/auctionService';
 import { bidService } from '@/services/bidService';
 import { paymentService } from '@/services/paymentService';
 import { transactionService } from '@/services/transactionService';
+import { TransactionType } from '@/types/transaction';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,20 +135,22 @@ const WonAuctions: React.FC = () => {
         throw new Error('Auction not found');
       }
 
+      const amount = wonAuction.currentBid || wonAuction.currentPrice || wonAuction.reservePrice || 0;
+      
       // 1. Create transaction
       const transaction = await transactionService.createTransaction({
-        amount: wonAuction.currentBid || wonAuction.currentPrice || wonAuction.reservePrice || 0,
-        transactionType: 'Payment',
+        amount: amount,
+        type: TransactionType.AuctionPayment,
         description: `Payment for auction #${auctionId}`,
+        auctionId: auctionId
       });
 
       // 2. Create payment with the transactionId from the transaction
-      const payment = await paymentService.createPayment({
+      const payment = await paymentService.createAuctionPayment({
         auctionId: auctionId,
-        amount: transaction.amount,
-        method: 'CreditCard',
-        transactionId: String(transaction.transactionId),
-        notes: transaction.description,
+        amount: amount,
+        paymentMethod: 'CreditCard',
+        notes: `Payment for auction #${auctionId}`
       });
 
       // 3. Navigate to payment page

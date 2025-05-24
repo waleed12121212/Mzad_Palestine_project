@@ -42,6 +42,8 @@ import ProductRecommendation from '@/pages/ProductRecommendation';
 import BuyNow from '@/pages/BuyNow';
 import SellProduct from '@/pages/SellProduct';
 import Contact from '@/pages/Contact';
+import TransactionsPage from '@/pages/TransactionsPage';
+import TransactionDetailsPage from '@/pages/TransactionDetailsPage';
 
 const queryClient = new QueryClient();
 
@@ -226,6 +228,22 @@ function App() {
                       element={
                         <ProtectedRoute adminOnly>
                           <ReportManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/transactions"
+                      element={
+                        <ProtectedRoute>
+                          <TransactionsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/transactions/:id"
+                      element={
+                        <ProtectedRoute>
+                          <TransactionDetailsPage />
                         </ProtectedRoute>
                       }
                     />

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { paymentService, Payment } from '@/services/paymentService';
 import { transactionService } from '@/services/transactionService';
+import { TransactionStatus } from '@/types/transaction';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -26,7 +27,7 @@ const PaymentPage: React.FC = () => {
   const handleUpdatePayment = async () => {
     try {
       await paymentService.updatePayment(Number(id), {
-        method: selectedMethod,
+        paymentMethod: selectedMethod,
       });
       toast.success('تم تحديث طريقة الدفع بنجاح');
       navigate('/auctions/won');
@@ -41,8 +42,10 @@ const PaymentPage: React.FC = () => {
     try {
       // 1. Delete the payment
       await paymentService.deletePayment(payment.id);
-      // 2. Cancel the transaction
-      await transactionService.updateTransaction(Number(payment.transactionId), { status: 'Cancelled' });
+      // 2. Cancel the transaction if there's a transaction ID
+      if (payment.transactionId) {
+        await transactionService.updateTransaction(Number(payment.transactionId), { status: TransactionStatus.Cancelled });
+      }
       toast.success('تم إلغاء عملية الدفع');
       navigate('/auctions/won');
     } catch (error) {

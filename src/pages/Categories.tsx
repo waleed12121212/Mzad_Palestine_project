@@ -377,7 +377,7 @@ const Categories = () => {
       // Transform the data to ensure proper image handling
       const transformedData = Array.isArray(data) ? data.map(category => ({
         ...category,
-        imageUrl: category.imageUrl || category.image || 'https://placehold.co/600x400?text=No+Image'
+        imageUrl: category.imageUrl || 'https://placehold.co/600x400?text=No+Image'
       })) : [];
       
       setCategories(transformedData);
@@ -424,7 +424,7 @@ const Categories = () => {
     if (!selectedCategory) return;
 
     try {
-      await categoryService.updateCategory(selectedCategory.id, {
+      await categoryService.updateCategory(String(selectedCategory.id), {
         name: formData.name,
         description: formData.description
       });
@@ -476,7 +476,10 @@ const Categories = () => {
 
   // تصميم كرت التصنيف
   const CategoryCard = ({ category }) => (
-    <div className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0">
+    <Link 
+      to={`/categories/${category.id}`}
+      className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0 cursor-pointer transform transition-transform hover:scale-105"
+    >
       {/* صورة الخلفية */}
       <img
         src={category.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
@@ -507,7 +510,9 @@ const Categories = () => {
       {isAdmin && (
         <div className="absolute top-3 left-3 flex gap-2 z-20">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault(); // منع السلوك الافتراضي للرابط
+              e.stopPropagation(); // منع انتشار الحدث للأعلى
               setSelectedCategory(category);
               setFormData({
                 name: category.name,
@@ -523,7 +528,11 @@ const Categories = () => {
             <Edit className="h-5 w-5" />
           </button>
           <button
-            onClick={() => handleDeleteCategory(category.id)}
+            onClick={(e) => {
+              e.preventDefault(); // منع السلوك الافتراضي للرابط
+              e.stopPropagation(); // منع انتشار الحدث للأعلى
+              handleDeleteCategory(category.id);
+            }}
             className="bg-white/80 hover:bg-red-500 text-red-500 hover:text-white rounded-full p-2 transition"
             title="حذف"
           >
@@ -531,10 +540,10 @@ const Categories = () => {
           </button>
         </div>
       )}
-    </div>
+    </Link>
   );
 
-  const selectedCategoryObj = Array.isArray(categories) ? categories.find(c => c.id === category) : null;
+  const selectedCategoryObj = Array.isArray(categories) ? categories.find(c => String(c.id) === category) : null;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
