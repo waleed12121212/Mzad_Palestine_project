@@ -377,16 +377,30 @@ class ListingService {
   
   async purchaseListing(listingId: number): Promise<any> {
     try {
-      const response = await axios.post(`${API_URL}/${listingId}/purchase`, {}, {
+      // First, call the purchase endpoint
+      const purchaseResponse = await axios.post(`${API_URL}/${listingId}/purchase`, {}, {
+        headers: getAuthHeader()
+      });
+      
+      // Create a payment for this listing
+      const paymentResponse = await axios.post('/Payment/listing/' + listingId, {
+        amount: purchaseResponse.data.price || 0,
+        paymentMethod: 'pending',
+        notes: 'Payment for direct purchase'
+      }, {
         headers: getAuthHeader()
       });
       
       toast({
-        title: "تم شراء المنتج بنجاح",
-        description: "يمكنك متابعة حالة الطلب من صفحة المشتريات"
+        title: "تم بدء عملية الشراء",
+        description: "سيتم توجيهك إلى صفحة الدفع"
       });
       
-      return response.data;
+      // Return both responses, with payment ID for redirection
+      return {
+        purchase: purchaseResponse.data,
+        paymentId: paymentResponse.data.data.id || null
+      };
     } catch (error: any) {
       console.error(`Purchase listing ${listingId} error:`, error);
       

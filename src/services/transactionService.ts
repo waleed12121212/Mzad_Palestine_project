@@ -1,4 +1,14 @@
 import axios, { AxiosError } from 'axios';
+import {
+  Transaction,
+  CreateTransactionInput,
+  UpdateTransactionInput,
+  FilterTransactionParams,
+  ApiResponse,
+  TotalAmountResponse,
+  TransactionType,
+  TransactionStatus
+} from '@/types/transaction';
 
 // Use relative URL to work with the proxy
 const API_URL = '/Transaction';
@@ -68,38 +78,6 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export type TransactionType = 'Payment' | 'Refund';
-export type TransactionStatus = 'Pending' | 'Completed' | 'Refunded' | 'Cancelled';
-
-export interface Transaction {
-  transactionId: number;
-  userId: number;
-  amount: number;
-  transactionDate: string;
-  transactionType: TransactionType;
-  status: TransactionStatus;
-  description: string;
-  user: any | null; // Using any for now since the user type is quite large
-}
-
-export interface CreateTransactionInput {
-  amount: number;
-  transactionType: TransactionType;
-  description: string;
-}
-
-export interface UpdateTransactionInput {
-  amount?: number;
-  transactionType?: TransactionType;
-  description?: string;
-  status?: TransactionStatus;
-}
-
-export interface DateRangeParams {
-  startDate: string;
-  endDate: string;
-}
-
 export const transactionService = {
   // Create a new transaction
   createTransaction: async (data: CreateTransactionInput): Promise<Transaction> => {
@@ -109,42 +87,64 @@ export const transactionService = {
 
   // Get transaction by ID
   getTransactionById: async (id: number): Promise<Transaction> => {
-    const response = await axiosInstance.get(`/${id}`);
+    const response = await axiosInstance.get<ApiResponse<Transaction>>(`/${id}`);
     return response.data.data;
   },
 
   // Update transaction
   updateTransaction: async (id: number, data: UpdateTransactionInput): Promise<Transaction> => {
-    const response = await axiosInstance.put(`/${id}`, data);
-    return response.data.data;
-  },
-
-  // Delete transaction
-  deleteTransaction: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/${id}`);
-  },
-
-  // Get transactions by date range
-  getTransactionsByDateRange: async (params: DateRangeParams): Promise<Transaction[]> => {
-    const response = await axiosInstance.get('/date-range', { params });
+    const response = await axiosInstance.put<ApiResponse<Transaction>>(`/${id}`, data);
     return response.data.data;
   },
 
   // Get user's transactions
-  getUserTransactions: async (): Promise<Transaction[]> => {
-    const response = await axiosInstance.get('/user');
+  getUserTransactions: async (id?: number): Promise<Transaction[]> => {
+    try {
+      // Get current user ID from localStorage if not provided
+      if (!id) {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        id = user.id; // Get user ID from the stored user object
+      }
+      
+      if (!id) {
+        throw new Error('لم يتم العثور على معرف المستخدم');
+      }
+      
+      const response = await axiosInstance.get<ApiResponse<Transaction[]>>(`/user/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching user transactions:', error);
+      return [];
+    }
+  },
+
+  // Get auction transactions
+  getAuctionTransactions: async (auctionId: number): Promise<Transaction[]> => {
+    const response = await axiosInstance.get<ApiResponse<Transaction[]>>(`/auction/${auctionId}`);
+    return response.data.data;
+  },
+
+  // Get listing transactions
+  getListingTransactions: async (listingId: number): Promise<Transaction[]> => {
+    const response = await axiosInstance.get<ApiResponse<Transaction[]>>(`/listing/${listingId}`);
     return response.data.data;
   },
 
   // Process refund for a transaction
-  refundTransaction: async (id: number): Promise<{ success: boolean; message: string }> => {
-    const response = await axiosInstance.post(`/${id}/refund`);
+  refundTransaction: async (id: number): Promise<ApiResponse<any>> => {
+    const response = await axiosInstance.post<ApiResponse<any>>(`/${id}/refund`);
     return response.data;
   },
 
-  // Process payment for a transaction
-  processTransaction: async (id: number): Promise<{ success: boolean; message: string }> => {
-    const response = await axiosInstance.post(`/${id}/process`);
-    return response.data;
+  // Get total amount of transactions
+  getTotalAmount: async (): Promise<number> => {
+    const response = await axiosInstance.get<TotalAmountResponse>('/total');
+    return response.data.total;
+  },
+
+  // Filter transactions by status and date range
+  filterTransactions: async (params: FilterTransactionParams): Promise<Transaction[]> => {
+    const response = await axiosInstance.get<ApiResponse<Transaction[]>>('/filter', { params });
+    return response.data.data;
   }
 }; 

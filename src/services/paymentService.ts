@@ -72,30 +72,35 @@ axiosInstance.interceptors.response.use(
 export interface Payment {
   id: number;
   userId: number;
-  auctionId: number;
+  auctionId: number | null;
+  listingId: number | null;
   amount: number;
   method: string;
   status: string;
-  transactionId: string;
+  transactionId: string | null;
   notes: string;
   createdAt: string;
   updatedAt: string | null;
 }
 
-export interface CreatePaymentDto {
+export interface CreateListingPaymentDto {
+  listingId: number;
+  amount: number;
+  paymentMethod: string;
+  notes: string;
+}
+
+export interface CreateAuctionPaymentDto {
   auctionId: number;
   amount: number;
-  method: string;
-  transactionId: string;
+  paymentMethod: string;
   notes: string;
 }
 
 export interface UpdatePaymentDto {
   amount?: number;
-  method?: string;
-  transactionId?: string;
+  paymentMethod?: string;
   notes?: string;
-  status?: string;
 }
 
 export interface PaymentResponse {
@@ -103,11 +108,57 @@ export interface PaymentResponse {
   data: Payment | Payment[];
 }
 
+export interface ConfirmPaymentDto {
+  paymentIntentId: string;
+}
+
 class PaymentService {
-  // Create a new payment
-  async createPayment(data: CreatePaymentDto): Promise<Payment> {
-    const response = await axiosInstance.post<PaymentResponse>('', data);
+  // Create a listing payment
+  async createListingPayment(data: CreateListingPaymentDto): Promise<Payment> {
+    try {
+      console.log('Creating listing payment:', data);
+      
+      const response = await axiosInstance.post<PaymentResponse>('/listing/' + data.listingId, {
+        listingId: data.listingId,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod,
+        notes: data.notes
+      });
+      
+      console.log('Payment creation response:', response.data);
+      
+      if (!response.data || !response.data.data) {
+        throw new Error('Invalid response from payment creation');
+      }
+      
+      return response.data.data as Payment;
+    } catch (error) {
+      console.error('Payment creation error:', error);
+      throw error;
+    }
+  }
+
+  // Create an auction payment
+  async createAuctionPayment(data: CreateAuctionPaymentDto): Promise<Payment> {
+    const response = await axiosInstance.post<PaymentResponse>('/auction/' + data.auctionId, {
+      auctionId: data.auctionId,
+      amount: data.amount,
+      paymentMethod: data.paymentMethod,
+      notes: data.notes
+    });
     return response.data.data as Payment;
+  }
+
+  // Get listing payment
+  async getListingPayment(listingId: number): Promise<Payment[]> {
+    const response = await axiosInstance.get<PaymentResponse>(`/listing/${listingId}`);
+    return response.data.data as Payment[];
+  }
+
+  // Get auction payment
+  async getAuctionPayment(auctionId: number): Promise<Payment[]> {
+    const response = await axiosInstance.get<PaymentResponse>(`/auction/${auctionId}`);
+    return response.data.data as Payment[];
   }
 
   // Get payment by ID
@@ -118,8 +169,8 @@ class PaymentService {
 
   // Update payment
   async updatePayment(id: number, data: UpdatePaymentDto): Promise<Payment> {
-    console.log('[updatePayment] PUT', `${API_URL}/${id}`, { dto: data });
-    const response = await axiosInstance.put<PaymentResponse>(`/${id}`, { dto: data });
+    console.log('[updatePayment] PUT', `${API_URL}/${id}`, data);
+    const response = await axiosInstance.put<PaymentResponse>(`/${id}`, data);
     console.log('[updatePayment] response', response.data);
     return response.data.data as Payment;
   }
@@ -135,15 +186,15 @@ class PaymentService {
     return response.data.data as Payment[];
   }
 
-  // Get payment by auction ID
-  async getPaymentByAuctionId(auctionId: number): Promise<Payment[]> {
-    const response = await axiosInstance.get<PaymentResponse>(`/auction/${auctionId}`);
-    return response.data.data as Payment[];
-  }
-
   // Verify payment
   async verifyPayment(id: number): Promise<Payment> {
     const response = await axiosInstance.post<PaymentResponse>(`/verify/${id}`);
+    return response.data.data as Payment;
+  }
+
+  // Confirm payment
+  async confirmPayment(data: ConfirmPaymentDto): Promise<Payment> {
+    const response = await axiosInstance.post<PaymentResponse>('/confirm', data);
     return response.data.data as Payment;
   }
 }

@@ -1,5 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Check, CreditCard, Wallet, Truck, Calendar, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { paymentService } from "@/services/paymentService";
 
 interface CheckoutProps {}
 
 const Checkout: React.FC<CheckoutProps> = () => {
-  const [paymentMethod, setPaymentMethod] = useState<string>("credit_card");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [paymentMethod, setPaymentMethod] = useState<string>("CreditCard");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<any>(null);
+  
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -26,7 +32,16 @@ const Checkout: React.FC<CheckoutProps> = () => {
     cvv: "",
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Extract checkout data from location state
+  useEffect(() => {
+    if (location.state?.checkoutData) {
+      setCheckoutData(location.state.checkoutData);
+    } else {
+      // If no checkout data, redirect to home
+      toast.error("لا توجد بيانات للدفع");
+      navigate("/");
+    }
+  }, [location.state, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -36,50 +51,53 @@ const Checkout: React.FC<CheckoutProps> = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    // محاكاة إرسال الطلب
-    setTimeout(() => {
-      setIsSubmitting(false);
-      toast.success("تم تقديم الطلب بنجاح!");
-      // يمكن إضافة التوجيه إلى صفحة التأكيد هنا
-    }, 2000);
+    
+    if (!checkoutData) {
+      toast.error("لا توجد بيانات للدفع");
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      // Create payment based on the type (listing or auction)
+      if (checkoutData.type === 'listing') {
+        await paymentService.createListingPayment({
+          listingId: checkoutData.id,
+          amount: checkoutData.amount,
+          paymentMethod: paymentMethod,
+          notes: `دفع للمنتج ${checkoutData.title}`
+        });
+      } else if (checkoutData.type === 'auction') {
+        await paymentService.createAuctionPayment({
+          auctionId: checkoutData.id,
+          amount: checkoutData.amount,
+          paymentMethod: paymentMethod,
+          notes: `دفع للمزاد ${checkoutData.title}`
+        });
+      }
+      
+      toast.success("تم إتمام عملية الدفع بنجاح!");
+      
+      // Redirect based on type
+      if (checkoutData.type === 'listing') {
+        navigate("/my-listings");
+      } else {
+        navigate("/auctions/won");
+      }
+    } catch (error) {
+      toast.error("حدث خطأ أثناء معالجة الدفع. يرجى المحاولة مرة أخرى.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const cartItems = [
-    {
-      id: 1,
-      name: "مزهرية خزفية تقليدية",
-      price: 250,
-      quantity: 1,
-      image: "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=1000",
-    },
-    {
-      id: 2,
-      name: "وشاح مطرز يدوياً",
-      price: 120,
-      quantity: 1,
-      image: "https://images.unsplash.com/photo-1603073163308-9654c3fb70b5?q=80&w=1000",
-    },
-  ];
-
-  const calculateTotal = () => {
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const shipping = 30;
-    const tax = subtotal * 0.15;
-    const total = subtotal + shipping + tax;
-
-    return {
-      subtotal,
-      shipping,
-      tax,
-      total,
-    };
-  };
-
-  const { subtotal, shipping, tax, total } = calculateTotal();
+  // If no checkout data yet, show loading
+  if (!checkoutData) {
+    return <div className="flex justify-center items-center min-h-screen">جاري التحميل...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -187,7 +205,7 @@ const Checkout: React.FC<CheckoutProps> = () => {
                 className="space-y-3"
               >
                 <div className="flex items-center space-x-2 space-x-reverse">
-                  <RadioGroupItem value="credit_card" id="credit_card" />
+                  <RadioGroupItem value="CreditCard" id="credit_card" />
                   <Label htmlFor="credit_card" className="flex items-center cursor-pointer">
                     <CreditCard className="ml-2 h-5 w-5 text-blue" />
                     بطاقة ائتمانية
@@ -195,7 +213,7 @@ const Checkout: React.FC<CheckoutProps> = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2 space-x-reverse">
-                  <RadioGroupItem value="paypal" id="paypal" />
+                  <RadioGroupItem value="PayPal" id="paypal" />
                   <Label htmlFor="paypal" className="flex items-center cursor-pointer">
                     <Wallet className="ml-2 h-5 w-5 text-blue" />
                     محفظة إلكترونية
@@ -203,7 +221,7 @@ const Checkout: React.FC<CheckoutProps> = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2 space-x-reverse">
-                  <RadioGroupItem value="cash" id="cash" />
+                  <RadioGroupItem value="CashOnDelivery" id="cash" />
                   <Label htmlFor="cash" className="flex items-center cursor-pointer">
                     <Truck className="ml-2 h-5 w-5 text-blue" />
                     الدفع عند الاستلام
@@ -211,7 +229,7 @@ const Checkout: React.FC<CheckoutProps> = () => {
                 </div>
               </RadioGroup>
               
-              {paymentMethod === "credit_card" && (
+              {paymentMethod === "CreditCard" && (
                 <div className="mt-6 space-y-6">
                   <Separator className="my-4" />
                   <div className="space-y-2">
@@ -269,85 +287,46 @@ const Checkout: React.FC<CheckoutProps> = () => {
                 </div>
               )}
             </div>
+            
+            <div className="flex justify-end">
+              <Button type="submit" className="w-full md:w-auto" disabled={isProcessing}>
+                {isProcessing ? "جاري معالجة الدفع..." : "إتمام الدفع"}
+              </Button>
+            </div>
           </form>
         </div>
         
         {/* ملخص الطلب */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 sticky top-24 rtl">
+        <div>
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 sticky top-8">
             <h2 className="text-xl font-semibold mb-4">ملخص الطلب</h2>
             
-            <div className="space-y-4 mb-6">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 space-x-reverse">
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="h-16 w-16 object-cover rounded-md"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {item.quantity} x {item.price} ش.ج
-                    </p>
-                  </div>
-                  <span className="font-semibold">{item.price * item.quantity} ش.ج</span>
-                </div>
-              ))}
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">المجموع الفرعي</span>
-                <span>{subtotal} ش.ج</span>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center py-3 border-b">
+                <span>{checkoutData.type === 'listing' ? 'منتج' : 'مزاد'}</span>
+                <span className="font-semibold">{checkoutData.title}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">رسوم الشحن</span>
-                <span>{shipping} ش.ج</span>
+              
+              <div className="flex justify-between items-center py-3 border-b">
+                <span>السعر</span>
+                <span className="font-semibold">{checkoutData.amount.toLocaleString()} ₪</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">الضريبة (15%)</span>
-                <span>{tax.toFixed(2)} ش.ج</span>
+              
+              <div className="flex justify-between items-center py-3 border-b">
+                <span>الشحن</span>
+                <span className="font-semibold">30 ₪</span>
+              </div>
+              
+              <div className="flex justify-between items-center py-3 border-b">
+                <span>الضريبة</span>
+                <span className="font-semibold">{(checkoutData.amount * 0.15).toLocaleString()} ₪</span>
+              </div>
+              
+              <div className="flex justify-between items-center py-3 text-lg font-bold">
+                <span>الإجمالي</span>
+                <span>{(checkoutData.amount + 30 + checkoutData.amount * 0.15).toLocaleString()} ₪</span>
               </div>
             </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="flex justify-between font-bold text-lg mb-6">
-              <span>الإجمالي</span>
-              <span>{total.toFixed(2)} ش.ج</span>
-            </div>
-            
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-md mb-6 flex items-start space-x-3 space-x-reverse">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                سيتم تأكيد طلبك بعد التحقق من دفعتك. سيتم إرسال تفاصيل التأكيد عبر البريد الإلكتروني.
-              </p>
-            </div>
-            
-            <Button 
-              className="w-full bg-blue hover:bg-blue-600 text-white"
-              size="lg"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  جاري المعالجة...
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <Check className="ml-2 h-5 w-5" />
-                  إتمام الطلب
-                </span>
-              )}
-            </Button>
           </div>
         </div>
       </div>

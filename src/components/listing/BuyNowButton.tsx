@@ -12,6 +12,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { listingService } from '@/services/listingService';
+import { paymentService } from '@/services/paymentService';
+import { transactionService } from '@/services/transactionService';
+import { TransactionType } from '@/types/transaction';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -43,12 +46,61 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
   const handlePurchase = async () => {
     setIsLoading(true);
     try {
-      await listingService.purchaseListing(listingId);
-      // Navigate to purchases or success page
-      navigate('/profile/purchases');
+      console.log('Starting purchase process for listing:', listingId);
+      
+      // 1. Create transaction first
+      const transaction = await transactionService.createTransaction({
+        amount: price,
+        type: TransactionType.ListingPayment,
+        description: `Payment for: ${title}`,
+        listingId: listingId
+      });
+      
+      console.log('Transaction created:', transaction);
+      
+      // 2. Create a payment for this listing
+      const payment = await paymentService.createListingPayment({
+        listingId: listingId,
+        amount: price,
+        paymentMethod: 'CreditCard',
+        notes: `Payment for: ${title}`
+      });
+      
+      console.log('Payment created:', payment);
+      
+      // Close the dialog immediately
+      setIsDialogOpen(false);
+      
+      // Navigate to payment page
+      if (payment && payment.id) {
+        console.log('Navigating to payment page:', `/payment/${payment.id}`);
+        
+        // Using direct window location change instead of navigate
+        // This ensures the navigation happens even if there's an issue with the React Router
+        toast({
+          title: "تم بدء عملية الشراء",
+          description: "جاري توجيهك إلى صفحة الدفع...",
+        });
+        
+        // Small delay to ensure toast is shown
+        setTimeout(() => {
+          window.location.href = `/payment/${payment.id}`;
+        }, 500);
+      } else {
+        console.warn('No payment ID returned, using fallback navigation');
+        toast({
+          title: "تم بدء عملية الشراء",
+          description: "يرجى متابعة عملية الدفع",
+        });
+        window.location.href = '/transactions';
+      }
     } catch (error) {
       console.error('Purchase error:', error);
-      // Error handling is done in the service with toast notifications
+      toast({
+        title: "فشل في عملية الشراء",
+        description: error.message || "حدث خطأ أثناء إنشاء طلب الدفع",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
       setIsDialogOpen(false);
