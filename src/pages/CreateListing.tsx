@@ -858,37 +858,49 @@ const CreateListing: React.FC = () => {
                   {errors.price && <div className="text-red-500 text-sm mt-1">{errors.price}</div>}
                 </div>
 
-                <div>
-                  <label className="block mb-2 text-sm font-medium">تاريخ انتهاء العرض <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative">
-                  <Input 
-                    name="endDate" 
-                    type="date" 
-                    value={formData.endDate} 
-                    onChange={handleChange} 
-                    min={new Date().toISOString().split('T')[0]}
-                        className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right" 
-                        required
-                        placeholder=""
-                      />
-                      <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="endDate" className="block mb-2 text-sm font-medium">
+                        تاريخ انتهاء المزاد <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          id="endDate"
+                          name="endDate"
+                          value={formData.endDate}
+                          onChange={handleChange}
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
+                          required
+                          min={new Date().toISOString().split('T')[0]}
+                          placeholder=""
+                        />
+                        <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                      </div>
+                      {errors.endDate && <div className="text-red-500 text-sm mt-1">{errors.endDate}</div>}
                     </div>
-                    <div className="relative">
-                      <Input 
-                        name="endTime" 
-                        type="time" 
-                        value={formData.endTime} 
-                        onChange={handleChange} 
-                        className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right" 
-                        required
-                        placeholder=""
-                      />
-                      <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+
+                    <div>
+                      <label htmlFor="endTime" className="block mb-2 text-sm font-medium">
+                        وقت انتهاء المزاد <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="time"
+                          id="endTime"
+                          name="endTime"
+                          value={formData.endTime}
+                          onChange={handleChange}
+                          className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
+                          required
+                          placeholder=""
+                        />
+                        <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+                      </div>
+                      {errors.endTime && <div className="text-red-500 text-sm mt-1">{errors.endTime}</div>}
                     </div>
                   </div>
                   {errors.endDate && <div className="text-red-500 text-sm mt-1">{errors.endDate}</div>}
-                </div>
 
                 <div>
                   <label className="block mb-2 text-sm font-medium">صور المنتج <span className="text-red-500">*</span></label>
