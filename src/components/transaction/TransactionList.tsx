@@ -48,6 +48,13 @@ interface TransactionListProps {
   showFilters?: boolean;
 }
 
+// دالة لتحويل الأرقام العربية إلى إنجليزية
+function toEnglishDigits(strOrNum: string | number) {
+  return strOrNum
+    .toString()
+    .replace(/[٠-٩]/g, d => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]);
+}
+
 export const TransactionList: React.FC<TransactionListProps> = ({
   userId,
   auctionId,
@@ -209,8 +216,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             {transactions && transactions.length > 0 ? (
               transactions.map((transaction) => (
                 <TableRow key={transaction.transactionId}>
-                  <TableCell>{transaction.transactionId}</TableCell>
-                  <TableCell>{formatCurrency(transaction.amount)}</TableCell>
+                  <TableCell>{toEnglishDigits(transaction.transactionId)}</TableCell>
+                  <TableCell>{toEnglishDigits(formatCurrency(transaction.amount))}</TableCell>
                   <TableCell>{getTransactionTypeText(transaction.type)}</TableCell>
                   <TableCell>
                     <Badge className={getStatusBadgeColor(transaction.status)}>
@@ -218,7 +225,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {formatDateTime(transaction.transactionDate)}
+                    {toEnglishDigits(formatDateTime(transaction.transactionDate))}
                   </TableCell>
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>

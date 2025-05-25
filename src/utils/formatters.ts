@@ -2,7 +2,7 @@
  * Format a number as currency in ILS (Israeli New Shekel)
  */
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('ar-PS', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: 2,
