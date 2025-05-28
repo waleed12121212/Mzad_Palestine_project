@@ -120,14 +120,11 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/LaptopPrediction/, '/LaptopPrediction'),
         configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
-          });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
           });
         }
       },
@@ -135,13 +132,29 @@ export default defineConfig(({ mode }) => ({
         target: API_URL,
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/CarPrediction/, '/CarPrediction')
+        rewrite: (path) => path.replace(/^\/CarPrediction/, '/CarPrediction'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       },
       '/Phone': {
         target: API_URL,
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/Phone/, '/Phone')
+        rewrite: (path) => path.replace(/^\/Phone/, '/Phone'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxyReq.setHeader('Origin', API_URL);
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
       },
       '/Image': {
         target: API_URL,
@@ -180,6 +193,82 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/auth/, '/auth')
+      },
+      '/job': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/job/, '/job'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Remove CORS headers from original request
+            proxyReq.removeHeader('Origin');
+            proxyReq.removeHeader('Referer');
+            
+            // Set new headers
+            proxyReq.setHeader('Origin', API_URL);
+            proxyReq.setHeader('Host', new URL(API_URL).host);
+            
+            // Handle authorization token
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+
+          // Handle response
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // Add CORS headers to response
+            proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin';
+            proxyRes.headers['Access-Control-Expose-Headers'] = 'Content-Length, Content-Range';
+            proxyRes.headers['Access-Control-Max-Age'] = '86400'; // 24 hours
+            
+            // Handle OPTIONS requests
+            if (req.method === 'OPTIONS') {
+              res.statusCode = 204;
+              res.end();
+              return;
+            }
+          });
+        }
+      },
+      '/JobCategory': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/JobCategory/, '/JobCategory'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // إزالة رؤوس CORS من الطلب الأصلي
+            proxyReq.removeHeader('Origin');
+            proxyReq.removeHeader('Referer');
+            
+            // إضافة رؤوس جديدة
+            proxyReq.setHeader('Origin', API_URL);
+            proxyReq.setHeader('Host', new URL(API_URL).host);
+            
+            // معالجة التوكن
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+
+          // معالجة الاستجابة
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // إضافة رؤوس CORS للاستجابة
+            proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:8081';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+            proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+            
+            // معالجة طلبات OPTIONS
+            if (req.method === 'OPTIONS') {
+              res.statusCode = 204;
+              res.end();
+            }
+          });
+        }
       }
     }
   },

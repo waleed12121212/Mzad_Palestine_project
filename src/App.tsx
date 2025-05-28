@@ -44,6 +44,12 @@ import SellProduct from '@/pages/SellProduct';
 import Contact from '@/pages/Contact';
 import TransactionsPage from '@/pages/TransactionsPage';
 import TransactionDetailsPage from '@/pages/TransactionDetailsPage';
+import AIPriceGuide from '@/pages/AIPriceGuide';
+import { JobsPage } from '@/pages/JobsPage';
+import { JobCategoriesPage } from '@/pages/JobCategoriesPage';
+import JobCategoriesList from '@/pages/JobCategoriesList';
+import JobDetailsPage from '@/pages/JobDetailsPage';
+import { AddJobPage } from './pages/AddJobPage';
 
 const queryClient = new QueryClient();
 
@@ -220,6 +226,7 @@ function App() {
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/ai-price-guide" element={<AIPriceGuide />} />
                     <Route path="/product-recommendation" element={<ProductRecommendation />} />
                     <Route path="/sell-product" element={<SellProduct />} />
                     <Route path="/contact" element={<Contact />} />
@@ -247,6 +254,18 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/jobs" element={<JobsPage />} />
+                    <Route 
+                      path="/jobs/categories" 
+                      element={
+                        <ProtectedRoute adminOnly>
+                          <JobCategoriesPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="/jobs/new" element={<ProtectedRoute><AddJobPage /></ProtectedRoute>} />
+                    <Route path="/job-categories" element={<JobCategoriesList />} />
+                    <Route path="/jobs/:id" element={<JobDetailsPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster

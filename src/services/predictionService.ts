@@ -3,24 +3,17 @@ import { API_BASE_URL } from '@/config';
 
 // Create a custom axios instance for prediction services
 const predictionAxios = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '', // Empty baseURL to use relative paths with Vite proxy
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Accept': 'application/json'
   },
   withCredentials: false
 });
 
-// Add request interceptor to handle CORS preflight
+// Add request interceptor for error handling
 predictionAxios.interceptors.request.use(
   (config) => {
-    // Add CORS headers to the request
-    config.headers['Access-Control-Allow-Origin'] = '*';
-    config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-    config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
     return config;
   },
   (error) => {

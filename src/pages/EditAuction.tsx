@@ -316,10 +316,10 @@ const EditAuction = () => {
       setSubmitting(true);
       console.log('Submitting update with values:', values);
       
-      let imageUrl = previewUrl;
+      let newImageUrl = previewUrl;
       if (selectedImage) {
         try {
-          imageUrl = await uploadImage(selectedImage);
+          newImageUrl = await uploadImage(selectedImage);
         } catch (error) {
           toast({
             title: "فشل في رفع الصورة",
@@ -330,18 +330,18 @@ const EditAuction = () => {
         }
       }
 
-      // Prepare images array
-      const images: string[] = [];
-      if (imageUrl) {
-        images.push(imageUrl);
-      } else if (originalAuction?.images && originalAuction.images.length > 0) {
-        originalAuction.images.forEach(img => images.push(img));
-      } else if (originalAuction?.Images && originalAuction.Images.length > 0) {
-        originalAuction.Images.forEach(img => images.push(img));
-      } else if (originalAuction?.imageUrl) {
-        images.push(originalAuction.imageUrl);
-      } else if (originalAuction?.ImageUrl) {
-        images.push(originalAuction.ImageUrl);
+      // Prepare images arrays
+      const imagesToDelete: string[] = [];
+      const newImages: string[] = [];
+
+      // If we have a new image, add it to newImages
+      if (newImageUrl) {
+        newImages.push(newImageUrl);
+      }
+
+      // If original auction had images and we're changing them, add old ones to imagesToDelete
+      if (originalAuction?.images && originalAuction.images.length > 0 && newImageUrl) {
+        originalAuction.images.forEach(img => imagesToDelete.push(img));
       }
 
       // Convert string status to numeric enum value
@@ -356,16 +356,17 @@ const EditAuction = () => {
 
       // Create the DTO object as required by the API
       const dto = {
-        Title: values.title,
-        Description: values.description,
-        Address: values.address,
-        StartDate: values.startTime.toISOString(),
-        EndDate: values.endTime.toISOString(),
-        ReservePrice: Number(values.reservePrice),
-        BidIncrement: Number(values.bidIncrement),
-        CategoryId: Number(values.categoryId),
-        Status: statusEnum, // Use the numeric enum value
-        Images: images
+        title: values.title,
+        description: values.description,
+        address: values.address,
+        startDate: values.startTime.toISOString(),
+        endDate: values.endTime.toISOString(),
+        reservePrice: Number(values.reservePrice),
+        bidIncrement: Number(values.bidIncrement),
+        categoryId: Number(values.categoryId),
+        status: statusEnum,
+        imagesToDelete,
+        newImages
       };
 
       console.log('Sending final request data:', { dto });
@@ -377,23 +378,10 @@ const EditAuction = () => {
       }
 
       try {
-        // Use axios directly to ensure proper request format
-        const token = localStorage.getItem('token');
+        // Use the auction service to update
+        const response = await auctionService.updateAuction(auctionId, dto);
         
-        console.log('Sending final request data:', { dto });
-        
-        const response = await axios.put(
-          `http://localhost:8081/Auction/${auctionId}`,
-          dto, // Send dto directly as the request body
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
-        
-        console.log('Update result:', response.data);
+        console.log('Update result:', response);
         
         toast({
           title: "تم تحديث المزاد بنجاح",
@@ -407,20 +395,14 @@ const EditAuction = () => {
       } catch (error: any) {
         console.error('API Error updating auction:', error);
         
-        // Log full error details
-        console.error('Error response:', error.response);
-        console.error('Error data:', error.response?.data);
-        
         // Try to extract and display the detailed error message
         let errorMessage = "حدث خطأ أثناء تحديث المزاد";
         
         if (error.response?.data) {
           const errorData = error.response.data;
           
-          // Handle specific validation errors
           if (errorData.errors) {
             try {
-              // Convert error object to a readable string
               const errorsString = JSON.stringify(errorData.errors);
               errorMessage = `خطأ في البيانات: ${errorsString}`;
             } catch (e) {

@@ -27,7 +27,8 @@ import {
   Baby,
   Coffee,
   Clock,
-  AlertCircle
+  AlertCircle,
+  PlusCircle
 } from "lucide-react";
 import HeroSlider from "@/components/ui/HeroSlider";
 import { useAuth } from "../contexts/AuthContext";
@@ -431,7 +432,7 @@ const Index = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">المزادات</h2>
+            <h2 className="heading-lg">المزادات الرائجة</h2>
             <Link to="/auctions" className="text-blue dark:text-blue-light hover:underline flex items-center">
               عرض الكل <ChevronRight className="h-5 w-5" />
             </Link>
@@ -687,6 +688,58 @@ const Index = () => {
                   </Link>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 bg-gradient-to-r from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8 rtl">
+            <h2 className="heading-lg">الوظائف المتاحة</h2>
+            <Link to="/jobs" className="text-blue dark:text-blue-light hover:underline flex items-center">
+              عرض الكل <ChevronRight className="h-5 w-5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="neo-card p-6 text-center">
+              <div className="mb-4">
+                <Building2 className="h-12 w-12 mx-auto text-blue dark:text-blue-light" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">وظائف متنوعة</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                تصفح مجموعة واسعة من الوظائف في مختلف المجالات والتخصصات
+              </p>
+              <Link to="/jobs" className="btn-primary inline-block">
+                تصفح الوظائف
+              </Link>
+            </div>
+
+            <div className="neo-card p-6 text-center">
+              <div className="mb-4">
+                <Search className="h-12 w-12 mx-auto text-blue dark:text-blue-light" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">ابحث عن وظيفة</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                ابحث عن الوظائف المناسبة لمهاراتك وخبراتك
+              </p>
+              <Link to="/jobs" className="btn-primary inline-block">
+                ابدأ البحث
+              </Link>
+            </div>
+
+            <div className="neo-card p-6 text-center">
+              <div className="mb-4">
+                <PlusCircle className="h-12 w-12 mx-auto text-blue dark:text-blue-light" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">أضف وظيفة</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                هل تبحث عن موظفين؟ أضف وظيفتك ووصل إلى آلاف الباحثين عن عمل
+              </p>
+              <Link to="/jobs/new" className="btn-primary inline-block">
+                إضافة وظيفة
+              </Link>
             </div>
           </div>
         </div>

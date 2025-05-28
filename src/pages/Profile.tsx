@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink, Award, AlertCircle, Clock, Tag, MessageCircle, BellRing, CheckCheck, Trash2, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -147,7 +147,7 @@ const Profile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/auth/login');
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الخروج",
@@ -390,7 +390,6 @@ const Profile = () => {
         {[
           { id: 'profile', to: "#", label: "البيانات الشخصية", icon: User },
           { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
-          { id: 'bids', to: "#", label: "مزايداتي", icon: ArrowLeft },
           { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
           { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
           { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
@@ -426,40 +425,141 @@ const Profile = () => {
 
   // Add UserAuctions component inside Profile (before MainContent):
   const UserAuctions = ({ userId }) => {
-    const { data: response = {}, isLoading, error } = useQuery({
+    const [filter, setFilter] = useState('all');
+    const { data: auctions, isLoading, error } = useQuery({
       queryKey: ['userAuctions', userId],
-      queryFn: () => auctionService.getUserAuctions(userId),
+      queryFn: async () => {
+        const response = await auctionService.getUserAuctions(userId);
+        return Array.isArray(response) ? response : response.data || [];
+      },
       enabled: !!userId,
     });
-    const auctions = (response as any).data || [];
-    console.log('UserAuctions userId:', userId);
-    console.log('UserAuctions raw auctions:', auctions);
-    if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>;
-    if (error) return <div className="text-red-500 text-center py-8">حدث خطأ أثناء تحميل المزادات</div>;
-    if (!auctions.length) return <EmptyState message="لا يوجد مزادات حالياً" icon={Package} />;
 
-    const normalizedAuctions = auctions.map(auction => ({
-      id: auction.auctionId,
-      listingId: auction.listingId,
-      title: auction.name,
-      description: '',
-      currentPrice: auction.currentBid > 0 ? auction.currentBid : auction.reservePrice,
-      minBidIncrement: auction.bidIncrement,
-      imageUrl: auction.imageUrl,
-      endTime: auction.endTime,
-      bidders: auction.bidsCount,
-    }));
-    console.log('UserAuctions normalizedAuctions:', normalizedAuctions);
+    const filteredAuctions = useMemo(() => {
+      if (!auctions) return [];
+      
+      switch (filter) {
+        case 'active':
+          return auctions.filter(auction => 
+            auction.status === 'Active' || 
+            (new Date(auction.endDate) > new Date() && auction.status !== 'Cancelled')
+          );
+        case 'ended':
+          return auctions.filter(auction => 
+            auction.status === 'Ended' || 
+            new Date(auction.endDate) <= new Date()
+          );
+        default:
+          return auctions;
+      }
+    }, [auctions, filter]);
+
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">حدث خطأ</h3>
+          <p className="text-gray-500">لم نتمكن من تحميل المزادات الخاصة بك</p>
+        </div>
+      );
+    }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {normalizedAuctions.map(auction => (
-          <AuctionCard
-            key={auction.id}
-            {...auction}
-            ownerView={true}
-          />
-        ))}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                filter === 'all' 
+                  ? 'bg-blue/10 text-blue dark:text-blue-light' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              الكل ({auctions?.length || 0})
+            </button>
+            <button 
+              onClick={() => setFilter('active')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                filter === 'active' 
+                  ? 'bg-blue/10 text-blue dark:text-blue-light' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              النشطة ({auctions?.filter(a => a.status === 'Active' || (new Date(a.endDate) > new Date() && a.status !== 'Cancelled')).length || 0})
+            </button>
+            <button 
+              onClick={() => setFilter('ended')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                filter === 'ended' 
+                  ? 'bg-blue/10 text-blue dark:text-blue-light' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              المنتهية ({auctions?.filter(a => a.status === 'Ended' || new Date(a.endDate) <= new Date()).length || 0})
+            </button>
+          </div>
+          <Link 
+            to="/create-auction"
+            className="bg-blue text-white dark:bg-blue-light dark:text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600 dark:hover:bg-blue-400 transition-colors"
+          >
+            <Package className="h-4 w-4" />
+            <span>إضافة مزاد</span>
+          </Link>
+        </div>
+
+        {!filteredAuctions.length ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+              <Package className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">لا توجد مزادات {filter !== 'all' ? 'في هذه الحالة' : ''}</h3>
+            <p className="text-gray-500 mb-4">
+              {filter === 'all' 
+                ? 'لم تقم بإنشاء أي مزادات حتى الآن' 
+                : filter === 'active' 
+                  ? 'لا توجد مزادات نشطة حالياً'
+                  : 'لا توجد مزادات منتهية'
+              }
+            </p>
+            {filter === 'all' && (
+              <Link 
+                to="/create-auction"
+                className="inline-flex items-center gap-2 bg-blue text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <Package className="h-4 w-4" />
+                <span>إنشاء مزاد جديد</span>
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAuctions.map(auction => (
+              <AuctionCard
+                key={auction.id}
+                id={auction.id}
+                title={auction.title || auction.name}
+                description={auction.description || ''}
+                currentPrice={auction.currentBid || auction.startingPrice}
+                minBidIncrement={auction.bidIncrement}
+                imageUrl={auction.images?.[0] || auction.imageUrl || ''}
+                endTime={auction.endDate}
+                bidders={auction.bidsCount || (auction.bids?.length || 0)}
+                ownerView={true}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -563,6 +663,7 @@ const Profile = () => {
               id="firstName"
               label="الاسم الأول"
               icon={User}
+              type="text"
               value={isEditing ? formData.firstName : (userData.firstName ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
@@ -572,6 +673,7 @@ const Profile = () => {
               id="lastName"
               label="الاسم الأخير"
               icon={User}
+              type="text"
               value={isEditing ? formData.lastName : (userData.lastName ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
@@ -581,6 +683,7 @@ const Profile = () => {
               id="username"
               label="اسم المستخدم"
               icon={User}
+              type="text"
               value={userData.username ?? ''}
               onChange={() => {}}
               readonly={true}
@@ -610,6 +713,7 @@ const Profile = () => {
               id="address"
               label="العنوان"
               icon={MapPin}
+              type="text"
               value={isEditing ? formData.address : (userData.address ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
@@ -619,7 +723,7 @@ const Profile = () => {
               id="dateOfBirth"
               label="تاريخ الميلاد"
               icon={Calendar}
-              type={isEditing ? "date" : "text"}
+              type="date"
               value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData.dateOfBirth ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
@@ -629,6 +733,7 @@ const Profile = () => {
               id="bio"
               label="نبذة عنك"
               icon={User}
+              type="text"
               value={isEditing ? formData.bio : (userData.bio ?? 'غير محدد')}
               onChange={handleInputChange}
               readonly={!isEditing}
@@ -638,6 +743,7 @@ const Profile = () => {
               id="createdAt"
               label="تاريخ الانضمام"
               icon={Calendar}
+              type="text"
               value={userData.createdAt ?? ''}
               onChange={() => {}}
               readonly={true}
@@ -647,6 +753,7 @@ const Profile = () => {
               id="role"
               label="نوع الحساب"
               icon={User}
+              type="text"
               value={userData.role === "Admin" ? "مدير" : "مستخدم"}
               onChange={() => {}}
               readonly={true}
@@ -656,6 +763,7 @@ const Profile = () => {
               id="isActive"
               label="حالة الحساب"
               icon={User}
+              type="text"
               value={userData.isActive ? "نشط" : "غير نشط"}
               onChange={() => {}}
               readonly={true}
@@ -714,34 +822,7 @@ const Profile = () => {
       case 'auctions':
         return (
           <ContentWrapper title="مزاداتي">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-4">
-                  <button className="px-4 py-2 rounded-lg bg-blue/10 text-blue dark:text-blue-light">الكل</button>
-                  <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">النشطة</button>
-                  <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">المنتهية</button>
-                </div>
-                <button className="bg-blue text-white dark:bg-blue-light dark:text-gray-900 px-4 py-2 rounded-lg flex items-center gap-2" onClick={() => navigate('/create-auction')}>
-                  <Package className="h-4 w-4" />
-                  <span>إضافة مزاد</span>
-                </button>
-              </div>
-              {userData && <UserAuctions userId={userData.id} />}
-            </div>
-          </ContentWrapper>
-        );
-      
-      case 'bids':
-        return (
-          <ContentWrapper title="مزايداتي">
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <button className="px-4 py-2 rounded-lg bg-blue/10 text-blue dark:text-blue-light">الكل</button>
-                <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">الفائزة</button>
-                <button className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">قيد الانتظار</button>
-              </div>
-              <MyBids />
-            </div>
+            <UserAuctions userId={userData.id} />
           </ContentWrapper>
         );
       
