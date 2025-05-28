@@ -5,7 +5,11 @@ import { componentTagger } from "lovable-tagger";
 
 const API_URL = process.env.VITE_API_URL || 'http://mazadpalestine.runasp.net';
 
+// Add base URL configuration for production
+const base = process.env.NODE_ENV === 'production' ? '/' : '/';
+
 export default defineConfig(({ mode }) => ({
+  base,
   server: {
     host: "::",
     port: 8081,
