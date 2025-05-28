@@ -2,7 +2,35 @@
   "rewrites": [
     {
       "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*"
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "has": [
+        {
+          "type": "query",
+          "key": "image"
+        }
+      ]
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "image/.*"
+        }
+      ]
     },
     {
       "source": "/Auth/:path*",
@@ -127,7 +155,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://mazadpalestine.runasp.net/uploads/; font-src 'self' data:; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app"
+          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://mazadpalestine.runasp.net/uploads/ http://mazadpalestine.runasp.net/uploads/images/ http://mazadpalestine.runasp.net/uploads/profile-pictures/; font-src 'self' data:; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app"
         }
       ]
     }
