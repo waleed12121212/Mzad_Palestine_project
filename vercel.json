@@ -1,6 +1,78 @@
 {
   "rewrites": [
     {
+      "source": "/Auth/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Auth/:path*"
+    },
+    {
+      "source": "/Notification/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Notification/:path*"
+    },
+    {
+      "source": "/Message/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Message/:path*"
+    },
+    {
+      "source": "/User/:path*",
+      "destination": "http://mazadpalestine.runasp.net/User/:path*"
+    },
+    {
+      "source": "/JobCategory/:path*",
+      "destination": "http://mazadpalestine.runasp.net/JobCategory/:path*"
+    },
+    {
+      "source": "/job/:path*",
+      "destination": "http://mazadpalestine.runasp.net/job/:path*"
+    },
+    {
+      "source": "/Payment/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Payment/:path*"
+    },
+    {
+      "source": "/Transaction/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Transaction/:path*"
+    },
+    {
+      "source": "/Support/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Support/:path*"
+    },
+    {
+      "source": "/Category/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Category/:path*"
+    },
+    {
+      "source": "/Listing/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Listing/:path*"
+    },
+    {
+      "source": "/Auction/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Auction/:path*"
+    },
+    {
+      "source": "/Bid/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Bid/:path*"
+    },
+    {
+      "source": "/Review/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Review/:path*"
+    },
+    {
+      "source": "/Wishlist/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Wishlist/:path*"
+    },
+    {
+      "source": "/Report/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Report/:path*"
+    },
+    {
+      "source": "/Dispute/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Dispute/:path*"
+    },
+    {
+      "source": "/Image/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Image/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -15,11 +87,43 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization"
+          "value": "X-Requested-With, Content-Type, Authorization, Accept, Origin, X-CSRF-Token, X-XSRF-TOKEN, X-API-Key, X-Client-Info, X-Client-Version, X-Client-Platform, X-Client-Device, X-Client-Browser, X-Client-OS, X-Client-IP, X-Client-Language, X-Client-TimeZone, X-Client-Currency, X-Client-Country, X-Client-Region, X-Client-City, X-Client-Latitude, X-Client-Longitude, X-Client-Timezone, X-Client-Device-Type, X-Client-Device-Model, X-Client-Device-Manufacturer, X-Client-Device-OS, X-Client-Device-OS-Version, X-Client-Device-Browser, X-Client-Device-Browser-Version, X-Client-Device-Screen-Width, X-Client-Device-Screen-Height, X-Client-Device-Screen-Density, X-Client-Device-Screen-Orientation, X-Client-Device-Screen-Color-Depth, X-Client-Device-Screen-Pixel-Ratio, X-Client-Device-Screen-Available-Width, X-Client-Device-Screen-Available-Height, X-Client-Device-Screen-Total-Width, X-Client-Device-Screen-Total-Height, X-Client-Device-Screen-Device-Width, X-Client-Device-Screen-Device-Height, X-Client-Device-Screen-Device-Pixel-Ratio, X-Client-Device-Screen-Device-Available-Width, X-Client-Device-Screen-Device-Available-Height, X-Client-Device-Screen-Device-Total-Width, X-Client-Device-Screen-Device-Total-Height"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Expose-Headers",
+          "value": "Content-Length, Content-Range, X-Total-Count, X-Pagination-Count, X-Pagination-Page, X-Pagination-Limit, X-Pagination-Total, X-Pagination-Total-Pages, X-Pagination-Has-Next, X-Pagination-Has-Prev, X-Pagination-Next-Page, X-Pagination-Prev-Page, X-Pagination-First-Page, X-Pagination-Last-Page, X-Pagination-Current-Page, X-Pagination-Per-Page, X-Pagination-Total-Items, X-Pagination-Total-Pages, X-Pagination-Has-More, X-Pagination-Current-Page-Items, X-Pagination-Current-Page-Start, X-Pagination-Current-Page-End, X-Pagination-Current-Page-Size, X-Pagination-Current-Page-Total, X-Pagination-Current-Page-Has-More, X-Pagination-Current-Page-Has-Prev, X-Pagination-Current-Page-Has-Next, X-Pagination-Current-Page-Is-First, X-Pagination-Current-Page-Is-Last, X-Pagination-Current-Page-Is-Empty, X-Pagination-Current-Page-Is-Single, X-Pagination-Current-Page-Is-Multiple, X-Pagination-Current-Page-Is-Complete, X-Pagination-Current-Page-Is-Incomplete, X-Pagination-Current-Page-Is-Valid, X-Pagination-Current-Page-Is-Invalid"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app"
         }
       ]
     }
