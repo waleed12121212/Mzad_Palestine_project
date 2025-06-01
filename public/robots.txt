@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Allow Google AdSense crawler
+User-agent: Mediapartners-Google
+Allow: /
+
+# Allow Google AdSense crawler
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://mzadpalestine.vercel.app/sitemap.xml 
