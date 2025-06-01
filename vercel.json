@@ -107,6 +107,14 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/NewService/:path*",
+      "destination": "http://mazadpalestine.runasp.net/NewService/:path*"
+    },
+    {
+      "source": "/NewServiceCategory/:path*",
+      "destination": "http://mazadpalestine.runasp.net/NewServiceCategory/:path*"
     }
   ],
   "headers": [
