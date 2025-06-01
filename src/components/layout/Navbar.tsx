@@ -98,6 +98,9 @@ const Navbar: React.FC = () => {
             <DesktopNavLink href="/jobs" active={isActive("/jobs")}>
               الوظائف
             </DesktopNavLink>
+            <DesktopNavLink href="/services" active={isActive("/services")}>
+              الخدمات
+            </DesktopNavLink>
             {isAuthenticated && (
               <DesktopNavLink href="/transactions" active={isActive("/transactions")}>
                 المعاملات المالية
@@ -233,6 +236,9 @@ const Navbar: React.FC = () => {
               </MobileNavLink>
               <MobileNavLink href="/jobs" active={isActive("/jobs")}>
                 الوظائف
+              </MobileNavLink>
+              <MobileNavLink href="/services" active={isActive("/services")}>
+                الخدمات
               </MobileNavLink>
               {isAuthenticated && (
                 <MobileNavLink href="/transactions" active={isActive("/transactions")}>

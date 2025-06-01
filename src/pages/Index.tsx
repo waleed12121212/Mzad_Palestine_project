@@ -6,6 +6,7 @@ import CategoryCarousel from "@/components/ui/CategoryCarousel";
 import ProductCard from "@/components/ui/ProductCard";
 import AdCard from "@/components/ui/AdCard";
 import UserQuickPanel from "@/components/ui/UserQuickPanel";
+import GoogleAdsense from "@/components/GoogleAdsense";
 import { 
   ArrowRight, 
   Building2, 
@@ -743,6 +744,20 @@ const Index = () => {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="py-12 bg-gradient-to-r from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent">
+          <div className="my-8 flex justify-center">
+            <GoogleAdsense 
+              adSlot="YOUR_AD_SLOT_ID"
+              style={{ 
+                display: 'block',
+                minHeight: '100px',
+                width: '100%',
+                maxWidth: '728px'
+              }}
+            />
+          </div>
       </section>
     </>
   );

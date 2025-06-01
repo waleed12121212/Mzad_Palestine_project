@@ -50,6 +50,9 @@ import { JobCategoriesPage } from '@/pages/JobCategoriesPage';
 import JobCategoriesList from '@/pages/JobCategoriesList';
 import JobDetailsPage from '@/pages/JobDetailsPage';
 import { AddJobPage } from './pages/AddJobPage';
+import ServiceCategoryPage from '@/pages/ServiceCategoryPage';
+import ServicePage from '@/pages/ServicePage';
+import ServiceDetailsPage from '@/pages/ServiceDetailsPage';
 
 const queryClient = new QueryClient();
 
@@ -266,6 +269,9 @@ function App() {
                     <Route path="/jobs/new" element={<ProtectedRoute><AddJobPage /></ProtectedRoute>} />
                     <Route path="/job-categories" element={<JobCategoriesList />} />
                     <Route path="/jobs/:id" element={<JobDetailsPage />} />
+                    <Route path="/services" element={<ServiceCategoryPage />} />
+                    <Route path="/services/category/:categoryId" element={<ServicePage />} />
+                    <Route path="/services/:id" element={<ServiceDetailsPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster

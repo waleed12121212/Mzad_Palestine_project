@@ -198,6 +198,32 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/auth/, '/auth')
       },
+      '/NewServiceCategory': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/NewServiceCategory/, '/NewServiceCategory'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
+      },
+      '/NewService': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/NewService/, '/NewService'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
+      },
       '/job': {
         target: API_URL,
         changeOrigin: true,
