@@ -180,7 +180,7 @@ const ServicePage: React.FC = () => {
           <h1 className="text-3xl font-extrabold text-blue-700 tracking-tight">{category?.name || 'الخدمات'}</h1>
           <div className="flex gap-2">
             {user && (
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow px-6 py-2 text-lg font-semibold transition">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow px-6 py-2 text-lg font-semibold transition" onClick={() => window.location.href = '/services/create'}>
                 إضافة خدمة جديدة
               </Button>
             )}
@@ -229,42 +229,46 @@ const ServicePage: React.FC = () => {
             {filteredServices.length === 0 && (
               <div className="text-center text-gray-500 py-8 col-span-full">لا توجد خدمات مطابقة للبحث أو الفلاتر.</div>
             )}
-            {filteredServices.map((service) => (
-              <div
-                key={service.id}
-                className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 hover:border-blue-400 transition overflow-hidden flex flex-col"
-              >
-                <div className="flex items-center gap-4 p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
-                  <div className="bg-blue-100 rounded-full p-3">
-                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5v-15a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v15m-15 0h15m-15 0a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2" /></svg>
+            {filteredServices.map((service) => {
+              console.log('service:', service);
+              console.log('service.images:', service.images);
+              // استخراج رابط الصورة بشكل آمن
+              const coverImage =
+                service.images && Array.isArray(service.images) && service.images.length > 0
+                  ? (typeof service.images[0] === 'string' ? service.images[0] : (service.images[0]?.url || '/placeholder.svg'))
+                  : '/placeholder.svg';
+              console.log('coverImage:', coverImage);
+              return (
+                <div
+                  key={service.id}
+                  className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md relative cursor-pointer flex flex-col"
+                >
+                  <div className="relative h-[220px] overflow-hidden group">
+                    <img
+                      src={coverImage}
+                      alt={service.title}
+                      className="w-full h-[220px] object-cover transform transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-blue-900 group-hover:text-blue-600 transition">{service.title}</h2>
-                    <div className="text-gray-500 text-sm">{service.location} • {service.contactInfo}</div>
-                  </div>
-                </div>
-                <div className="p-6 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <span className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 rounded px-2 py-1">خدمة</span>
-                      <span className="flex items-center gap-1 text-xs bg-gray-100 rounded px-2 py-1">{service.price} ₪</span>
-                    </div>
-                    <p className="text-gray-700 text-sm line-clamp-2">{service.description}</p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center">
-                    <Link to={`/services/${service.id}`}>
-                      <Button className="rounded-full px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow transition">تفاصيل</Button>
-                    </Link>
-                    {user?.id === service.userId && (
-                      <div className="flex gap-2">
-                        <Button size="icon" variant="ghost" onClick={() => handleEditService(service)}><Edit className="w-5 h-5" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDeleteService(service.id)}><Trash2 className="w-5 h-5 text-red-500" /></Button>
+                  <div className="p-4 rtl flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold line-clamp-1">{service.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">{service.description}</p>
+                      <div className="flex items-center gap-2 mt-2 mb-4">
+                        <p className="text-lg font-bold text-blue dark:text-blue-light">₪ {service.price.toLocaleString()}</p>
                       </div>
-                    )}
+                      <div className="text-gray-500 text-xs mb-2">{service.location} • {service.contactInfo}</div>
+                    </div>
+                    <Link to={`/services/${service.id}`} className="block mt-auto">
+                      <button className="w-full bg-blue hover:bg-blue-600 text-white dark:bg-blue-500 dark:hover:bg-blue-600 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                        تفاصيل
+                      </button>
+                    </Link>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>

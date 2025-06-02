@@ -110,6 +110,38 @@
       "destination": "http://mazadpalestine.runasp.net/NewService/:path*"
     },
     {
+      "source": "/NewService/images/:path*",
+      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
+    },
+    {
+      "source": "/NewService/images/:path*",
+      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "has": [
+        {
+          "type": "query",
+          "key": "image"
+        }
+      ]
+    },
+    {
+      "source": "/NewService/images/:path*",
+      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "image/.*"
+        }
+      ]
+    },
+    {
       "source": "/NewServiceCategory/:path*",
       "destination": "http://mazadpalestine.runasp.net/NewServiceCategory/:path*"
     },

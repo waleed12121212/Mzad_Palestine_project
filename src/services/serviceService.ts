@@ -37,6 +37,7 @@ export interface Service {
   price: number;
   location: string;
   contactInfo: string;
+  images: string[];
 }
 
 export interface CreateServiceData {
@@ -122,9 +123,34 @@ class ServiceService {
       return [];
     }
   }
+
+  // Update service
+  async updateService(id: number | string, data: any, token?: string): Promise<any> {
+    try {
+      // تحويل المعرف إلى رقم
+      const serviceId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // التحقق من صحة المعرف
+      if (isNaN(serviceId)) {
+        throw new Error('معرف الخدمة غير صالح');
+      }
+
+      // إعداد الهيدرز
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
+
+      const response = await axiosInstance.put(`/update/${serviceId}`, data, { headers });
+      return response.data?.data || response.data;
+    } catch (error: any) {
+      console.error('Error updating service:', error.response?.data || error.message);
+      throw error;
+    }
+  }
 }
 
 // Create and export a singleton instance
 const serviceService = new ServiceService();
-export { serviceService };
-export type { Service }; 
+export { serviceService }; 

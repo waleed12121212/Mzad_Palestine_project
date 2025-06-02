@@ -53,6 +53,8 @@ import { AddJobPage } from './pages/AddJobPage';
 import ServiceCategoryPage from '@/pages/ServiceCategoryPage';
 import ServicePage from '@/pages/ServicePage';
 import ServiceDetailsPage from '@/pages/ServiceDetailsPage';
+import CreateService from '@/pages/CreateService';
+import EditService from '@/pages/EditService';
 
 const queryClient = new QueryClient();
 
@@ -272,6 +274,8 @@ function App() {
                     <Route path="/services" element={<ServiceCategoryPage />} />
                     <Route path="/services/category/:categoryId" element={<ServicePage />} />
                     <Route path="/services/:id" element={<ServiceDetailsPage />} />
+                    <Route path="/services/create" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
+                    <Route path="/services/edit/:id" element={<ProtectedRoute><EditService /></ProtectedRoute>} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster

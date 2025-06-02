@@ -198,11 +198,11 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/auth/, '/auth')
       },
-      '/NewServiceCategory': {
+      '/NewService': {
         target: API_URL,
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/NewServiceCategory/, '/NewServiceCategory'),
+        rewrite: (path) => path.replace(/^\/NewService/, '/NewService'),
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             if (req.headers.authorization) {
@@ -211,11 +211,24 @@ export default defineConfig(({ mode }) => ({
           });
         }
       },
-      '/NewService': {
+      '/NewService/images': {
         target: API_URL,
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/NewService/, '/NewService'),
+        rewrite: (path) => path.replace(/^\/NewService\/images/, '/NewService/images'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        }
+      },
+      '/NewServiceCategory': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/NewServiceCategory/, '/NewServiceCategory'),
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
             if (req.headers.authorization) {

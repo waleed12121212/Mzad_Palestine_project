@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { serviceCategoryService } from '@/services/serviceCategoryService';
-import { Loader2, Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Search, Plus, Edit, Trash2, Shirt, Smartphone, Car, Gem, BookOpen, Camera, Baby, Coffee, Sofa, Broom, User, Truck, Building2 } from 'lucide-react';
 import type { ServiceCategory } from '@/services/serviceCategoryService';
 
 const ServiceCategoryPage: React.FC = () => {
@@ -104,6 +104,24 @@ const ServiceCategoryPage: React.FC = () => {
     category.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // دالة اختيار الأيقونة حسب اسم الفئة (مطابقة جزئية)
+  const getCategoryIcon = (name: string) => {
+    if (name.includes("تنظيف") || name.includes("سجاد")) return <Gem className="w-5 h-5 text-gray-700" />; // استبدل Gem بـ Broom إذا كانت متوفرة
+    if (name.includes("معلم") || name.includes("تدريس") || name.includes("دروس")) return <BookOpen className="w-5 h-5 text-gray-700" />;
+    if (name.includes("سائق") || name.includes("توصيل")) return <Car className="w-5 h-5 text-gray-700" />;
+    if (name.includes("بناء") || name.includes("إنشاء")) return <Building2 className="w-5 h-5 text-gray-700" />;
+    if (name.includes("أزياء") || name.includes("ملابس")) return <Shirt className="w-5 h-5 text-gray-700" />;
+    if (name.includes("إلكترونيات")) return <Smartphone className="w-5 h-5 text-gray-700" />;
+    if (name.includes("مركبات") || name.includes("سيارات")) return <Car className="w-5 h-5 text-gray-700" />;
+    if (name.includes("إكسسوارات")) return <Gem className="w-5 h-5 text-gray-700" />;
+    if (name.includes("كتب") || name.includes("مجلات")) return <BookOpen className="w-5 h-5 text-gray-700" />;
+    if (name.includes("كاميرا")) return <Camera className="w-5 h-5 text-gray-700" />;
+    if (name.includes("أطفال")) return <Baby className="w-5 h-5 text-gray-700" />;
+    if (name.includes("منزلية")) return <Coffee className="w-5 h-5 text-gray-700" />;
+    if (name.includes("أثاث")) return <Sofa className="w-5 h-5 text-gray-700" />;
+    return <Gem className="w-5 h-5 text-gray-700" />;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -154,68 +172,68 @@ const ServiceCategoryPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="relative rounded-2xl overflow-hidden shadow-md group w-full h-44 flex-shrink-0 cursor-pointer transform transition-transform hover:scale-105">
-              {/* Background Image */}
-              <img
-                src={category.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
-                alt={category.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://placehold.co/600x400?text=Error+Loading+Image';
-                }}
-              />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              
-              {/* Category Name and Description */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h3 className="text-xl font-bold mb-1">{category.name}</h3>
-                <p className="text-sm text-gray-200 line-clamp-2">{category.description}</p>
-              </div>
-
-              {/* Admin Actions */}
+            <div
+              className="relative w-80 h-48 mx-auto group cursor-pointer"
+              onClick={() => navigate(`/services/category/${category.id}`)}
+            >
+              {/* أزرار الأدمن */}
               {isAdmin && (
-                <div className="absolute top-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 left-2 flex gap-2 z-20">
                   <Button
                     variant="secondary"
-                    size="sm"
-                    className="bg-white/90 hover:bg-white"
+                    size="icon"
+                    className="bg-white/90 hover:bg-white rounded-full p-2"
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingCategory(category);
                     }}
                   >
-                    <Edit className="w-4 h-4 ml-1" />
-                    تعديل
+                    <Edit className="w-5 h-5 text-blue-700" />
                   </Button>
                   <Button
                     variant="destructive"
-                    size="sm"
-                    className="bg-red-500/90 hover:bg-red-500"
+                    size="icon"
+                    className="bg-white/90 hover:bg-white rounded-full p-2"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteCategory(category.id);
                     }}
                   >
-                    <Trash2 className="w-4 h-4 ml-1" />
-                    حذف
+                    <Trash2 className="w-5 h-5 text-red-600" />
                   </Button>
                 </div>
               )}
-
-              {/* View Services Button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-3 right-3 bg-white/90 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/services/category/${category.id}`);
+              {/* الصورة الخلفية */}
+              <img
+                src={category.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
+                alt={category.name}
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
+                style={{ filter: 'brightness(0.7)' }}
+                onError={(e) => {
+                  e.currentTarget.src = 'https://placehold.co/600x400?text=Error+Loading+Image';
                 }}
-              >
-                عرض الخدمات
-              </Button>
-            </Card>
+              />
+              {/* تدرج فوق الصورة */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              {/* محتوى البطاقة */}
+              <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                {/* أيقونة الفئة */}
+                <span className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+                  {getCategoryIcon(category.name)}
+                </span>
+                {/* اسم الفئة */}
+                <span className="text-lg font-bold text-white drop-shadow-lg">{category.name}</span>
+              </div>
+              {/* الوصف والعدادات */}
+              <div className="absolute bottom-4 right-4 left-4 flex flex-col md:flex-row items-end md:items-center justify-between z-20">
+                <span className="text-sm text-white/90 mb-2 md:mb-0 md:mr-2">{category.description || 'لا يوجد وصف'}</span>
+                <div className="flex gap-4">
+                  <span className="flex items-center text-xs text-white/90">
+                    {(category.serviceNumber ?? 0)} خدمة
+                  </span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
