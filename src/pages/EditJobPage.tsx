@@ -26,7 +26,7 @@ export const EditJobPage: React.FC = () => {
         setCategories(cats);
         setJob(jobData);
         // حماية: السماح فقط لصاحب الوظيفة
-        if (!user || jobData.userId !== user.id) {
+        if (!user || String(jobData.userId) !== String(user.id)) {
           setNotAllowed(true);
           toast.error('غير مصرح لك بتعديل هذه الوظيفة');
           setTimeout(() => navigate('/jobs'), 3000);

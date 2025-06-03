@@ -55,6 +55,7 @@ import ServicePage from '@/pages/ServicePage';
 import ServiceDetailsPage from '@/pages/ServiceDetailsPage';
 import CreateService from '@/pages/CreateService';
 import EditService from '@/pages/EditService';
+import { EditJobPage } from '@/pages/EditJobPage';
 
 const queryClient = new QueryClient();
 
@@ -271,6 +272,7 @@ function App() {
                     <Route path="/jobs/new" element={<ProtectedRoute><AddJobPage /></ProtectedRoute>} />
                     <Route path="/job-categories" element={<JobCategoriesList />} />
                     <Route path="/jobs/:id" element={<JobDetailsPage />} />
+                    <Route path="/jobs/edit/:id" element={<ProtectedRoute><EditJobPage /></ProtectedRoute>} />
                     <Route path="/services" element={<ServiceCategoryPage />} />
                     <Route path="/services/category/:categoryId" element={<ServicePage />} />
                     <Route path="/services/:id" element={<ServiceDetailsPage />} />

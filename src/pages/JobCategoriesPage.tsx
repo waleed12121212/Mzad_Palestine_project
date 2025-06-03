@@ -170,7 +170,7 @@ export const JobCategoriesPage: React.FC = () => {
             <div className="absolute bottom-0 right-0 left-0 z-10 flex flex-col gap-1 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
               <p className="text-xs text-gray-100 mb-1 min-h-[18px]">{category.description || 'لا يوجد وصف'}</p>
               <div className="flex gap-3 items-center">
-                <span className="text-xs text-gray-200 bg-black/30 rounded-full px-2 py-1">{typeof category.jobsCount !== 'undefined' ? `${category.jobsCount} وظيفة` : '0 وظيفة'}</span>
+                <span className="text-xs text-gray-200 bg-black/30 rounded-full px-2 py-1">{typeof category.jobNumber !== 'undefined' ? `${category.jobNumber} وظيفة` : '0 وظيفة'}</span>
               </div>
             </div>
             {/* أزرار الأدمن */}

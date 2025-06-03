@@ -281,7 +281,7 @@ export const JobsPage: React.FC = () => {
                   <div>
                     <div className="flex flex-wrap gap-2 mb-2">
                       <span className="flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded px-2 py-1"><Briefcase className="w-4 h-4" /> {job.jobType}</span>
-                      <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1"><DollarSign className="w-4 h-4" /> {job.salary}</span>
+                      <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">₪ {job.salary}</span>
                       <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">{job.experienceLevel}</span>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2">{job.description}</p>

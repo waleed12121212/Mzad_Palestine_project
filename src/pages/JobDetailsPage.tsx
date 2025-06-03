@@ -24,6 +24,10 @@ const JobDetailsPage = () => {
   const [messageContent, setMessageContent] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  // دوال مساعدة للتحقق من نوع التواصل
+  const isEmail = (val) => val && val.includes('@');
+  const isPhone = (val) => val && /^[0-9+\-\s]+$/.test(val);
+
   useEffect(() => {
     const fetchJob = async () => {
       try {
@@ -67,12 +71,37 @@ const JobDetailsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
             <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-4 flex items-center justify-center">
               <Briefcase className="w-10 h-10 text-blue-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold text-blue-700 dark:text-blue-200 mb-1">{job.title}</h1>
+              <h1 className="text-3xl font-extrabold text-blue-700 dark:text-blue-200 mb-1 flex items-center gap-4">
+                {job.title}
+                {/* أزرار التعديل والحذف بجانب العنوان */}
+                {String(user?.id) === String(job?.userId) && (
+                  <span className="flex gap-2 ms-4">
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border-blue-200 text-blue-700 bg-white/80 hover:bg-blue-50 shadow"
+                      title="تعديل"
+                      onClick={() => navigate(`/jobs/edit/${job.id}`)}
+                    >
+                      <Edit className="w-5 h-5 text-blue-700" />
+                      <span className="font-bold">تعديل</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border-red-200 text-red-600 bg-white/80 hover:bg-red-50 shadow"
+                      title="حذف"
+                      onClick={handleDelete}
+                    >
+                      <Trash2 className="w-5 h-5 text-red-600" />
+                      <span className="font-bold">حذف</span>
+                    </Button>
+                  </span>
+                )}
+              </h1>
               <div className="flex flex-wrap gap-3 text-gray-500 dark:text-gray-400 text-sm">
                 <span className="flex items-center gap-1"><Building className="w-4 h-4" /> {job.companyName}</span>
                 <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.location}</span>
@@ -80,12 +109,7 @@ const JobDetailsPage = () => {
             </div>
           </div>
           <div className="flex gap-2 mt-4 md:mt-0">
-            {user?.id === job.userId && (
-              <>
-                <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-blue-700 border-blue-200" onClick={() => navigate(`/jobs/edit/${job.id}`)}><Edit className="w-4 h-4 mr-2" />تعديل</Button>
-                <Button variant="outline" className="bg-red-500/10 hover:bg-red-500/20 text-red-700 border-red-500/20" onClick={handleDelete}><Trash2 className="w-4 h-4 mr-2" />حذف</Button>
-              </>
-            )}
+            {/* تم نقل الأزرار إلى الأعلى */}
           </div>
         </div>
       </header>
@@ -116,7 +140,13 @@ const JobDetailsPage = () => {
             <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-4">وصف الوظيفة</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-6">{job.description}</p>
             <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-4">المتطلبات</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">{job.requirements}</p>
+            {job.requirements && (
+              <ul className="list-disc pr-6 text-gray-700 dark:text-gray-300 space-y-2 mb-6">
+                {job.requirements.split(/\n|,|-/).filter(Boolean).map((req, i) => (
+                  <li key={i}>{req.trim()}</li>
+                ))}
+              </ul>
+            )}
             <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-4">المميزات</h2>
             {job.benefits && (
               <ul className="list-disc pr-6 text-gray-700 dark:text-gray-300 space-y-2">
@@ -154,20 +184,52 @@ const JobDetailsPage = () => {
             )}
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4 mt-6">معلومات التواصل</h3>
             <div className="space-y-4 w-full">
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-blue-600" />
-                <div>
-                  <div className="text-sm text-gray-500">البريد الإلكتروني</div>
-                  <div className="font-medium">{job.contactEmail || job.contactInfo}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-blue-600" />
-                <div>
-                  <div className="text-sm text-gray-500">رقم الهاتف</div>
-                  <div className="font-medium">{job.contactPhone || '-'}</div>
-                </div>
-              </div>
+              {(() => {
+                // الأولوية: رقم الهاتف ثم الإيميل
+                if (job.contactPhone && job.contactPhone !== '-' && isPhone(job.contactPhone)) {
+                  return (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">رقم الهاتف</div>
+                        <div className="font-medium">{job.contactPhone}</div>
+                      </div>
+                    </div>
+                  );
+                } else if (job.contactInfo && isPhone(job.contactInfo)) {
+                  return (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">رقم الهاتف</div>
+                        <div className="font-medium">{job.contactInfo}</div>
+                      </div>
+                    </div>
+                  );
+                } else if (job.contactEmail && isEmail(job.contactEmail)) {
+                  return (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">البريد الإلكتروني</div>
+                        <div className="font-medium">{job.contactEmail}</div>
+                      </div>
+                    </div>
+                  );
+                } else if (job.contactInfo && isEmail(job.contactInfo)) {
+                  return (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">البريد الإلكتروني</div>
+                        <div className="font-medium">{job.contactInfo}</div>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return <div className="text-gray-400">لا يوجد معلومات تواصل متاحة</div>;
+                }
+              })()}
             </div>
           </div>
           {user && user.id !== job.userId && (

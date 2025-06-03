@@ -197,15 +197,6 @@ const ServicePage: React.FC = () => {
             <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="ابحث عن خدمة..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="mb-4">
-            <label className="block font-semibold mb-2">التصنيف</label>
-            <select className="w-full border rounded-lg px-3 py-2" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-              <option value="">كل التصنيفات</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="mb-4">
             <label className="block font-semibold mb-2">نطاق السعر</label>
             <div className="flex gap-2">
               <input type="number" className="w-1/2 border rounded-lg px-2 py-1" placeholder="الحد الأدنى" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
@@ -225,6 +216,29 @@ const ServicePage: React.FC = () => {
 
         {/* Main Content */}
         <section className="flex-1">
+          {/* شريط البحث والترتيب */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 rtl">
+            <div className="relative w-full md:w-auto md:flex-1">
+              <svg className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <input
+                type="text"
+                placeholder="ابحث عن خدمة..."
+                className="pr-10 rtl w-full border rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-400"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex space-s-2 w-full md:w-auto">
+              <select
+                className="w-full md:w-48 border rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-400"
+                // يمكنك ربطه بحالة ترتيب لاحقاً
+              >
+                <option value="">الأحدث</option>
+                <option value="low">الأقل سعراً</option>
+                <option value="high">الأعلى سعراً</option>
+              </select>
+            </div>
+          </div>
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
             {filteredServices.length === 0 && (
               <div className="text-center text-gray-500 py-8 col-span-full">لا توجد خدمات مطابقة للبحث أو الفلاتر.</div>

@@ -37,7 +37,7 @@ export const JobForm: React.FC<JobFormProps> = ({
           <div className="space-y-2">
             <label htmlFor="jobCategoryId" className="text-sm font-medium">فئة الوظيفة</label>
             <Select
-              defaultValue={initialData?.jobCategoryId.toString()}
+              defaultValue={initialData?.jobCategoryId !== undefined && initialData?.jobCategoryId !== null ? initialData.jobCategoryId.toString() : ''}
               onValueChange={(value) => setValue('jobCategoryId', parseInt(value))}
             >
               <SelectTrigger>

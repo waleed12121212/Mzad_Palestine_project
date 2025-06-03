@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { serviceCategoryService } from '@/services/serviceCategoryService';
-import { Loader2, Search, Plus, Edit, Trash2, Shirt, Smartphone, Car, Gem, BookOpen, Camera, Baby, Coffee, Sofa, Broom, User, Truck, Building2 } from 'lucide-react';
+import { Loader2, Search, Plus, Edit, Trash2, Shirt, Smartphone, Car, Gem, BookOpen, Camera, Baby, Coffee, Sofa, User, Truck, Building2 } from 'lucide-react';
 import type { ServiceCategory } from '@/services/serviceCategoryService';
 
 const ServiceCategoryPage: React.FC = () => {
@@ -50,7 +50,7 @@ const ServiceCategoryPage: React.FC = () => {
       setCategories(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('حدث خطأ أثناء جلب فئات الخدمات');
+      toast({ title: 'حدث خطأ أثناء جلب فئات الخدمات', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -59,42 +59,42 @@ const ServiceCategoryPage: React.FC = () => {
   const handleCreateCategory = async () => {
     try {
       await serviceCategoryService.createServiceCategory(newCategory);
-      toast.success('تم إنشاء فئة الخدمة بنجاح');
+      toast({ title: 'تم إنشاء فئة الخدمة بنجاح', variant: 'default' });
       setNewCategory({ name: '', description: '', imageUrl: '' });
       setIsDialogOpen(false);
       fetchCategories();
     } catch (error) {
       console.error('Error creating category:', error);
-      toast.error('حدث خطأ أثناء إنشاء فئة الخدمة');
+      toast({ title: 'حدث خطأ أثناء إنشاء فئة الخدمة', variant: 'destructive' });
     }
   };
 
   const handleUpdateCategory = async () => {
     if (!editingCategory) return;
     try {
-      await serviceCategoryService.updateServiceCategory(editingCategory.id, {
+      await serviceCategoryService.updateServiceCategory(String(editingCategory.id), {
         name: editingCategory.name,
         description: editingCategory.description,
         imageUrl: editingCategory.imageUrl
       });
-      toast.success('تم تحديث فئة الخدمة بنجاح');
+      toast({ title: 'تم تحديث فئة الخدمة بنجاح', variant: 'default' });
       setEditingCategory(null);
       fetchCategories();
     } catch (error) {
       console.error('Error updating category:', error);
-      toast.error('حدث خطأ أثناء تحديث فئة الخدمة');
+      toast({ title: 'حدث خطأ أثناء تحديث فئة الخدمة', variant: 'destructive' });
     }
   };
 
   const handleDeleteCategory = async (id: number) => {
     if (!window.confirm('هل أنت متأكد من حذف هذه الفئة؟')) return;
     try {
-      await serviceCategoryService.deleteServiceCategory(id);
-      toast.success('تم حذف فئة الخدمة بنجاح');
+      await serviceCategoryService.deleteServiceCategory(String(id));
+      toast({ title: 'تم حذف فئة الخدمة بنجاح', variant: 'default' });
       fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('حدث خطأ أثناء حذف فئة الخدمة');
+      toast({ title: 'حدث خطأ أثناء حذف فئة الخدمة', variant: 'destructive' });
     }
   };
 
@@ -139,9 +139,6 @@ const ServiceCategoryPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">فئات الخدمات</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            تصفح واختر من بين مجموعة متنوعة من فئات الخدمات
-          </p>
         </div>
         {isAdmin && (
           <Button onClick={() => setIsDialogOpen(true)}>
@@ -151,20 +148,8 @@ const ServiceCategoryPage: React.FC = () => {
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="relative mb-8">
-        <Search className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="ابحث عن فئات الخدمات..."
-          className="pr-10 rtl w-full"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
       {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredCategories.map((category) => (
           <motion.div
             key={category.id}
@@ -173,65 +158,48 @@ const ServiceCategoryPage: React.FC = () => {
             transition={{ duration: 0.3 }}
           >
             <div
-              className="relative w-80 h-48 mx-auto group cursor-pointer"
+              className="relative w-80 h-44 mx-auto group cursor-pointer rounded-2xl overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-800 transition-transform hover:scale-105"
               onClick={() => navigate(`/services/category/${category.id}`)}
             >
-              {/* أزرار الأدمن */}
-              {isAdmin && (
-                <div className="absolute top-2 left-2 flex gap-2 z-20">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="bg-white/90 hover:bg-white rounded-full p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingCategory(category);
-                    }}
-                  >
-                    <Edit className="w-5 h-5 text-blue-700" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="bg-white/90 hover:bg-white rounded-full p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteCategory(category.id);
-                    }}
-                  >
-                    <Trash2 className="w-5 h-5 text-red-600" />
-                  </Button>
-                </div>
-              )}
-              {/* الصورة الخلفية */}
+              {/* صورة الخلفية */}
               <img
                 src={category.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
                 alt={category.name}
-                className="absolute inset-0 w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-300"
-                style={{ filter: 'brightness(0.7)' }}
+                className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.src = 'https://placehold.co/600x400?text=Error+Loading+Image';
                 }}
               />
-              {/* تدرج فوق الصورة */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              {/* محتوى البطاقة */}
-              <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
-                {/* أيقونة الفئة */}
-                <span className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
-                  {getCategoryIcon(category.name)}
-                </span>
-                {/* اسم الفئة */}
-                <span className="text-lg font-bold text-white drop-shadow-lg">{category.name}</span>
+              {/* تدرج غامق أسفل البطاقة */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
+              {/* اسم الفئة وأزرار الأدمن */}
+              <div className="absolute top-3 right-3 left-3 flex items-center justify-between z-20">
+                <span className="text-lg font-bold text-white drop-shadow-lg truncate max-w-[60%]">{category.name}</span>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="bg-white/80 hover:bg-white rounded-full p-2"
+                      onClick={e => { e.stopPropagation(); setEditingCategory(category); }}
+                    >
+                      <Edit className="w-5 h-5 text-blue-700" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="bg-white/80 hover:bg-white rounded-full p-2"
+                      onClick={e => { e.stopPropagation(); handleDeleteCategory(category.id); }}
+                    >
+                      <Trash2 className="w-5 h-5 text-red-600" />
+                    </Button>
+                  </div>
+                )}
               </div>
-              {/* الوصف والعدادات */}
-              <div className="absolute bottom-4 right-4 left-4 flex flex-col md:flex-row items-end md:items-center justify-between z-20">
-                <span className="text-sm text-white/90 mb-2 md:mb-0 md:mr-2">{category.description || 'لا يوجد وصف'}</span>
-                <div className="flex gap-4">
-                  <span className="flex items-center text-xs text-white/90">
-                    {(category.serviceNumber ?? 0)} خدمة
-                  </span>
-                </div>
+              {/* الوصف وعدد الخدمات */}
+              <div className="absolute bottom-3 right-3 left-3 flex flex-col gap-2 z-20">
+                <span className="text-sm text-white/90 truncate">{category.description || 'لا يوجد وصف'}</span>
+                <span className="text-xs text-white/80 font-bold">{(category as any).serviceNumber || 0} خدمة</span>
               </div>
             </div>
           </motion.div>
