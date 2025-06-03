@@ -55,16 +55,49 @@ function parseAuctionBlock(content: string) {
 }
 
 // Utility function to parse the product block
-function parseProductBlock(content: string) {
-  // Flexible regex: matches [منتج: title](url) optionally followed by price, then the rest
-  const productRegex = /^\[منتج: (.+?)\]\((.+?)\)[ \n]*(?:السعر الحالي: ₪(\d+)[ \n]*)?(?:[-]+[ \n]*)?/;
+function parseProductBlock(content) {
+  const productRegex = /^\[منتج: (.+?)\]\((.+?)\)\nالسعر الحالي: ₪([\d,]+)\n-+\n/;
   const match = content.match(productRegex);
+  
   if (!match) return null;
+  
   return {
     title: match[1],
     url: match[2],
-    price: match[3],
-    rest: content.replace(productRegex, '').trim(),
+    price: parseInt(match[3].replace(/,/g, '')),
+    rest: content.replace(productRegex, '')
+  };
+}
+
+// Utility function to parse the job block
+function parseJobBlock(content) {
+  const jobRegex = /^\[وظيفة: (.+?)\]\((.+?)\)\nالشركة: (.+?)\nالموقع: (.+?)\n-+\n/;
+  const match = content.match(jobRegex);
+  
+  if (!match) return null;
+  
+  return {
+    title: match[1],
+    url: match[2],
+    company: match[3],
+    location: match[4],
+    rest: content.replace(jobRegex, '')
+  };
+}
+
+// Utility function to parse the service block
+function parseServiceBlock(content) {
+  const serviceRegex = /^\[خدمة: (.+?)\]\((.+?)\)\nالسعر: ₪(\d+)\nالموقع: (.+?)\n-+\n/;
+  const match = content.match(serviceRegex);
+  
+  if (!match) return null;
+  
+  return {
+    title: match[1],
+    url: match[2],
+    price: parseInt(match[3]),
+    location: match[4],
+    rest: content.replace(serviceRegex, '')
   };
 }
 
@@ -72,6 +105,21 @@ function parseProductBlock(content: string) {
 const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
   const auction = parseAuctionBlock(content);
   const product = parseProductBlock(content);
+  const job = parseJobBlock(content);
+  const service = parseServiceBlock(content);
+  
+  // Helper to determine if a URL is internal or external
+  const isInternalLink = (url: string) => {
+    return url.startsWith(window.location.origin) || url.startsWith('/');
+  };
+  
+  // Helper to convert internal URL to path for React Router
+  const getInternalPath = (url: string) => {
+    if (url.startsWith(window.location.origin)) {
+      return url.replace(window.location.origin, '');
+    }
+    return url;
+  };
   
   if (auction) {
     return (
@@ -96,14 +144,23 @@ const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
             />
           )}
           <div>
-            <a
-              href={auction.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
-            >
-              {auction.title}
-            </a>
+            {isInternalLink(auction.url) ? (
+              <Link
+                to={getInternalPath(auction.url)}
+                style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {auction.title}
+              </Link>
+            ) : (
+              <a
+                href={auction.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {auction.title}
+              </a>
+            )}
             {auction.price && (
               <div style={{ color: '#2563eb', fontSize: 14, marginTop: 2 }}>
                 السعر الحالي: ₪{auction.price}
@@ -130,14 +187,23 @@ const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
           }}
         >
           <div>
-            <a
-              href={product.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
-            >
-              {product.title}
-            </a>
+            {isInternalLink(product.url) ? (
+              <Link
+                to={getInternalPath(product.url)}
+                style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {product.title}
+              </Link>
+            ) : (
+              <a
+                href={product.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {product.title}
+              </a>
+            )}
             {product.price && (
               <div style={{ color: '#22c55e', fontSize: 14, marginTop: 2 }}>
                 السعر: ₪{product.price}
@@ -146,6 +212,92 @@ const AuctionMessage: React.FC<{ content: string }> = ({ content }) => {
           </div>
         </div>
         <div>{product.rest}</div>
+      </div>
+    );
+  } else if (job) {
+    return (
+      <div>
+        <div
+          style={{
+            border: '1px solid #6366f1',
+            background: '#f1f5fd',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div>
+            {isInternalLink(job.url) ? (
+              <Link
+                to={getInternalPath(job.url)}
+                style={{ color: '#6366f1', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {job.title}
+              </Link>
+            ) : (
+              <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#6366f1', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {job.title}
+              </a>
+            )}
+            <div style={{ fontSize: 14, marginTop: 2 }}>
+              {job.company && <span style={{ color: '#6366f1' }}>الشركة: {job.company}</span>}
+              {job.company && job.location && <span> • </span>}
+              {job.location && <span style={{ color: '#6366f1' }}>الموقع: {job.location}</span>}
+            </div>
+          </div>
+        </div>
+        <div>{job.rest}</div>
+      </div>
+    );
+  } else if (service) {
+    return (
+      <div>
+        <div
+          style={{
+            border: '1px solid #ec4899',
+            background: '#fdf2f8',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div>
+            {isInternalLink(service.url) ? (
+              <Link
+                to={getInternalPath(service.url)}
+                style={{ color: '#ec4899', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {service.title}
+              </Link>
+            ) : (
+              <a
+                href={service.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#ec4899', fontWeight: 'bold', fontSize: 16, textDecoration: 'none' }}
+              >
+                {service.title}
+              </a>
+            )}
+            <div style={{ fontSize: 14, marginTop: 2 }}>
+              {service.price && <span style={{ color: '#ec4899' }}>السعر: ₪{service.price}</span>}
+              {service.price && service.location && <span> • </span>}
+              {service.location && <span style={{ color: '#ec4899' }}>الموقع: {service.location}</span>}
+            </div>
+          </div>
+        </div>
+        <div>{service.rest}</div>
       </div>
     );
   }

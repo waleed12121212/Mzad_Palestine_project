@@ -247,10 +247,19 @@ const JobDetailsPage = () => {
                   e.preventDefault();
                   setIsSending(true);
                   try {
+                    // Format message to include job details
+                    const jobUrl = `${window.location.origin}/jobs/${job.id}`;
+                    const formattedMessage = 
+                      `[وظيفة: ${job.title}](${jobUrl})\n` +
+                      `الشركة: ${job.companyName}\n` +
+                      `الموقع: ${job.location}\n` +
+                      `-----------------\n` +
+                      messageContent;
+
                     await messageService.sendMessage({
                       receiverId: jobOwner.id,
                       subject: `تقديم طلب على وظيفة ${job.title}`,
-                      content: messageContent,
+                      content: formattedMessage,
                     });
                     toast.success('تم إرسال الطلب بنجاح');
                     setShowApplyModal(false);

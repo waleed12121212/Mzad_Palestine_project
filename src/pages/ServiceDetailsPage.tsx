@@ -12,6 +12,8 @@ import { wishlistService } from "@/services/wishlistService";
 import { useAuth } from "@/contexts/AuthContext";
 import { userService, UserProfile } from "@/services/userService";
 import ReportDialog from '@/components/ReportDialog';
+import { messageService } from '@/services/messageService';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ServiceDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,9 @@ export default function ServiceDetailsPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [ownerLoading, setOwnerLoading] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [messageContent, setMessageContent] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const serviceId = id ? parseInt(id) : 0;
 
@@ -140,6 +145,50 @@ export default function ServiceDetailsPage() {
         description: error.message || "حدث خطأ أثناء حذف الخدمة",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageContent.trim()) {
+      toast({
+        title: "الرسالة فارغة",
+        description: "يرجى كتابة رسالة قبل الإرسال",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      // Format message to include service details
+      const serviceUrl = `${window.location.origin}/services/${service.id}`;
+      const formattedMessage = 
+        `[خدمة: ${service.title}](${serviceUrl})\n` +
+        `السعر: ₪${service.price}\n` +
+        `الموقع: ${service.location}\n` +
+        `-----------------\n` +
+        messageContent;
+
+      await messageService.sendMessage({
+        receiverId: owner.id,
+        subject: `استفسار عن خدمة: ${service.title}`,
+        content: formattedMessage,
+      });
+
+      toast({
+        title: "تم إرسال الرسالة بنجاح",
+        description: "سيتم الرد عليك في أقرب وقت ممكن",
+      });
+      setMessageContent('');
+      setShowContactModal(false);
+    } catch (error) {
+      toast({
+        title: "فشل إرسال الرسالة",
+        description: "حدث خطأ أثناء إرسال الرسالة. يرجى المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -425,6 +474,10 @@ export default function ServiceDetailsPage() {
           <Link
             to={`/chat?user=${owner?.id}`}
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-bold shadow transition"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowContactModal(true);
+                  }}
           >
             <MessageCircle className="w-5 h-5" />
             تواصل مع صاحب الخدمة
@@ -435,6 +488,80 @@ export default function ServiceDetailsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">تواصل مع صاحب الخدمة</h3>
+              <button 
+                onClick={() => setShowContactModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Service Preview */}
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-start gap-3">
+                {service.images && service.images.length > 0 && (
+                  <img 
+                    src={service.images[0]} 
+                    alt={service.title}
+                    className="w-16 h-16 object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-1">
+                    <Package className="h-4 w-4" />
+                    <span>الخدمة:</span>
+                  </div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    {service.title}
+                  </h4>
+                  {service.price && (
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      السعر: ₪{service.price.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">رسالتك</label>
+              <Textarea
+                placeholder="اكتب رسالتك هنا..."
+                value={messageContent}
+                onChange={(e) => setMessageContent(e.target.value)}
+                className="w-full min-h-[120px]"
+                disabled={isSending}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowContactModal(false)}
+                disabled={isSending}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={isSending || !messageContent.trim()}
+              >
+                {isSending ? "جاري الإرسال..." : "إرسال"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
