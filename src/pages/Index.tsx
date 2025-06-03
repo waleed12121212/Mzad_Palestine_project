@@ -700,50 +700,6 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8 rtl">
-            <h2 className="heading-lg">الوظائف المتاحة</h2>
-            <Link to="/jobs" className="text-blue dark:text-blue-light hover:underline flex items-center">
-              عرض الكل
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {jobs.slice(0, 4).map((job) => (
-              <div
-                key={job.id}
-                className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 dark:border-gray-700 hover:border-blue-400 transition overflow-hidden flex flex-col"
-              >
-                <div className="flex items-center gap-4 p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-                  <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-3">
-                    <Briefcase className="w-8 h-8 text-blue-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 group-hover:text-blue-600 transition">{job.title}</h2>
-                    <div className="text-gray-500 dark:text-gray-400 text-sm">{job.companyName} • {job.location}</div>
-                  </div>
-                </div>
-                <div className="p-6 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <span className="flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 rounded px-2 py-1"><Briefcase className="w-4 h-4" /> {job.jobType}</span>
-                      <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1"><DollarSign className="w-4 h-4" /> {job.salary} ₪</span>
-                      <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">{job.experienceLevel}</span>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2">{job.description}</p>
-                  </div>
-                  <div className="mt-4 flex justify-center items-center">
-                    <Link to={`/jobs/${job.id}`}>
-                      <Button className="rounded-full px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow transition">تفاصيل</Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="py-12 bg-gradient-to-r from-blue/5 to-transparent dark:from-blue-dark/10 dark:to-transparent">
           <div className="my-8 flex justify-center">
             <GoogleAdsense 

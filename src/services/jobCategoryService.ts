@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAuthHeader } from '@/utils/auth';
 import { JobCategory } from '@/types/job';
+import { Job } from '@/types/job';
 
 // API URL for JobCategory service
 const API_URL = '/JobCategory'; // This uses Vite's proxy configuration
@@ -74,6 +75,17 @@ class JobCategoryService {
     } catch (error) {
       console.error('Error in getJobCategories:', error);
       return [];
+    }
+  }
+
+  // Get jobs by category ID
+  async getJobsByCategoryId(categoryId: string): Promise<Job[]> {
+    try {
+      const response = await axiosInstance.get(`/get-jobs/${categoryId}`);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching jobs by category:', error);
+      throw error;
     }
   }
 

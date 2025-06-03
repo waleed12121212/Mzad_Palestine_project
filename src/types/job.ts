@@ -20,6 +20,8 @@ export interface Job {
   benefits: string;
   contactInfo: string;
   createdAt?: string;
+  updatedAt?: string;
+  date?: string;
   userId?: string | number;
   userName?: string | null;
 }

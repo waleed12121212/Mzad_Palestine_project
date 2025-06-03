@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Job, JobCategory } from '../types/job';
 import { jobService } from '../services/jobService';
 import { jobCategoryService } from '../services/jobCategoryService';
@@ -9,13 +9,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { Building2, Edit, Trash2, MapPin, Briefcase, DollarSign, Plus, Filter, Clock } from 'lucide-react';
 
 export const JobsPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [categories, setCategories] = useState<JobCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   // فلاتر
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState(searchParams.get('category') || '');
   const [filterType, setFilterType] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterLevel, setFilterLevel] = useState('');
@@ -26,12 +27,14 @@ export const JobsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [filterCategory]);
 
   const loadData = async () => {
     try {
       const [jobsData, categoriesData] = await Promise.all([
-        jobService.getAllJobs(),
+        filterCategory 
+          ? jobCategoryService.getJobsByCategoryId(filterCategory)
+          : jobService.getAllJobs(),
         jobCategoryService.getAllJobCategories()
       ]);
       setJobs(jobsData);
@@ -95,7 +98,6 @@ export const JobsPage: React.FC = () => {
     }
 
     return (
-      (!filterCategory || job.jobCategoryId === Number(filterCategory)) &&
       (!filterType || job.jobType === filterType) &&
       (!filterLocation || job.location.includes(filterLocation)) &&
       (!filterLevel || job.experienceLevel === filterLevel) &&

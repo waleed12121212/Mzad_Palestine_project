@@ -146,6 +146,7 @@ export const JobCategoriesPage: React.FC = () => {
         {categories.map((category) => (
           <div
             key={category.id}
+            onClick={() => navigate(`/jobs?category=${category.id}`)}
             className="relative rounded-2xl overflow-hidden shadow-md group w-72 h-44 flex-shrink-0 cursor-pointer transform transition-transform hover:scale-105"
           >
             {/* صورة الخلفية */}
