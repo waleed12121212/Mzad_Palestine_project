@@ -1,8 +1,8 @@
 // Transaction types based on API response
 export enum TransactionType {
-  AuctionPayment = 0,
-  ListingPayment = 1,
-  Refund = 2
+  AuctionPayment = "AuctionPayment",
+  ListingPayment = "ListingPayment",
+  Refund = "Refund"
 }
 
 // Transaction status based on API response
@@ -30,15 +30,17 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   amount: number;
-  type: TransactionType;
+  type: TransactionType | string;
   description: string;
   auctionId?: number;
   listingId?: number;
 }
 
 export interface UpdateTransactionInput {
-  amount?: number;
-  status?: TransactionStatus;
+  amount: number;
+  type: TransactionType | string;
+  description: string;
+  status: number;
 }
 
 export interface FilterTransactionParams {
@@ -76,8 +78,8 @@ export const getTransactionStatusText = (status: TransactionStatus): string => {
 
 // Helper function to convert numeric or string type to string representation
 export const getTransactionTypeText = (type: TransactionType | string): string => {
-  if (type === 0 || type === "AuctionPayment") return "دفع مزاد";
-  if (type === 1 || type === "ListingPayment") return "دفع منتج";
-  if (type === 2 || type === "Refund") return "استرجاع";
-  return "غير معروف";
+  if (type === "AuctionPayment" || type === "دفع مزاد") return "دفع مزاد";
+  if (type === "ListingPayment" || type === "دفع منتج") return "دفع منتج";
+  if (type === "Refund" || type === "استرجاع") return "استرجاع";
+  return type?.toString() || "غير معروف";
 }; 

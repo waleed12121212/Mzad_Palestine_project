@@ -56,16 +56,18 @@ function toEnglishDigits(strOrNum: string | number | undefined | null) {
     .replace(/[٠-٩]/g, d => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]);
 }
 
-// خرائط تحويل القيم الرقمية إلى نصية للفلترة
+// خرائط تحويل القيم النصية للفلترة
 const statusMap: Record<string, string> = {
-  "0": "Pending",
-  "1": "Completed",
-  "2": "Refunded",
-  "3": "Cancelled"
+  "Pending": "Pending",
+  "Completed": "Completed",
+  "Refunded": "Refunded",
+  "Cancelled": "Cancelled"
 };
+
 const typeMap: Record<string, string> = {
-  "0": "AuctionPayment",
-  "1": "ListingPayment"
+  "AuctionPayment": "AuctionPayment",
+  "ListingPayment": "ListingPayment",
+  "Refund": "Refund"
 };
 
 export const TransactionList: React.FC<TransactionListProps> = ({
@@ -176,10 +178,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="0">قيد الانتظار</SelectItem>
-                <SelectItem value="1">مكتمل</SelectItem>
-                <SelectItem value="2">مسترجع</SelectItem>
-                <SelectItem value="3">ملغي</SelectItem>
+                <SelectItem value="Pending">قيد الانتظار</SelectItem>
+                <SelectItem value="Completed">مكتمل</SelectItem>
+                <SelectItem value="Refunded">مسترجع</SelectItem>
+                <SelectItem value="Cancelled">ملغي</SelectItem>
               </SelectContent>
             </Select>
 
@@ -189,8 +191,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="0">دفع مزاد</SelectItem>
-                <SelectItem value="1">دفع منتج</SelectItem>
+                <SelectItem value="AuctionPayment">دفع مزاد</SelectItem>
+                <SelectItem value="ListingPayment">دفع منتج</SelectItem>
               </SelectContent>
             </Select>
 

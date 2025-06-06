@@ -5,7 +5,7 @@ import { auctionService } from '@/services/auctionService';
 import { bidService } from '@/services/bidService';
 import { paymentService } from '@/services/paymentService';
 import { transactionService } from '@/services/transactionService';
-import { TransactionType } from '@/types/transaction';
+import { TransactionType, TransactionStatus } from '@/types/transaction';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -132,39 +132,56 @@ const WonAuctions: React.FC = () => {
     try {
       const wonAuction = wonAuctions?.find((a: WonAuction) => (a.id || a.auctionId) === auctionId);
       if (!wonAuction) {
-        throw new Error('Auction not found');
+        throw new Error('المزاد غير موجود');
       }
 
       const amount = wonAuction.currentBid || wonAuction.currentPrice || wonAuction.reservePrice || 0;
       
-      // 1. Create transaction
-      const transaction = await transactionService.createTransaction({
+      // Validate amount
+      if (!amount || amount <= 0) {
+        throw new Error('قيمة المزايدة غير صحيحة');
+      }
+
+      // 1. Create transaction with proper validation
+      const transactionData = {
         amount: amount,
         type: TransactionType.AuctionPayment,
-        description: `Payment for: ${wonAuction.name}`,
+        description: `${wonAuction.name}`,
         auctionId: auctionId
-      });
+      };
 
-      console.log('Transaction created for auction payment:', transaction);
-      console.log('Auction payment transaction ID:', transaction.transactionId);
+      console.log('Creating transaction with data:', transactionData);
+      const transaction = await transactionService.createTransaction(transactionData);
 
-      // 2. Create payment with the transactionId from the transaction
-      const payment = await paymentService.createAuctionPayment({
+      if (!transaction || !transaction.transactionId) {
+        throw new Error('فشل في إنشاء المعاملة');
+      }
+
+      console.log('Transaction created:', transaction);
+
+      // 2. Create payment with the transaction ID
+      const paymentData = {
         auctionId: auctionId,
         amount: amount,
         paymentMethod: 'CreditCard',
-        notes: `Payment for: ${wonAuction.name}`,
+        notes: `${wonAuction.name}`,
         transactionId: transaction.transactionId.toString()
-      });
+      };
 
-      console.log('Auction payment created:', payment);
-      console.log('Auction payment with transaction ID:', payment.transactionId);
+      console.log('Creating payment with data:', paymentData);
+      const payment = await paymentService.createAuctionPayment(paymentData);
+
+      if (!payment || !payment.id) {
+        throw new Error('فشل في إنشاء الدفع');
+      }
+
+      console.log('Payment created:', payment);
 
       // 3. Navigate to payment page
       navigate(`/payment/${payment.id}`);
-    } catch (error) {
-      toast.error('حدث خطأ أثناء بدء عملية الدفع');
+    } catch (error: any) {
       console.error('Payment error:', error);
+      toast.error(error.message || 'حدث خطأ أثناء بدء عملية الدفع');
     }
   };
 

@@ -13,10 +13,10 @@ interface BuyNowButtonProps {
   listingId: number;
   price: number;
   title: string;
-  transactionId: string;
+  onSold?: () => void;
 }
 
-export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, title }) => {
+export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, title, onSold }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -38,9 +38,9 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
       // 1. Create transaction first
       const transaction = await transactionService.createTransaction({
         amount: price,
-        type: TransactionType.ListingPayment,
-        description: `Payment for: ${title}`,
-        listingId: listingId
+        type: "ListingPayment",
+        description: `${title}`,
+        auctionId: listingId  // IMPORTANT: API expects this as auctionId even for listings
       });
       
       console.log('Transaction created:', transaction);

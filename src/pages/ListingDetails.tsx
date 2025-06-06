@@ -16,6 +16,8 @@ import ReviewForm from '@/components/ReviewForm';
 import ListingReviews from '@/components/ListingReviews';
 import { userService, UserProfile } from '@/services/userService';
 import ReportDialog from '@/components/ReportDialog';
+import { useQuery } from '@tanstack/react-query';
+import { paymentService } from '@/services/paymentService';
 
 export default function ListingDetails() {
   const { id } = useParams<{ id: string }>();
@@ -32,18 +34,36 @@ export default function ListingDetails() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [seller, setSeller] = useState<UserProfile | null>(null);
   const [sellerLoading, setSellerLoading] = useState(false);
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
 
   const listingId = id ? parseInt(id) : 0;
 
+  // Check if the listing has a completed payment
+  const checkPaymentStatus = async (listingId: number) => {
+    try {
+      const payments = await paymentService.getListingPayment(listingId);
+      // Check if there's any completed payment in the array
+      return payments.some(payment => payment.status === 'Completed' && payment.auctionId === listingId);
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const fetchListingDetails = async () => {
-      if (!listingId) return;
+      if (!id) return;
       
       setIsLoading(true);
       try {
+        const listingId = parseInt(id);
         const data = await listingService.getListingById(listingId);
         setListing(data);
         
+        // Check payment status using listingId as auctionId
+        const isPaid = await checkPaymentStatus(listingId);
+        setIsPaymentCompleted(isPaid);
+
         // Check if listing is in user's wishlist
         if (isAuthenticated) {
           const wishlistStatus = await wishlistService.isInWishlist(listingId);
@@ -51,17 +71,14 @@ export default function ListingDetails() {
         }
       } catch (error) {
         console.error('Error fetching listing details:', error);
-        toast({
-          title: 'فشل في تحميل بيانات المنتج',
-          variant: 'destructive',
-        });
+        setError('Failed to load listing details');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchListingDetails();
-  }, [listingId, isAuthenticated]);
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
     if (listing && listing.userId) {
@@ -194,9 +211,9 @@ export default function ListingDetails() {
           <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 rtl justify-start" style={{direction: 'rtl'}}>
             <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">الرئيسية</Link>
             <span className="mx-2">›</span>
-            <span className="text-gray-900 dark:text-gray-100">{listing.categoryName}</span>
+            <span className="text-gray-900 dark:text-gray-100">{listing?.categoryName}</span>
             <span className="mx-2">›</span>
-            <span className="text-gray-900 dark:text-gray-100">{listing.title}</span>
+            <span className="text-gray-900 dark:text-gray-100">{listing?.title}</span>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -344,10 +361,15 @@ export default function ListingDetails() {
               )}
             </div>
 
-            {/* Product details */}
+            {/* Product details with transaction status */}
             <div>
               <div className="flex justify-between items-start mb-4">
-                <h1 className="text-3xl font-bold">{listing.title}</h1>
+                <h1 className="text-3xl font-bold">{listing?.title}</h1>
+                {isPaymentCompleted && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    تم البيع
+                  </Badge>
+                )}
               </div>
 
               <div className="mb-8">
@@ -433,18 +455,36 @@ export default function ListingDetails() {
                 </div>
 
                 <div className="space-y-4 mt-6">
-                  <BuyNowButton
-                    listingId={listing.listingId}
-                    price={listing.price}
-                    title={listing.title}
-                  />
+                  {!isPaymentCompleted ? (
+                    <BuyNowButton
+                      listingId={listing?.listingId || 0}
+                      price={listing?.price || 0}
+                      title={listing?.title || ''}
+                      onSold={async () => {
+                        if (listing?.listingId) {
+                          // Check payment status using listingId as auctionId
+                          const isPaid = await checkPaymentStatus(listing.listingId);
+                          setIsPaymentCompleted(isPaid);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <p className="text-gray-600 dark:text-gray-300">
+                        تم بيع هذا المنتج
+                      </p>
+                    </div>
+                  )}
                   
-                  <ListingContactSellerDialog 
-                    sellerId={listing.userId}
-                    productName={listing.title} 
-                    productImage={listing.images && listing.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
-                    productPrice={listing.price}
-                  />
+                  {!isPaymentCompleted && (
+                    <ListingContactSellerDialog 
+                      sellerId={listing?.userId || 0}
+                      productName={listing?.title || ''} 
+                      productImage={listing?.images && listing?.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
+                      productPrice={listing?.price || 0}
+                    />
+                  )}
+
                   {/* أزرار المفضلة والمشاركة والإبلاغ */}
                   <div className="flex gap-2 mt-4 justify-center">
                     <button

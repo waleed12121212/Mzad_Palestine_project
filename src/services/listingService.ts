@@ -382,11 +382,13 @@ class ListingService {
         headers: getAuthHeader()
       });
       
-      // Create a payment for this listing
+      // Create a payment for this listing with correct payload structure
       const paymentResponse = await axios.post('/Payment/listing/' + listingId, {
         amount: purchaseResponse.data.price || 0,
-        paymentMethod: 'pending',
-        notes: 'Payment for direct purchase'
+        type: "ListingPayment",
+        description: `دفع المنتج: ${purchaseResponse.data.title || ''}`,
+        auctionId: listingId,
+        paymentMethod: 'CreditCard'
       }, {
         headers: getAuthHeader()
       });

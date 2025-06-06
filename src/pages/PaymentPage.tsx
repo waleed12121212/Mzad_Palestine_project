@@ -62,10 +62,18 @@ const PaymentPage: React.FC = () => {
       await paymentService.deletePayment(payment.id);
       // Cancel the transaction if there's a transaction ID
       if (payment.transactionId) {
-        await transactionService.updateTransaction(Number(payment.transactionId), { status: TransactionStatus.Cancelled });
+        // Get the original transaction to preserve its data
+        const originalTransaction = await transactionService.getTransactionById(Number(payment.transactionId));
+        
+        await transactionService.updateTransaction(Number(payment.transactionId), {
+          amount: originalTransaction.amount,
+          type: originalTransaction.type, // Keep original type
+          description: originalTransaction.description, // Keep original description
+          status: 3 // Cancelled status
+        });
       }
       toast.success('تم إلغاء عملية الدفع');
-      navigate('/auctions/won');
+      navigate('/');
     } catch (error) {
       toast.error('حدث خطأ أثناء إلغاء الدفع');
     } finally {

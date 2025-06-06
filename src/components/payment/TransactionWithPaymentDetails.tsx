@@ -1,16 +1,12 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Payment, paymentService } from '@/services/paymentService';
-import { Transaction } from '@/types/transaction';
+import React, { useState } from 'react';
+import { Transaction, TransactionType } from '@/types/transaction';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { getTransactionStatusText, getTransactionTypeText } from '@/types/transaction';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Loader2, ArrowRight } from 'lucide-react';
-import PaymentDetailsCard from './PaymentDetailsCard';
+import { ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,19 +16,31 @@ interface TransactionWithPaymentDetailsProps {
 
 const TransactionWithPaymentDetails: React.FC<TransactionWithPaymentDetailsProps> = ({ transaction }) => {
   const navigate = useNavigate();
+  const [activeTab] = useState<string>("transaction");
   
-  // Fetch payment details if there's a payment ID in the transaction
-  const { data: payment, isLoading: isLoadingPayment } = useQuery({
-    queryKey: ['payment', transaction.paymentIntentId],
-    queryFn: () => paymentService.getPaymentById(Number(transaction.paymentIntentId)),
-    enabled: !!transaction.paymentIntentId,
-  });
-
+  // Log transaction for debugging
+  console.log('Transaction details:', transaction);
+  
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ar });
     } catch (error) {
       return dateString;
+    }
+  };
+
+  // Helper function to determine if this is a listing payment
+  const isListingPayment = () => {
+    const typeText = getTransactionTypeText(transaction.type);
+    return typeText === "دفع منتج";
+  };
+
+  // Helper function to navigate to auction or listing detail
+  const navigateToItem = (type: string, id: number) => {
+    if (type === "دفع منتج" || transaction.type === TransactionType.ListingPayment) {
+      navigate(`/listing/${id}`);
+    } else {
+      navigate(`/auction/${id}`);
     }
   };
 
@@ -68,11 +76,8 @@ const TransactionWithPaymentDetails: React.FC<TransactionWithPaymentDetailsProps
         </CardHeader>
         <CardContent className="pt-4">
           <Tabs defaultValue="transaction" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-1 mb-4">
               <TabsTrigger value="transaction">تفاصيل المعاملة</TabsTrigger>
-              <TabsTrigger value="payment" disabled={!payment && !isLoadingPayment}>
-                تفاصيل الدفع
-              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="transaction" className="space-y-4">
@@ -107,15 +112,31 @@ const TransactionWithPaymentDetails: React.FC<TransactionWithPaymentDetailsProps
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {transaction.auctionId && (
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/30 rounded-md">
-                    <span className="text-sm text-gray-500">رقم المزاد</span>
-                    <span className="font-medium">{transaction.auctionId}</span>
+                    <span className="text-sm text-gray-500">
+                      {isListingPayment() ? "رقم المنتج" : "رقم المزاد"}
+                    </span>
+                    <Button 
+                      variant="link" 
+                      className="font-medium flex items-center p-0 h-auto"
+                      onClick={() => navigateToItem(getTransactionTypeText(transaction.type), transaction.auctionId)}
+                    >
+                      {transaction.auctionId}
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                    </Button>
                   </div>
                 )}
                 
                 {transaction.listingId && (
                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/30 rounded-md">
                     <span className="text-sm text-gray-500">رقم المنتج</span>
-                    <span className="font-medium">{transaction.listingId}</span>
+                    <Button 
+                      variant="link" 
+                      className="font-medium flex items-center p-0 h-auto"
+                      onClick={() => navigate(`/listing/${transaction.listingId}`)}
+                    >
+                      {transaction.listingId}
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -131,25 +152,17 @@ const TransactionWithPaymentDetails: React.FC<TransactionWithPaymentDetailsProps
                 </div>
               </div>
               
-              {transaction.paymentIntentId && (
+              {transaction.paymentIntentId && transaction.paymentIntentId !== "null" && transaction.paymentIntentId !== "undefined" && transaction.paymentIntentId.trim() !== "" && (
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/30 rounded-md">
                   <span className="text-sm text-gray-500">رقم عملية الدفع</span>
-                  <span className="font-medium">{transaction.paymentIntentId}</span>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="payment">
-              {isLoadingPayment ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="mr-2">جاري تحميل تفاصيل الدفع...</span>
-                </div>
-              ) : payment ? (
-                <PaymentDetailsCard payment={payment} showHeader={false} />
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  لا توجد معلومات دفع متاحة
+                  <Button 
+                    variant="link" 
+                    className="font-medium flex items-center p-0 h-auto"
+                    onClick={() => navigate(`/payment/${transaction.paymentIntentId}`)}
+                  >
+                    {transaction.paymentIntentId}
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                  </Button>
                 </div>
               )}
             </TabsContent>
