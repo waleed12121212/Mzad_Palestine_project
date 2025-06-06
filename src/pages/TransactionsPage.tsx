@@ -257,7 +257,7 @@ const TransactionsPage: React.FC = () => {
                       <div>الحالة</div>
                       <div>طريقة الدفع</div>
                       <div>التاريخ</div>
-                      <div className="text-center">التفاصيل</div>
+                      <div className="text-center">الاجراءات</div>
                     </div>
                     {/* Payment Rows */}
                     {paginatedPayments.map(renderCompactPaymentRow)}
