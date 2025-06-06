@@ -6,7 +6,7 @@ import { paymentService, Payment } from '@/services/paymentService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/formatters';
-import { Loader2, Search, CreditCard, ChevronLeft, ChevronRight, Filter, Calendar, ExternalLink } from 'lucide-react';
+import { Loader2, Search, CreditCard, ChevronLeft, ChevronRight, Filter, Calendar, ExternalLink, ArrowRight } from 'lucide-react';
 import PaymentDetailsCard from '@/components/payment/PaymentDetailsCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -117,7 +117,7 @@ const TransactionsPage: React.FC = () => {
       <div>{getStatusBadge(payment.status)}</div>
       <div>{payment.method || <span className="text-gray-400">غير محدد</span>}</div>
       <div>{formatDate(payment.createdAt)}</div>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -130,6 +130,23 @@ const TransactionsPage: React.FC = () => {
           <span>التفاصيل</span>
           <ExternalLink className="h-4 w-4" />
         </Button>
+        {/* Check if payment status indicates pending/incomplete */}
+{(payment.status === 'Pending' || 
+  payment.status === '0' ||  
+  Number(payment.status) === 0) && (
+  <Button
+    variant="default"
+    size="sm"
+    className="flex items-center gap-1 px-2"
+    onClick={() => {
+      navigate(`/payment/${payment.id}`);
+    }}
+    title="اكمال عملية الدفع"
+  >
+    <span>اكمال الدفع</span>
+    <ArrowRight className="h-4 w-4" />
+  </Button>
+)}
       </div>
     </div>
   );

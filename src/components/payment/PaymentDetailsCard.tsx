@@ -1,9 +1,9 @@
 import React from 'react';
 import { Payment } from '@/services/paymentService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Wallet, Banknote, Clock, CheckCircle, AlertTriangle, XCircle, Building2, Truck, ExternalLink } from 'lucide-react';
+import { CreditCard, Wallet, Banknote, Clock, CheckCircle, AlertTriangle, XCircle, Building2, Truck, ExternalLink, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -108,6 +108,16 @@ const PaymentDetailsCard: React.FC<PaymentDetailsCardProps> = ({
     }
   };
 
+  const isPaymentPending = () => {
+    const statusText = getStatusText(payment.status);
+    const statusNumber = typeof payment.status === 'number' ? payment.status : Number(payment.status);
+    return statusText === 'قيد الانتظار' || payment.status === 'Pending' || statusNumber === 0;
+  };
+
+  const handleCompletePayment = () => {
+    navigate(`/payment/${payment.id}`);
+  };
+
   return (
     <Card className={`overflow-hidden ${className}`}>
       {showHeader && (
@@ -190,6 +200,18 @@ const PaymentDetailsCard: React.FC<PaymentDetailsCardProps> = ({
           </div>
         </div>
       </CardContent>
+      {isPaymentPending() && (
+        <CardFooter className="bg-gray-50 dark:bg-gray-800/30 px-4 py-3 border-t">
+          <Button 
+            onClick={handleCompletePayment} 
+            className="w-full"
+            variant="default"
+          >
+            اكمال الدفع
+            <ArrowRight className="h-4 w-4 mr-2" />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };
