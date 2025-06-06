@@ -49,11 +49,24 @@ interface TransactionListProps {
 }
 
 // دالة لتحويل الأرقام العربية إلى إنجليزية
-function toEnglishDigits(strOrNum: string | number) {
+function toEnglishDigits(strOrNum: string | number | undefined | null) {
+  if (strOrNum === undefined || strOrNum === null) return '';
   return strOrNum
     .toString()
     .replace(/[٠-٩]/g, d => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]);
 }
+
+// خرائط تحويل القيم الرقمية إلى نصية للفلترة
+const statusMap: Record<string, string> = {
+  "0": "Pending",
+  "1": "Completed",
+  "2": "Refunded",
+  "3": "Cancelled"
+};
+const typeMap: Record<string, string> = {
+  "0": "AuctionPayment",
+  "1": "ListingPayment"
+};
 
 export const TransactionList: React.FC<TransactionListProps> = ({
   userId,
@@ -89,8 +102,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       return transactionService.getListingTransactions(listingId);
     } else if ((status && status !== 'all') || (type && type !== 'all') || startDate || endDate) {
       const params: any = {};
-      if (status && status !== 'all') params.status = status;
-      if (type && type !== 'all') params.type = type;
+      if (status && status !== 'all') params.status = statusMap[status] || status;
+      if (type && type !== 'all') params.type = typeMap[type] || type;
       if (startDate) params.startDate = format(startDate, 'yyyy-MM-dd');
       if (endDate) params.endDate = format(endDate, 'yyyy-MM-dd');
       return transactionService.filterTransactions(params);

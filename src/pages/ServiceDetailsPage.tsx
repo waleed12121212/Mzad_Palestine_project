@@ -14,6 +14,7 @@ import { userService, UserProfile } from "@/services/userService";
 import ReportDialog from '@/components/ReportDialog';
 import { messageService } from '@/services/messageService';
 import { Textarea } from '@/components/ui/textarea';
+import { serviceCategoryService } from '@/services/serviceCategoryService';
 
 export default function ServiceDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,7 @@ export default function ServiceDetailsPage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [categoryName, setCategoryName] = useState<string>("");
 
   const serviceId = id ? parseInt(id) : 0;
 
@@ -44,6 +46,7 @@ export default function ServiceDetailsPage() {
       try {
         const data = await serviceService.getServiceById(serviceId);
         setService(data);
+        console.log("service object:", data);
         
         // Check if service is in user's wishlist
         if (isAuthenticated) {
@@ -73,6 +76,13 @@ export default function ServiceDetailsPage() {
         .finally(() => setOwnerLoading(false));
     }
   }, [service?.userId]);
+
+  useEffect(() => {
+    if (service && service.category) {
+      serviceCategoryService.getServiceCategoryById(service.category)
+        .then(cat => setCategoryName(cat?.name || ""));
+    }
+  }, [service?.category]);
 
   const handleToggleWishlist = async () => {
     if (!isAuthenticated) {
@@ -239,7 +249,13 @@ export default function ServiceDetailsPage() {
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 rtl justify-start" style={{direction: 'rtl'}}>
           <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">الرئيسية</Link>
           <span className="mx-2">›</span>
-          <span className="text-gray-900 dark:text-gray-100">الخدمات</span>
+          <Link to="/services" className="hover:text-blue-600 dark:hover:text-blue-400">الخدمات</Link>
+          {categoryName && (
+            <>
+              <span className="mx-2">›</span>
+              <Link to={`/services/category/${service.category}`} className="hover:text-blue-600 dark:hover:text-blue-400">{categoryName}</Link>
+            </>
+          )}
           <span className="mx-2">›</span>
           <span className="text-gray-900 dark:text-gray-100">{service.title}</span>
         </div>
@@ -456,16 +472,18 @@ export default function ServiceDetailsPage() {
           <Card className="sticky top-4">
             <CardContent className="p-6">
               <div className="flex flex-col items-center mb-6">
-                {owner?.profilePicture ? (
-                  <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={owner.profilePicture} />
-                    <AvatarFallback>{owner.firstName?.[0]}{owner.lastName?.[0]}</AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Avatar className="w-24 h-24 mb-4">
-                    <AvatarFallback>{owner?.firstName?.[0]}{owner?.lastName?.[0]}</AvatarFallback>
-                  </Avatar>
-                )}
+                <Avatar className="w-24 h-24 mb-4">
+                  {owner?.profilePicture ? (
+                    <AvatarImage src={owner.profilePicture} alt={owner?.firstName || owner?.username || '؟'} />
+                  ) : null}
+                  <AvatarFallback className="text-3xl font-bold flex items-center justify-center w-full h-full">
+                    {owner?.firstName
+                      ? owner.firstName[0]
+                      : owner?.username
+                        ? owner.username[0]
+                        : '؟'}
+                  </AvatarFallback>
+                </Avatar>
                 <h3 className="text-xl font-bold mb-1">{owner?.firstName} {owner?.lastName}</h3>
                 <p className="text-gray-500 text-sm mb-4">{owner?.email}</p>
               </div>

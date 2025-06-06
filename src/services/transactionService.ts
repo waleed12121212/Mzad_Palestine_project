@@ -138,8 +138,18 @@ export const transactionService = {
 
   // Get total amount of transactions
   getTotalAmount: async (): Promise<number> => {
-    const response = await axiosInstance.get<TotalAmountResponse>('/total');
-    return response.data.total;
+    try {
+      const response = await axiosInstance.get<TotalAmountResponse>('/total');
+      // Always return a number, never undefined
+      if (response.data && response.data.data && typeof response.data.data.total === 'number') {
+        return response.data.data.total;
+      }
+      return 0;
+    } catch (error) {
+      // Optionally log the error
+      console.error('Error fetching total amount:', error);
+      return 0;
+    }
   },
 
   // Filter transactions by status and date range

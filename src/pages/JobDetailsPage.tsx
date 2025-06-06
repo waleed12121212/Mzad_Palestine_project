@@ -10,6 +10,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { messageService } from '../services/messageService';
 import { toast } from 'sonner';
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
 const JobDetailsPage = () => {
   const { id } = useParams();
@@ -163,18 +164,14 @@ const JobDetailsPage = () => {
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4">معلومات صاحب الوظيفة</h3>
             {jobOwner ? (
               <div className="flex flex-col items-center gap-3 mb-4">
-                {jobOwner.profilePicture && !showAvatar ? (
-                  <img
-                    src={jobOwner.profilePicture}
-                    alt="صورة المستخدم"
-                    className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow mb-2"
-                    onError={() => setShowAvatar(true)}
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-700 border-4 border-blue-100 shadow mb-2">
-                    {`${jobOwner.firstName?.[0] || ''}${jobOwner.lastName?.[0] || ''}`}
-                  </div>
-                )}
+                <Avatar className="w-24 h-24 mb-2">
+                  {jobOwner.profilePicture && !showAvatar ? (
+                    <AvatarImage src={jobOwner.profilePicture} alt={jobOwner.firstName || jobOwner.username || '؟'} onError={() => setShowAvatar(true)} />
+                  ) : null}
+                  <AvatarFallback className="text-3xl font-bold flex items-center justify-center w-full h-full">
+                    {jobOwner.firstName ? jobOwner.firstName[0] : jobOwner.username ? jobOwner.username[0] : '؟'}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="font-bold text-blue-700 dark:text-blue-200 text-lg">{jobOwner.firstName} {jobOwner.lastName}</div>
                 <div className="text-gray-500 text-sm">{jobOwner.email}</div>
                 <div className="text-gray-500 text-sm">{jobOwner.phoneNumber}</div>

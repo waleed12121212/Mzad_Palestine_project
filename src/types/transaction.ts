@@ -74,16 +74,10 @@ export const getTransactionStatusText = (status: TransactionStatus): string => {
   }
 };
 
-// Helper function to convert numeric type to string representation
-export const getTransactionTypeText = (type: TransactionType): string => {
-  switch (type) {
-    case TransactionType.AuctionPayment:
-      return 'دفع مزاد';
-    case TransactionType.ListingPayment:
-      return 'دفع منتج';
-    case TransactionType.Refund:
-      return 'استرجاع';
-    default:
-      return 'غير معروف';
-  }
+// Helper function to convert numeric or string type to string representation
+export const getTransactionTypeText = (type: TransactionType | string): string => {
+  if (type === 0 || type === "AuctionPayment") return "دفع مزاد";
+  if (type === 1 || type === "ListingPayment") return "دفع منتج";
+  if (type === 2 || type === "Refund") return "استرجاع";
+  return "غير معروف";
 }; 

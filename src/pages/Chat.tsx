@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { 
   Send, User, Search, MoreVertical, Phone, Video, 
@@ -891,11 +891,18 @@ const Chat: React.FC = () => {
                     onClick={() => handleSelectConversation(msg.senderId)}
                     style={{ direction: 'rtl' }}
                   >
-                    <img
-                      src={msg.senderAvatar ? (msg.senderAvatar.startsWith('http') ? msg.senderAvatar : `http://mazadpalestine.runasp.net${msg.senderAvatar}`) : ''}
-                      alt={msg.senderName}
-                      className="w-10 h-10 rounded-full object-cover border border-[#313A4D]"
-                    />
+                    <Avatar className="w-10 h-10 border-2 border-gray-200 dark:border-gray-700">
+                      {msg.senderAvatar ? (
+                        <img
+                          src={msg.senderAvatar.startsWith('http') ? msg.senderAvatar : `http://mazadpalestine.runasp.net${msg.senderAvatar}`}
+                          alt={msg.senderName}
+                          className="w-full h-full rounded-full object-cover"
+                          onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <AvatarFallback>{msg.senderName ? msg.senderName.charAt(0) : '؟'}</AvatarFallback>
+                      )}
+                    </Avatar>
                     <div className="flex-1 min-w-0 text-right">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="font-bold text-base truncate dark:text-white">{msg.senderName || 'مستخدم'}</span>
@@ -946,13 +953,11 @@ const Chat: React.FC = () => {
                           <Avatar className="h-8 w-8 ml-2">
                             {contact.avatar ? (
                               <img src={contact.avatar.startsWith('http') ? contact.avatar : `http://mazadpalestine.runasp.net${contact.avatar}`} alt={contact.name} className="object-cover rounded-full w-full h-full" />
-                    ) : (
-                      <div className="bg-blue text-white h-full w-full flex items-center justify-center rounded-full">
-                                <User className="h-4 w-4" />
-                      </div>
-                    )}
-                  </Avatar>
-                  <div>
+                            ) : (
+                              <AvatarFallback>{contact.name ? contact.name.charAt(0) : '؟'}</AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div>
                             <h3 className="text-sm font-medium">{contact.name}</h3>
                           </div>
                         </div>
