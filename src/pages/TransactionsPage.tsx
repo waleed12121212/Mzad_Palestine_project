@@ -115,7 +115,7 @@ const TransactionsPage: React.FC = () => {
       <div className="font-bold">{payment.amount.toLocaleString()} ₪</div>
       <div className="truncate">{payment.notes?.replace('Payment for: ', '') || '-'}</div>
       <div>{getStatusBadge(payment.status)}</div>
-      <div>{payment.method || <span className="text-gray-400">غير محدد</span>}</div>
+      <div>{payment.paymentMethod || <span className="text-gray-400">غير محدد</span>}</div>
       <div>{formatDate(payment.createdAt)}</div>
       <div className="flex justify-end gap-2">
         <Button

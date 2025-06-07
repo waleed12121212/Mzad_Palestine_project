@@ -75,7 +75,7 @@ export interface Payment {
   auctionId: number | null;
   listingId: number | null;
   amount: number;
-  method: string;
+  paymentMethod: string;
   status: string;
   transactionId: string | null;
   notes: string;
