@@ -165,12 +165,28 @@ const JobDetailsPage = () => {
             {jobOwner ? (
               <div className="flex flex-col items-center gap-3 mb-4">
                 <Avatar className="w-24 h-24 mb-2">
-                  {jobOwner.profilePicture && !showAvatar ? (
-                    <AvatarImage src={jobOwner.profilePicture} alt={jobOwner.firstName || jobOwner.username || '؟'} onError={() => setShowAvatar(true)} />
-                  ) : null}
-                  <AvatarFallback className="text-3xl font-bold flex items-center justify-center w-full h-full">
-                    {jobOwner.firstName ? jobOwner.firstName[0] : jobOwner.username ? jobOwner.username[0] : '؟'}
-                  </AvatarFallback>
+                  {jobOwner && jobOwner.profilePicture ? (
+                    <img
+                      src={jobOwner.profilePicture.startsWith('http') 
+                        ? jobOwner.profilePicture 
+                        : `http://mazadpalestine.runasp.net${jobOwner.profilePicture}`}
+                      alt={jobOwner.username}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        e.currentTarget.src = '/default-avatar.png';
+                        e.currentTarget.onerror = () => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = jobOwner.username?.charAt(0)?.toUpperCase() || 'U';
+                          }
+                        };
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
+                      {jobOwner?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  )}
                 </Avatar>
                 <div className="font-bold text-blue-700 dark:text-blue-200 text-lg">{jobOwner.firstName} {jobOwner.lastName}</div>
                 <div className="text-gray-500 text-sm">{jobOwner.email}</div>

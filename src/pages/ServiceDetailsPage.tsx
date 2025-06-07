@@ -473,16 +473,28 @@ export default function ServiceDetailsPage() {
             <CardContent className="p-6">
               <div className="flex flex-col items-center mb-6">
                 <Avatar className="w-24 h-24 mb-4">
-                  {owner?.profilePicture ? (
-                    <AvatarImage src={owner.profilePicture} alt={owner?.firstName || owner?.username || '؟'} />
-                  ) : null}
-                  <AvatarFallback className="text-3xl font-bold flex items-center justify-center w-full h-full">
-                    {owner?.firstName
-                      ? owner.firstName[0]
-                      : owner?.username
-                        ? owner.username[0]
-                        : '؟'}
-                  </AvatarFallback>
+                  {owner && owner.profilePicture ? (
+                    <img
+                      src={owner.profilePicture.startsWith('http') 
+                        ? owner.profilePicture 
+                        : `http://mazadpalestine.runasp.net${owner.profilePicture}`}
+                      alt={owner.username}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        e.currentTarget.src = '/default-avatar.png';
+                        e.currentTarget.onerror = () => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = owner.username?.charAt(0)?.toUpperCase() || 'U';
+                          }
+                        };
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
+                      {owner?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  )}
                 </Avatar>
                 <h3 className="text-xl font-bold mb-1">{owner?.firstName} {owner?.lastName}</h3>
                 <p className="text-gray-500 text-sm mb-4">{owner?.email}</p>
