@@ -242,23 +242,20 @@ const Navbar: React.FC = () => {
               </MobileNavLink>
               {isAuthenticated && (
                 <MobileNavLink href="/transactions" active={isActive("/transactions")}>
-                  <div className="flex items-center">
-                    <CreditCard className="h-4 w-4 ml-2" />
                     المعاملات المالية
-                  </div>
                 </MobileNavLink>
               )}
               <MobileNavLink href="/support" active={isActive("/support")}>
                 الدعم الفني
               </MobileNavLink>
-              <MobileNavLink href="/favorites" active={isActive("/favorites")}>
-                {t('nav.favorites')}
+              <MobileNavLink href="/favorites" active={isActive("/favorites")}> 
+                <Heart className="h-5 w-5" />
               </MobileNavLink>
-              <MobileNavLink href="/conversations" active={isActive("/conversations")}>
-                {t('nav.chat')}
+              <MobileNavLink href="/conversations" active={isActive("/conversations")}> 
+                <MessageCircle className="h-5 w-5" />
               </MobileNavLink>
-              <MobileNavLink href="/notifications" active={isActive("/notifications")}>
-                {t('nav.notifications')}
+              <MobileNavLink href="/notifications" active={isActive("/notifications")}> 
+                <Bell className="h-5 w-5" />
               </MobileNavLink>
             </nav>
 
