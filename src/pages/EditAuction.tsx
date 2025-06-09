@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { auctionService } from '@/services/auctionService';
 import { imageService } from '@/services/imageService';
+import { categoryService } from '@/services/categoryService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { CalendarIcon, Upload } from 'lucide-react';
 import axios from 'axios';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface ApiAuction {
   id?: number;
@@ -117,9 +119,9 @@ const EditAuction = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [originalAuction, setOriginalAuction] = useState<ApiAuction | null>(null);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [auction, setAuction] = useState<ApiAuction | null>(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -133,6 +135,8 @@ const EditAuction = () => {
       bidIncrement: '',
       categoryId: 1,
       status: 'Open',
+      newImages: [],
+      imagesToDelete: [],
     },
   });
 
@@ -149,24 +153,8 @@ const EditAuction = () => {
           return;
         }
 
-        console.log('Fetching auction with ID:', id);
         const response = await auctionService.getAuctionById(Number(id));
-        console.log('Raw API response:', response);
-        
-        // Handle different API response formats
-        let auctionData;
-        if (response.data) {
-          auctionData = response.data;
-        } else if (response.success && response.data) {
-          auctionData = response.data;
-        } else {
-          auctionData = response;
-        }
-        
-        console.log('Processed auction data:', auctionData);
-        
-        // Store the original auction data
-        setOriginalAuction(auctionData);
+        let auctionData = response.data || response;
         
         if (!auctionData) {
           toast({
@@ -178,7 +166,7 @@ const EditAuction = () => {
           return;
         }
 
-        // Check user permissions - support both camelCase and PascalCase keys
+        // Check user permissions
         const auctionUserId = auctionData.userId || auctionData.UserId || auctionData.sellerId || auctionData.SellerId;
         if (Number(auctionUserId) !== Number(user.id)) {
           toast({
@@ -190,62 +178,19 @@ const EditAuction = () => {
           return;
         }
 
-        // Create safe date objects with basic error handling
-        const now = new Date();
-        const futureDate = new Date();
-        futureDate.setDate(now.getDate() + 7);
+        setAuction(auctionData);
+        setCurrentImages(auctionData.images || auctionData.Images || []);
         
-        // Try to parse dates carefully (check all possible date fields)
-        let startTime = now;
-        let endTime = futureDate;
+        // Parse dates
+        const startTime = new Date(auctionData.startDate || auctionData.StartDate || auctionData.startTime || auctionData.StartTime);
+        const endTime = new Date(auctionData.endDate || auctionData.EndDate || auctionData.endTime || auctionData.EndTime);
         
-        // Get start date from any available field
-        const startDateStr = 
-          auctionData.startDate || auctionData.StartDate || 
-          auctionData.startTime || auctionData.StartTime;
-          
-        // Get end date from any available field  
-        const endDateStr = 
-          auctionData.endDate || auctionData.EndDate || 
-          auctionData.endTime || auctionData.EndTime;
-        
-        console.log('Parsing dates:', { startDateStr, endDateStr });
-        
-        if (startDateStr) {
-          try {
-            startTime = new Date(startDateStr);
-          } catch (error) {
-            console.error("Error parsing start date:", error);
-          }
-        }
-        
-        if (endDateStr) {
-          try {
-            endTime = new Date(endDateStr);
-          } catch (error) {
-            console.error("Error parsing end date:", error);
-          }
-        }
-        
-        // Validate dates (use fallbacks if invalid)
-        if (isNaN(startTime.getTime())) startTime = now;
-        if (isNaN(endTime.getTime())) endTime = futureDate;
-        
-        // Get price and increment with fallbacks
+        // Get price and increment
         const reservePrice = auctionData.reservePrice || auctionData.ReservePrice || 0;
         const bidIncrement = auctionData.bidIncrement || auctionData.BidIncrement || 100;
         
-        console.log('Setting form values:', {
-          startTime,
-          endTime,
-          reservePrice,
-          bidIncrement
-        });
-        
         const getStatusString = (status: any): string => {
           if (typeof status === 'string') return status;
-          
-          // Convert numeric status to string matching our enum
           switch (Number(status)) {
             case AuctionStatus.Draft: return 'Draft';
             case AuctionStatus.Active: return 'Open';
@@ -265,16 +210,9 @@ const EditAuction = () => {
           bidIncrement: String(bidIncrement),
           categoryId: auctionData.categoryId || auctionData.CategoryId || 1,
           status: getStatusString(auctionData.status || auctionData.Status || 'Open'),
+          newImages: [],
+          imagesToDelete: [],
         });
-        
-        // Try all possible image URLs
-        setPreviewUrl(
-          auctionData.imageUrl || 
-          auctionData.ImageUrl || 
-          (auctionData.images && auctionData.images.length > 0 ? auctionData.images[0] : '') ||
-          (auctionData.Images && auctionData.Images.length > 0 ? auctionData.Images[0] : '') ||
-          ''
-        );
         
         setLoading(false);
       } catch (error: any) {
@@ -288,60 +226,49 @@ const EditAuction = () => {
       }
     };
 
+    const loadCategories = async () => {
+      try {
+        const response = await categoryService.getCategories();
+        if (response) {
+          setCategories(response);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        toast({
+          title: "خطأ في تحميل الفئات",
+          description: "حدث خطأ أثناء تحميل قائمة الفئات",
+          variant: "destructive",
+        });
+      }
+    };
+
     if (id && user) {
       loadAuction();
+      loadCategories();
     }
   }, [id, user, navigate, form]);
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const uploadResult = await imageService.uploadImage(file);
-      return uploadResult.url;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
+  const handleImageRemove = (imageUrl: string) => {
+    const updatedImages = currentImages.filter(img => img !== imageUrl);
+    setCurrentImages(updatedImages);
+    
+    // Add to images to delete
+    const imagesToDelete = form.getValues('imagesToDelete') || [];
+    form.setValue('imagesToDelete', [...imagesToDelete, imageUrl]);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!id) return;
+    
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      console.log('Submitting update with values:', values);
-      
-      let newImageUrl = previewUrl;
-      if (selectedImage) {
-        try {
-          newImageUrl = await uploadImage(selectedImage);
-        } catch (error) {
-          toast({
-            title: "فشل في رفع الصورة",
-            description: "حدث خطأ أثناء رفع الصورة، يرجى المحاولة مرة أخرى",
-            variant: "destructive",
-          });
-          return;
+      // Upload new images if any
+      const newImageUrls: string[] = [];
+      if (values.newImages && values.newImages.length > 0) {
+        for (const file of values.newImages) {
+          const result = await imageService.uploadImage(file);
+          newImageUrls.push(result.url);
         }
-      }
-
-      // Prepare images arrays
-      const imagesToDelete: string[] = [];
-      const newImages: string[] = [];
-
-      // If we have a new image, add it to newImages
-      if (newImageUrl) {
-        newImages.push(newImageUrl);
-      }
-
-      // If original auction had images and we're changing them, add old ones to imagesToDelete
-      if (originalAuction?.images && originalAuction.images.length > 0 && newImageUrl) {
-        originalAuction.images.forEach(img => imagesToDelete.push(img));
       }
 
       // Convert string status to numeric enum value
@@ -354,76 +281,48 @@ const EditAuction = () => {
         default: statusEnum = AuctionStatus.Active;
       }
 
-      // Create the DTO object as required by the API
-      const dto = {
-        title: values.title,
-        description: values.description,
-        address: values.address,
-        startDate: values.startTime.toISOString(),
-        endDate: values.endTime.toISOString(),
+      // Get current auction status
+      const currentAuction = await auctionService.getAuctionById(Number(id));
+      const currentStatus = currentAuction.status || currentAuction.Status;
+
+      // Adjust dates for UTC
+      const startDate = new Date(values.startTime);
+      const endDate = new Date(values.endTime);
+      
+      // Add 3 hours to convert from Palestine time to UTC
+      startDate.setHours(startDate.getHours() + 3);
+      endDate.setHours(endDate.getHours() + 3);
+
+      // Prepare update data
+      const updateData = {
+        title: values.title.trim(),
+        description: values.description.trim(),
+        address: values.address.trim(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         reservePrice: Number(values.reservePrice),
         bidIncrement: Number(values.bidIncrement),
         categoryId: Number(values.categoryId),
-        status: statusEnum,
-        imagesToDelete,
-        newImages
+        status: currentStatus,
+        imagesToDelete: values.imagesToDelete || [],
+        newImages: newImageUrls
       };
 
-      console.log('Sending final request data:', { dto });
-      
-      // Get the ID from the URL parameter
-      const auctionId = Number(id);
-      if (isNaN(auctionId)) {
-        throw new Error('Invalid auction ID');
-      }
+      console.log('Sending update data:', updateData);
 
-      try {
-        // Use the auction service to update
-        const response = await auctionService.updateAuction(auctionId, dto);
-        
-        console.log('Update result:', response);
-        
-        toast({
-          title: "تم تحديث المزاد بنجاح",
-          description: "تم حفظ التغييرات بنجاح",
-        });
-        
-        // Add a small delay before navigation
-        setTimeout(() => {
-          navigate(`/auction/${id}`);
-        }, 500);
-      } catch (error: any) {
-        console.error('API Error updating auction:', error);
-        
-        // Try to extract and display the detailed error message
-        let errorMessage = "حدث خطأ أثناء تحديث المزاد";
-        
-        if (error.response?.data) {
-          const errorData = error.response.data;
-          
-          if (errorData.errors) {
-            try {
-              const errorsString = JSON.stringify(errorData.errors);
-              errorMessage = `خطأ في البيانات: ${errorsString}`;
-            } catch (e) {
-              errorMessage = "خطأ في التحقق من البيانات";
-            }
-          } else if (errorData.title) {
-            errorMessage = errorData.title;
-          }
-        }
-        
-        toast({
-          title: "فشل في تحديث المزاد",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      await auctionService.updateAuction(Number(id), updateData);
+      
+      toast({
+        title: "تم تحديث المزاد بنجاح",
+        description: "تم حفظ التغييرات بنجاح",
+      });
+      
+      navigate(`/auction/${id}`);
     } catch (error: any) {
       console.error('Error updating auction:', error);
       toast({
         title: "فشل في تحديث المزاد",
-        description: error.message || "حدث خطأ أثناء تحديث المزاد",
+        description: error.response?.data?.message || "حدث خطأ أثناء تحديث المزاد",
         variant: "destructive",
       });
     } finally {
@@ -448,52 +347,52 @@ const EditAuction = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Image Upload Section */}
+            {/* Current Images */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                صورة المزاد
+                الصور الحالية
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg">
-                <div className="space-y-1 text-center">
-                  {previewUrl ? (
-                    <div className="relative">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="mx-auto h-32 w-auto object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedImage(null);
-                          setPreviewUrl('');
-                        }}
-                        className="absolute top-0 right-0 -mr-2 -mt-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  )}
-                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                    <label className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                      <span>رفع صورة</span>
-                      <input
-                        type="file"
-                        className="sr-only"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-                    <p className="pr-2">أو اسحب وأفلت</p>
+              <div className="grid grid-cols-3 gap-4">
+                {currentImages.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="h-32 w-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleImageRemove(url)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    PNG, JPG, GIF حتى 10MB
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
+
+            {/* New Images */}
+            <FormField
+              control={form.control}
+              name="newImages"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>إضافة صور جديدة</FormLabel>
+                  <FormControl>
+                    <ImageUpload
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      onRemove={(file) => {
+                        field.onChange((field.value || []).filter(f => f !== file));
+                      }}
+                      maxFiles={5 - currentImages.length}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Title Field */}
             <FormField
@@ -556,7 +455,6 @@ const EditAuction = () => {
                     <Input
                       type="datetime-local"
                       value={(() => {
-                        // Safely handle the date
                         try {
                           const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
                             ? field.value 
@@ -598,7 +496,6 @@ const EditAuction = () => {
                     <Input
                       type="datetime-local"
                       value={(() => {
-                        // Safely handle the date
                         try {
                           const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
                             ? field.value 
@@ -617,7 +514,6 @@ const EditAuction = () => {
                             field.onChange(new Date(e.target.value));
                           } catch (error) {
                             console.error("Error parsing date:", error);
-                            // Set to 1 week from now
                             const futureDate = new Date();
                             futureDate.setDate(futureDate.getDate() + 7);
                             field.onChange(futureDate);
@@ -676,9 +572,11 @@ const EditAuction = () => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="1">ملابس رجالية</SelectItem>
-                      <SelectItem value="2">أجهزة إلكترونية</SelectItem>
-                      <SelectItem value="3">أثاث منزلي</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={String(category.id)}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

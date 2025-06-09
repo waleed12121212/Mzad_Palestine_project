@@ -46,13 +46,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import CategorySpecificForm from "@/components/forms/CategorySpecificForm";
 import { predictionService } from '@/services/predictionService';
+import { imageService } from '@/services/imageService';
 
 const CreateAuction = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeStep, setActiveStep] = useState<number>(1);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -235,13 +236,13 @@ const CreateAuction = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newImages = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setImages([...images, ...newImages]);
+      const newFiles = Array.from(e.target.files);
+      setImages(prev => [...prev, ...newFiles]);
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateStep = () => {
@@ -316,6 +317,23 @@ const CreateAuction = () => {
           return;
         }
 
+        // Upload images
+        const processedImages: string[] = [];
+        for (const file of images) {
+          try {
+            const uploadResult = await imageService.uploadImage(file);
+            processedImages.push(uploadResult.url);
+          } catch (error) {
+            toast({
+              title: "خطأ في رفع الصور",
+              description: "فشل في رفع إحدى الصور. الرجاء المحاولة مرة أخرى.",
+              variant: "destructive"
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
         // Create auction with exact backend format
         const auctionData = {
           title: formData.title.trim(),
@@ -326,7 +344,7 @@ const CreateAuction = () => {
           reservePrice: Number(formData.startingPrice),
           bidIncrement: Number(formData.incrementAmount || 10),
           categoryId: Number(formData.category),
-          images: images.length > 0 ? images : ["https://example.com/images/placeholder.jpg"],
+          images: processedImages.length > 0 ? processedImages : ["https://example.com/images/placeholder.jpg"],
           userId: Number(user?.id) || 1
         };
 
@@ -350,11 +368,9 @@ const CreateAuction = () => {
         }
 
         console.log('Creating auction with data:', JSON.stringify(auctionData, null, 2));
-        const auctionResponse = await auctionService.createAuction(auctionData);
-        console.log('Auction creation response:', auctionResponse);
-
-        // On successful auction creation, show the modal
+        await auctionService.createAuction(auctionData);
         setShowSuccessModal(true);
+        setIsSubmitting(false);
       } catch (error: any) {
         // Only log the error if it's not a successful creation
         if (!error.response?.data?.success) {
@@ -375,7 +391,6 @@ const CreateAuction = () => {
             variant: "destructive"
           });
         }
-      } finally {
         setIsSubmitting(false);
       }
     }
@@ -940,10 +955,10 @@ const CreateAuction = () => {
                       ) : (
                         <div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
-                            {images.map((src, index) => (
+                            {images.map((file, index) => (
                               <div key={index} className="relative group">
                                 <img
-                                  src={src}
+                                  src={URL.createObjectURL(file)}
                                   alt={`Uploaded ${index + 1}`}
                                   className="w-full h-24 object-cover rounded-lg"
                                 />
@@ -1072,10 +1087,10 @@ const CreateAuction = () => {
                   <div className="flex flex-col items-center">
                     <h3 className="text-lg font-semibold mb-2">الصور</h3>
                     <div className="grid grid-cols-2 gap-2">
-                      {images.length > 0 ? images.map((src, idx) => (
+                      {images.length > 0 ? images.map((file, idx) => (
                         <img
                           key={idx}
-                          src={src}
+                          src={URL.createObjectURL(file)}
                           alt={`Preview ${idx + 1}`}
                           className="h-24 w-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:scale-105 transition-transform"
                         />

@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/uploads/images/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*"
+    },
+    {
+      "source": "/uploads/profile-pictures/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*"
+    },
+    {
       "source": "/uploads/:path*",
       "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
       "has": [
@@ -144,6 +156,26 @@
     {
       "source": "/NewServiceCategory/:path*",
       "destination": "http://mazadpalestine.runasp.net/NewServiceCategory/:path*"
+    },
+    {
+      "source": "/LaptopPrediction/:path*",
+      "destination": "http://mazadpalestine.runasp.net/LaptopPrediction/:path*"
+    },
+    {
+      "source": "/CarPrediction/:path*",
+      "destination": "http://mazadpalestine.runasp.net/CarPrediction/:path*"
+    },
+    {
+      "source": "/Phone/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Phone/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "http://mazadpalestine.runasp.net/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "http://mazadpalestine.runasp.net/auth/:path*"
     },
     {
       "source": "/(.*)",

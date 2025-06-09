@@ -68,6 +68,21 @@ interface ExtendedAuction {
   updatedAt?: string;
 }
 
+// أضف دالة تنسيق التاريخ والوقت مع إضافة 3 ساعات
+function formatBidDateTime(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  date.setHours(date.getHours() + 3);
+  return date.toLocaleString('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+}
+
 const AuctionDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -913,13 +928,7 @@ const AuctionDetails = () => {
                               )}
                             </span>
                             <span className="text-sm text-gray-500">
-                              {bid.bidTime ? new Date(bid.bidTime).toLocaleDateString('ar-EG', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }) : ''}
+                              {bid.bidTime ? formatBidDateTime(bid.bidTime) : ''}
                             </span>
                           </div>
                           <div>
