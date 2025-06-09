@@ -1,16 +1,16 @@
 {
   "rewrites": [
     {
+      "source": "/uploads/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*"
+    },
+    {
       "source": "/uploads/images/:path*",
       "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*"
     },
     {
       "source": "/uploads/profile-pictures/:path*",
       "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*"
-    },
-    {
-      "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*"
     },
     {
       "source": "/uploads/:path*",
