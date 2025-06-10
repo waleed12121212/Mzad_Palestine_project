@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Clock, Users, BadgeDollarSign, Share2, Heart, Banknote, ShieldCheck, Info, Flag, AlertTriangle, Edit, Trash2, Package, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import CountdownTimer from "@/components/ui/CountdownTimer";
 import { toast } from "@/hooks/use-toast";
@@ -102,6 +102,8 @@ const AuctionDetails = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [closing, setClosing] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
 
   // Add a ref to store the latest bidderUsernames
   const bidderUsernamesRef = React.useRef<Record<number, string>>({});
@@ -548,6 +550,26 @@ const AuctionDetails = () => {
     }
   };
 
+  const handleCloseAuction = async () => {
+    setClosing(true);
+    try {
+      await auctionService.closeAuction(auction.id);
+      toast({
+        title: "تم إغلاق المزاد",
+        description: "تم إغلاق المزاد بنجاح.",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "فشل في إغلاق المزاد",
+        description: error.message || "حدث خطأ أثناء إغلاق المزاد",
+        variant: "destructive",
+      });
+    } finally {
+      setClosing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -584,6 +606,16 @@ const AuctionDetails = () => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4">
+          {/* زر إغلاق المزاد لصاحب المزاد فقط */}
+          {user && auction && Number(user.id) === Number(auction.userId) && auction.status !== 'Closed' && (
+            <button
+              className="btn btn-danger mb-4"
+              onClick={() => setShowCloseDialog(true)}
+              disabled={closing}
+            >
+              {closing ? "جاري الإغلاق..." : "إغلاق المزاد"}
+            </button>
+          )}
           <div className="flex flex-col lg:flex-row gap-8 rtl">
             <div className="lg:w-8/12">
               <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -625,6 +657,17 @@ const AuctionDetails = () => {
                       <Trash2 className="h-5 w-5" />
                       <span className="hidden sm:inline">حذف</span>
                     </button>
+                    {auction.status !== 'Closed' && (
+                      <button
+                        onClick={() => setShowCloseDialog(true)}
+                        disabled={closing}
+                        className="flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-gray-200 text-gray-700 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                        title="إغلاق المزاد"
+                      >
+                        <Lock className="h-5 w-5 text-orange-500" />
+                        <span className="hidden sm:inline">{closing ? 'جاري الإغلاق...' : 'إغلاق المزاد'}</span>
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -648,6 +691,33 @@ const AuctionDetails = () => {
                           className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                         >
                           حذف المزاد
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* نافذة تأكيد إغلاق المزاد */}
+                {showCloseDialog && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+                      <h3 className="text-xl font-bold mb-4">تأكيد إغلاق المزاد</h3>
+                      <p className="mb-6 text-gray-600 dark:text-gray-300">
+                        هل أنت متأكد من إغلاق هذا المزاد؟ لا يمكن إعادة فتحه بعد الإغلاق.
+                      </p>
+                      <div className="flex gap-4 justify-end">
+                        <button
+                          onClick={() => setShowCloseDialog(false)}
+                          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+                        >
+                          إلغاء
+                        </button>
+                        <button
+                          onClick={async () => { setShowCloseDialog(false); await handleCloseAuction(); }}
+                          className="px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700"
+                          disabled={closing}
+                        >
+                          {closing ? 'جاري الإغلاق...' : 'تأكيد الإغلاق'}
                         </button>
                       </div>
                     </div>

@@ -249,6 +249,7 @@ const EditAuction = () => {
   }, [id, user, navigate, form]);
 
   const handleImageRemove = (imageUrl: string) => {
+    // Remove from current images
     const updatedImages = currentImages.filter(img => img !== imageUrl);
     setCurrentImages(updatedImages);
     
@@ -266,8 +267,29 @@ const EditAuction = () => {
       const newImageUrls: string[] = [];
       if (values.newImages && values.newImages.length > 0) {
         for (const file of values.newImages) {
-          const result = await imageService.uploadImage(file);
-          newImageUrls.push(result.url);
+          try {
+            const result = await imageService.uploadImage(file);
+            newImageUrls.push(result.url);
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast({
+              title: "خطأ في تحميل الصور",
+              description: "فشل في تحميل بعض الصور. يرجى المحاولة مرة أخرى",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+
+      // Delete removed images
+      const imagesToDelete = form.getValues('imagesToDelete') || [];
+      for (const imageUrl of imagesToDelete) {
+        try {
+          await imageService.deleteImage(imageUrl);
+        } catch (error) {
+          console.error('Error deleting image:', error);
+          // Continue with other images even if one fails
         }
       }
 
@@ -304,7 +326,7 @@ const EditAuction = () => {
         bidIncrement: Number(values.bidIncrement),
         categoryId: Number(values.categoryId),
         status: currentStatus,
-        imagesToDelete: values.imagesToDelete || [],
+        imagesToDelete: imagesToDelete,
         newImages: newImageUrls
       };
 

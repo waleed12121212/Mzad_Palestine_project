@@ -6,7 +6,7 @@ const Terms: React.FC = () => {
     <div className="container mx-auto px-4 py-12 max-w-4xl rtl">
       <h1 className="text-3xl font-bold mb-6 text-center">الشروط والأحكام</h1>
       <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">
-        آخر تحديث: 20 يوليو 2023
+        آخر تحديث: 10 يونيو 2025
       </p>
 
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-8">
@@ -18,30 +18,8 @@ const Terms: React.FC = () => {
 
           <Separator className="my-6" />
 
-          <h2 className="text-2xl font-semibold mb-4">1. تعريفات</h2>
-          <ul className="list-disc list-inside space-y-2 mb-6">
-            <li>
-              <strong>"المنصة"</strong>: تشير إلى موقع وتطبيق "مزاد فلسطين" الإلكتروني.
-            </li>
-            <li>
-              <strong>"المستخدم"</strong>: أي شخص يقوم بالوصول إلى المنصة أو استخدامها.
-            </li>
-            <li>
-              <strong>"البائع"</strong>: المستخدم الذي يعرض سلعة أو خدمة للبيع من خلال المزاد.
-            </li>
-            <li>
-              <strong>"المشتري"</strong>: المستخدم الذي يقدم عروضاً للشراء في المزاد.
-            </li>
-            <li>
-              <strong>"المزاد"</strong>: عملية البيع التنافسي للسلع أو الخدمات على المنصة.
-            </li>
-          </ul>
-
-          <h2 className="text-2xl font-semibold mb-4">2. التسجيل والحسابات</h2>
+          <h2 className="text-2xl font-semibold mb-4">1. التسجيل والحسابات</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
-            <li>
-              يجب أن يكون عمر المستخدم 18 عاماً على الأقل لإنشاء حساب.
-            </li>
             <li>
               يجب تقديم معلومات دقيقة وصحيحة وحديثة عند التسجيل.
             </li>
@@ -56,7 +34,7 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">3. قواعد المزاد</h2>
+          <h2 className="text-2xl font-semibold mb-4">2. قواعد المزاد</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               المزايدات ملزمة قانونياً. عند تقديم عرض، فإنك تلتزم بشراء السلعة إذا فزت بالمزاد.
@@ -75,7 +53,7 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">4. المنتجات والخدمات المحظورة</h2>
+          <h2 className="text-2xl font-semibold mb-4">3. المنتجات والخدمات المحظورة</h2>
           <p className="mb-4">
             لا يُسمح بعرض المنتجات أو الخدمات التالية للبيع على المنصة:
           </p>
@@ -89,7 +67,7 @@ const Terms: React.FC = () => {
             <li>أي منتجات أو خدمات أخرى تعتبرها المنصة غير مناسبة.</li>
           </ul>
 
-          <h2 className="text-2xl font-semibold mb-4">5. الرسوم والمدفوعات</h2>
+          <h2 className="text-2xl font-semibold mb-4">4. الرسوم والمدفوعات</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               تفرض المنصة عمولة على البائعين بنسبة 5٪ من سعر البيع النهائي.
@@ -108,7 +86,7 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">6. الشحن والتسليم</h2>
+          <h2 className="text-2xl font-semibold mb-4">5. الشحن والتسليم</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               البائعون مسؤولون عن تحديد تكاليف وخيارات الشحن.
@@ -127,7 +105,7 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">7. سياسة الإرجاع والاسترداد</h2>
+          <h2 className="text-2xl font-semibold mb-4">6. سياسة الإرجاع والاسترداد</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               يجب على البائعين توضيح سياسة الإرجاع والاسترداد الخاصة بهم في وصف المنتج.
@@ -146,7 +124,7 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">8. الملكية الفكرية</h2>
+          <h2 className="text-2xl font-semibold mb-4">7. الملكية الفكرية</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               جميع المحتوى على المنصة، بما في ذلك الشعارات والتصميمات والبرامج، هو ملكية لـ "مزاد فلسطين".
@@ -162,12 +140,12 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">9. الخصوصية</h2>
+          <h2 className="text-2xl font-semibold mb-4">8. الخصوصية</h2>
           <p className="mb-6">
             استخدامك للمنصة يخضع لسياسة الخصوصية الخاصة بنا، والتي تشكل جزءاً من هذه الشروط والأحكام. يرجى مراجعة سياسة الخصوصية لفهم ممارساتنا.
           </p>
 
-          <h2 className="text-2xl font-semibold mb-4">10. تحديد المسؤولية</h2>
+          <h2 className="text-2xl font-semibold mb-4">9. تحديد المسؤولية</h2>
           <ol className="list-decimal list-inside space-y-2 mb-6">
             <li>
               المنصة هي وسيط بين البائعين والمشترين وليست طرفاً في المعاملات.
@@ -183,17 +161,17 @@ const Terms: React.FC = () => {
             </li>
           </ol>
 
-          <h2 className="text-2xl font-semibold mb-4">11. التعديلات على الشروط</h2>
+          <h2 className="text-2xl font-semibold mb-4">10. التعديلات على الشروط</h2>
           <p className="mb-6">
             نحتفظ بالحق في تعديل هذه الشروط والأحكام في أي وقت. سيتم إخطار المستخدمين بالتغييرات الهامة. استمرار استخدامك للمنصة بعد هذه التغييرات يعني موافقتك على الشروط المعدلة.
           </p>
 
-          <h2 className="text-2xl font-semibold mb-4">12. القانون المطبق وتسوية النزاعات</h2>
+          <h2 className="text-2xl font-semibold mb-4">11. القانون المطبق وتسوية النزاعات</h2>
           <p className="mb-6">
             تخضع هذه الشروط والأحكام لقوانين دولة فلسطين. أي نزاع ينشأ عن هذه الشروط سيتم تسويته أولاً من خلال الوساطة، وإذا لم يتم حله، سيتم إحالته إلى المحاكم المختصة في فلسطين.
           </p>
 
-          <h2 className="text-2xl font-semibold mb-4">13. التواصل</h2>
+          <h2 className="text-2xl font-semibold mb-4">12. التواصل</h2>
           <p className="mb-6">
             إذا كان لديك أي أسئلة حول هذه الشروط والأحكام، يرجى التواصل معنا على <a href="mailto:mzadpalestine5@gmail.com" className="text-blue hover:underline">mzadpalestine5@gmail.com</a>.
           </p>

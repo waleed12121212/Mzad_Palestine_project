@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Edit, Trash2, Plus, ExternalLink } from 'lucide-react';
 import PageWrapper from '@/components/layout/PageWrapper';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MyListings: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
@@ -55,14 +57,14 @@ const MyListings: React.FC = () => {
     }
   };
 
-  const handleCloseAuction = async (id: number) => {
+  const handleCloseAuction = async (auctionId: number) => {
     try {
-      await auctionService.closeAuction(id);
-      setAuctions(auctions.map(auction => 
-        auction.id === id ? { ...auction, status: 'closed' } : auction
-      ));
+      console.log('[MyListings] Closing auction:', auctionId);
+      await auctionService.closeAuction(auctionId);
       toast.success('تم إغلاق المزاد بنجاح');
+      queryClient.invalidateQueries(['myListings']);
     } catch (error) {
+      console.error('[MyListings] Error closing auction:', error);
       toast.error('حدث خطأ أثناء إغلاق المزاد');
     }
   };
