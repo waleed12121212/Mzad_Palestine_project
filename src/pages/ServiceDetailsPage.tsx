@@ -410,7 +410,7 @@ export default function ServiceDetailsPage() {
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <h1 className="text-2xl font-bold mb-2 flex items-center gap-2 text-gray-900 dark:text-white">
                     {service.title}
                     {String(user?.id) === String(service.userId) && (
                       <>
@@ -418,6 +418,7 @@ export default function ServiceDetailsPage() {
                           variant="outline"
                           size="icon"
                           onClick={() => navigate(`/services/edit/${service.id}`)}
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Edit className="w-5 h-5" />
                         </Button>
@@ -425,42 +426,43 @@ export default function ServiceDetailsPage() {
                           variant="outline"
                           size="icon"
                           onClick={() => setShowDeleteDialog(true)}
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Trash2 className="w-5 h-5" />
                         </Button>
                       </>
                     )}
                   </h1>
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                     <MapPin className="w-4 h-4" />
                     <span>{service.location}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={handleShareService}
+                    className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Share2 className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
 
-              <div className="prose max-w-none">
-                <h2 className="text-xl font-semibold mb-4">وصف الخدمة</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{service.description}</p>
+              <div className="prose max-w-none dark:prose-invert">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">وصف الخدمة</h2>
+                <p className="text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{service.description}</p>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500 mb-1">السعر</div>
-                  <div className="text-xl font-bold text-blue-600">{service.price} ₪</div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">السعر</div>
+                  <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{service.price} ₪</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-sm text-gray-500 mb-1">معلومات التواصل</div>
-                  <div className="text-lg font-medium">{service.contactInfo}</div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">معلومات التواصل</div>
+                  <div className="text-lg font-medium text-gray-900 dark:text-white">{service.contactInfo}</div>
                 </div>
               </div>
             </CardContent>

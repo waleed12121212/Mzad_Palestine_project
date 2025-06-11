@@ -111,6 +111,89 @@
       @apply text-sm;
     }
   }
+
+  /* Dark mode text contrast improvements */
+  .dark .text-gray-500 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-200;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-gray-100;
+  }
+  
+  .dark .bg-gray-50 {
+    @apply bg-gray-800;
+  }
+  
+  .dark .bg-gray-100 {
+    @apply bg-gray-800;
+  }
+  
+  .dark .bg-gray-200 {
+    @apply bg-gray-700;
+  }
+  
+  .dark .border-gray-100 {
+    @apply border-gray-700;
+  }
+  
+  .dark .border-gray-200 {
+    @apply border-gray-600;
+  }
+  
+  /* Card contrast improvements */
+  .dark .neo-card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .dark .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  /* Button contrast improvements */
+  .dark .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white;
+  }
+  
+  .dark .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-gray-100;
+  }
+  
+  /* Form element contrast improvements */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply bg-gray-800 border-gray-700 text-gray-100;
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    @apply text-gray-400;
+  }
+  
+  /* Link contrast improvements */
+  .dark a {
+    @apply text-blue-400 hover:text-blue-300;
+  }
+  
+  /* Heading contrast improvements */
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    @apply text-gray-100;
+  }
+  
+  /* Paragraph contrast improvements */
+  .dark p {
+    @apply text-gray-200;
+  }
 }
 
 /* Component styles */

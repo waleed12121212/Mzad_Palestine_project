@@ -173,11 +173,11 @@ const ServicePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50/30">
+    <div className="min-h-screen bg-blue-50/30 dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-800/80 backdrop-blur border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="container mx-auto flex items-center justify-between py-4 px-6">
-          <h1 className="text-3xl font-extrabold text-blue-700 tracking-tight">{category?.name || 'الخدمات'}</h1>
+          <h1 className="text-3xl font-extrabold text-blue-700 dark:text-blue-400 tracking-tight">{category?.name || 'الخدمات'}</h1>
           <div className="flex gap-2">
             {user && (
               <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow px-6 py-2 text-lg font-semibold transition" onClick={() => window.location.href = '/services/create'}>
@@ -191,21 +191,43 @@ const ServicePage: React.FC = () => {
       {/* فلاتر جانبية وmain */}
       <div className="container mx-auto mt-8 flex flex-col md:flex-row gap-6">
         {/* Sidebar Filters */}
-        <aside className="w-full md:w-1/4 bg-white rounded-xl shadow p-6 mb-6 md:mb-0">
+        <aside className="w-full md:w-1/4 bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-6 md:mb-0">
           <div className="mb-4">
-            <label className="block font-semibold mb-2">بحث</label>
-            <input type="text" className="w-full border rounded-lg px-3 py-2" placeholder="ابحث عن خدمة..." value={search} onChange={e => setSearch(e.target.value)} />
+            <label className="block font-semibold mb-2 text-gray-900 dark:text-white">بحث</label>
+            <input 
+              type="text" 
+              className="w-full border dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+              placeholder="ابحث عن خدمة..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+            />
           </div>
           <div className="mb-4">
-            <label className="block font-semibold mb-2">نطاق السعر</label>
+            <label className="block font-semibold mb-2 text-gray-900 dark:text-white">نطاق السعر</label>
             <div className="flex gap-2">
-              <input type="number" className="w-1/2 border rounded-lg px-2 py-1" placeholder="الحد الأدنى" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
-              <input type="number" className="w-1/2 border rounded-lg px-2 py-1" placeholder="الحد الأعلى" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
+              <input 
+                type="number" 
+                className="w-1/2 border dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+                placeholder="الحد الأدنى" 
+                value={minPrice} 
+                onChange={e => setMinPrice(e.target.value)} 
+              />
+              <input 
+                type="number" 
+                className="w-1/2 border dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+                placeholder="الحد الأعلى" 
+                value={maxPrice} 
+                onChange={e => setMaxPrice(e.target.value)} 
+              />
             </div>
           </div>
           <div className="mb-4">
-            <label className="block font-semibold mb-2">المدينة</label>
-            <select className="w-full border rounded-lg px-3 py-2" value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
+            <label className="block font-semibold mb-2 text-gray-900 dark:text-white">المدينة</label>
+            <select 
+              className="w-full border dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" 
+              value={filterLocation} 
+              onChange={e => setFilterLocation(e.target.value)}
+            >
               <option value="">كل المدن</option>
               {uniqueLocations.map(loc => (
                 <option key={loc} value={loc}>{loc}</option>
@@ -219,19 +241,18 @@ const ServicePage: React.FC = () => {
           {/* شريط البحث والترتيب */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 rtl">
             <div className="relative w-full md:w-auto md:flex-1">
-              <svg className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <svg className="absolute top-1/2 transform -translate-y-1/2 right-3 h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
               <input
                 type="text"
                 placeholder="ابحث عن خدمة..."
-                className="pr-10 rtl w-full border rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-400"
+                className="pr-10 rtl w-full border dark:border-gray-700 rounded-lg py-2 px-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
             <div className="flex space-s-2 w-full md:w-auto">
               <select
-                className="w-full md:w-48 border rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-400"
-                // يمكنك ربطه بحالة ترتيب لاحقاً
+                className="w-full md:w-48 border dark:border-gray-700 rounded-lg py-2 px-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-400"
               >
                 <option value="">الأحدث</option>
                 <option value="low">الأقل سعراً</option>
@@ -241,7 +262,7 @@ const ServicePage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
             {filteredServices.length === 0 && (
-              <div className="text-center text-gray-500 py-8 col-span-full">لا توجد خدمات مطابقة للبحث أو الفلاتر.</div>
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8 col-span-full">لا توجد خدمات مطابقة للبحث أو الفلاتر.</div>
             )}
             {filteredServices.map((service) => {
               console.log('service:', service);
@@ -267,15 +288,15 @@ const ServicePage: React.FC = () => {
                   </div>
                   <div className="p-4 rtl flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold line-clamp-1">{service.title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">{service.description}</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">{service.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">{service.description}</p>
                       <div className="flex items-center gap-2 mt-2 mb-4">
-                        <p className="text-lg font-bold text-blue dark:text-blue-light">₪ {service.price.toLocaleString()}</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">₪ {service.price.toLocaleString()}</p>
                       </div>
-                      <div className="text-gray-500 text-xs mb-2">{service.location} • {service.contactInfo}</div>
+                      <div className="text-gray-600 dark:text-gray-300 text-xs mb-2">{service.location} • {service.contactInfo}</div>
                     </div>
                     <Link to={`/services/${service.id}`} className="block mt-auto">
-                      <button className="w-full bg-blue hover:bg-blue-600 text-white dark:bg-blue-500 dark:hover:bg-blue-600 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600 py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
                         تفاصيل
                       </button>
                     </Link>

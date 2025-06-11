@@ -70,8 +70,8 @@ export const EditJobPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 flex justify-center">
-      <div className="w-full md:w-2/3 lg:w-1/2 bg-white rounded-xl shadow p-8">
-        <h2 className="text-2xl font-bold mb-6 text-blue-700 text-center">تعديل وظيفة</h2>
+      <div className="w-full md:w-2/3 lg:w-1/2 bg-white dark:bg-gray-900 rounded-xl shadow p-8">
+        <h2 className="text-2xl font-bold mb-6 text-blue-700 dark:text-blue-300 text-center">تعديل وظيفة</h2>
         <JobForm
           categories={categories}
           initialData={job}
