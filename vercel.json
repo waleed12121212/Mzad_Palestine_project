@@ -6,15 +6,18 @@
     },
     {
       "source": "/uploads/images/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*"
+      "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
     },
     {
       "source": "/uploads/profile-pictures/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*"
-    },
-    {
-      "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*",
       "has": [
         {
           "type": "header",
@@ -184,6 +187,39 @@
   ],
   "headers": [
     {
+      "source": "/uploads/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {
@@ -196,7 +232,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "*"
+          "value": "X-Requested-With, Content-Type, Authorization, Accept, Origin, X-CSRF-Token, X-XSRF-TOKEN, X-API-Key, X-Client-Info, X-Client-Version, X-Client-Platform, X-Client-Device, X-Client-Browser, X-Client-OS, X-Client-IP, X-Client-Language, X-Client-TimeZone, X-Client-Currency, X-Client-Country, X-Client-Region, X-Client-City, X-Client-Latitude, X-Client-Longitude, X-Client-Timezone, X-Client-Device-Type, X-Client-Device-Model, X-Client-Device-Manufacturer, X-Client-Device-OS, X-Client-Device-OS-Version, X-Client-Device-Browser, X-Client-Device-Browser-Version, X-Client-Device-Screen-Width, X-Client-Device-Screen-Height, X-Client-Device-Screen-Density, X-Client-Device-Screen-Orientation, X-Client-Device-Screen-Color-Depth, X-Client-Device-Screen-Pixel-Ratio, X-Client-Device-Screen-Available-Width, X-Client-Device-Screen-Available-Height, X-Client-Device-Screen-Total-Width, X-Client-Device-Screen-Total-Height, X-Client-Device-Screen-Device-Width, X-Client-Device-Screen-Device-Height, X-Client-Device-Screen-Device-Pixel-Ratio, X-Client-Device-Screen-Device-Available-Width, X-Client-Device-Screen-Device-Available-Height, X-Client-Device-Screen-Device-Total-Width, X-Client-Device-Screen-Device-Total-Height"
         },
         {
           "key": "Access-Control-Allow-Credentials",
@@ -204,7 +240,7 @@
         },
         {
           "key": "Access-Control-Expose-Headers",
-          "value": "*"
+          "value": "Content-Length, Content-Range, X-Total-Count, X-Pagination-Count, X-Pagination-Page, X-Pagination-Limit, X-Pagination-Total, X-Pagination-Total-Pages, X-Pagination-Has-Next, X-Pagination-Has-Prev, X-Pagination-Next-Page, X-Pagination-Prev-Page, X-Pagination-First-Page, X-Pagination-Last-Page, X-Pagination-Current-Page, X-Pagination-Per-Page, X-Pagination-Total-Items, X-Pagination-Total-Pages, X-Pagination-Has-More, X-Pagination-Current-Page-Items, X-Pagination-Current-Page-Start, X-Pagination-Current-Page-End, X-Pagination-Current-Page-Size, X-Pagination-Current-Page-Total, X-Pagination-Current-Page-Has-More, X-Pagination-Current-Page-Has-Prev, X-Pagination-Current-Page-Has-Next, X-Pagination-Current-Page-Is-First, X-Pagination-Current-Page-Is-Last, X-Pagination-Current-Page-Is-Empty, X-Pagination-Current-Page-Is-Single, X-Pagination-Current-Page-Is-Multiple, X-Pagination-Current-Page-Is-Complete, X-Pagination-Current-Page-Is-Incomplete, X-Pagination-Current-Page-Is-Valid, X-Pagination-Current-Page-Is-Invalid"
         },
         {
           "key": "Access-Control-Max-Age",
@@ -228,7 +264,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http: http://mazadpalestine.runasp.net/uploads/ http://mazadpalestine.runasp.net/uploads/images/ http://mazadpalestine.runasp.net/uploads/profile-pictures/ https://mzadpalestine.vercel.app/uploads/ https://mzadpalestine.vercel.app/uploads/profile-pictures/ https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com"
+          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: http://mazadpalestine.runasp.net/uploads/ http://mazadpalestine.runasp.net/uploads/images/ http://mazadpalestine.runasp.net/uploads/profile-pictures/ https://mzadpalestine.vercel.app/uploads/ https://mzadpalestine.vercel.app/uploads/profile-pictures/ https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com"
         }
       ]
     }
