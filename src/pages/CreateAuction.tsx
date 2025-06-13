@@ -267,6 +267,22 @@ const CreateAuction = () => {
       if (!formData.startTime) stepErrors.startTime = 'وقت بدء المزاد مطلوب';
       if (!formData.endDate) stepErrors.endDate = 'تاريخ انتهاء المزاد مطلوب';
       if (!formData.endTime) stepErrors.endTime = 'وقت انتهاء المزاد مطلوب';
+      
+      // Validate that start date/time is not in the past
+      const now = new Date();
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+      if (startDateTime < now) {
+        stepErrors.startDate = 'تاريخ ووقت بدء المزاد يجب أن يكون في المستقبل';
+      }
+      
+      // Validate that end date/time is after start date/time
+      if (formData.startDate && formData.startTime && formData.endDate && formData.endTime) {
+        const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+        if (endDateTime <= startDateTime) {
+          stepErrors.endDate = 'تاريخ ووقت انتهاء المزاد يجب أن يكون بعد تاريخ ووقت البدء';
+        }
+      }
+      
       if (images.length === 0) stepErrors.images = 'يجب إضافة صورة واحدة على الأقل';
     } else if (activeStep === 3) {
       if (!formData.terms) setShowTermsError(true);
@@ -308,6 +324,16 @@ const CreateAuction = () => {
         const endDate = new Date(`${formData.endDate}T${formData.endTime}`);
 
         // Validate dates
+        const now = new Date();
+        if (startDate <= now) {
+          toast({
+            title: "خطأ في التاريخ",
+            description: "تاريخ بدء المزاد يجب أن يكون في المستقبل",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         if (endDate <= startDate) {
           toast({
             title: "خطأ في التاريخ",
@@ -333,6 +359,7 @@ const CreateAuction = () => {
             return;
           }
         }
+
 
         // Create auction with exact backend format
         const auctionData = {
@@ -870,6 +897,7 @@ const CreateAuction = () => {
                           className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
                           placeholder=""
+                          step="60"
                         />
                         <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>
@@ -891,7 +919,7 @@ const CreateAuction = () => {
                           onChange={handleChange}
                           className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
-                          min={new Date().toISOString().split('T')[0]}
+                          min={formData.startDate || new Date().toISOString().split('T')[0]}
                           placeholder=""
                         />
                         <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
@@ -913,6 +941,7 @@ const CreateAuction = () => {
                           className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
                           required
                           placeholder=""
+                          step="60"
                         />
                         <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                       </div>

@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { auctionService } from "@/services/auctionService";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface AuctionCardProps {
   id: string | number;
@@ -47,6 +49,18 @@ interface AuctionCardProps {
     ssdSize: number;
   };
 }
+
+// Add formatStartDate function
+const formatStartDate = (dateString?: string | null): string => {
+  if (!dateString) return "-";
+  try {
+    const date = new Date(dateString);
+    return format(date, "dd/MM/yyyy HH:mm", { locale: ar });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "-";
+  }
+};
 
 const AuctionCard: React.FC<AuctionCardProps> = ({
   id,
@@ -184,30 +198,6 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
     }
   };
 
-  // Add a helper function to format the date correctly
-  const formatStartDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return '';
-    
-    try {
-      const date = new Date(dateString);
-      
-      // Format the date in Arabic style
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      
-      // Format time in 24-hour format
-      let hours = date.getHours();
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      
-      // Format as DD/MM/YYYY HH:MM
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString.toString();
-    }
-  };
-
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md relative cursor-pointer ${
@@ -295,7 +285,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
           {isPending ? (
             <div className="bg-yellow-500/30 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center">
               <Clock className="h-3 w-3 ml-1 text-yellow-300" />
-              <span>يبدأ: {formatStartDate(endTime)}</span>
+              <span>{formatStartDate(endTime)}</span>
             </div>
           ) : (
             <CountdownTimer 
