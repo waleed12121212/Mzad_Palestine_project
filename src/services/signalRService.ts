@@ -1,0 +1,113 @@
+import * as signalR from '@microsoft/signalr';
+import { toast } from 'sonner';
+
+class SignalRService {
+  private connection: signalR.HubConnection | null = null;
+  private static instance: SignalRService;
+
+  private constructor() {}
+
+  public static getInstance(): SignalRService {
+    if (!SignalRService.instance) {
+      SignalRService.instance = new SignalRService();
+    }
+    return SignalRService.instance;
+  }
+
+  public async startConnection(): Promise<void> {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      this.connection = new signalR.HubConnectionBuilder()
+        .withUrl('http://mazadpalestine.runasp.net/chatHub', {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      // إعداد معالجات الأحداث
+      this.setupEventHandlers();
+
+      await this.connection.start();
+      console.log('SignalR Connected!');
+    } catch (err) {
+      console.error('Error while establishing SignalR connection:', err);
+      toast.error('فشل الاتصال بالخادم');
+    }
+  }
+
+  private setupEventHandlers(): void {
+    if (!this.connection) return;
+
+    // معالج الرسائل الجديدة
+    this.connection.on('ReceiveMessage', (message) => {
+      // سيتم تنفيذ هذا عند استلام رسالة جديدة
+      console.log('New message received:', message);
+      // يمكنك إضافة منطق إضافي هنا مثل تحديث واجهة المستخدم
+    });
+
+    // معالج الإشعارات الجديدة
+    this.connection.on('ReceiveNotification', (notification) => {
+      console.log('New notification received:', notification);
+      toast.info(notification.message);
+    });
+
+    // معالج تحديثات المزاد
+    this.connection.on('AuctionUpdate', (update) => {
+      console.log('Auction update received:', update);
+      // تحديث واجهة المستخدم مع معلومات المزاد الجديدة
+    });
+  }
+
+  public async sendMessage(receiverId: string, content: string): Promise<void> {
+    try {
+      if (!this.connection) {
+        throw new Error('No SignalR connection');
+      }
+      await this.connection.invoke('SendMessage', receiverId, content);
+    } catch (err) {
+      console.error('Error sending message:', err);
+      toast.error('فشل في إرسال الرسالة');
+    }
+  }
+
+  public async joinAuctionRoom(auctionId: string): Promise<void> {
+    try {
+      if (!this.connection) {
+        throw new Error('No SignalR connection');
+      }
+      await this.connection.invoke('JoinAuctionRoom', auctionId);
+    } catch (err) {
+      console.error('Error joining auction room:', err);
+    }
+  }
+
+  public async leaveAuctionRoom(auctionId: string): Promise<void> {
+    try {
+      if (!this.connection) {
+        throw new Error('No SignalR connection');
+      }
+      await this.connection.invoke('LeaveAuctionRoom', auctionId);
+    } catch (err) {
+      console.error('Error leaving auction room:', err);
+    }
+  }
+
+  public async stopConnection(): Promise<void> {
+    try {
+      if (this.connection) {
+        await this.connection.stop();
+        this.connection = null;
+        console.log('SignalR Disconnected!');
+      }
+    } catch (err) {
+      console.error('Error stopping SignalR connection:', err);
+    }
+  }
+}
+
+export const signalRService = SignalRService.getInstance(); 

@@ -285,6 +285,34 @@ const Profile = () => {
     }
   };
 
+  // --- إحصائيات المزادات ---
+  const { data: userAuctionsCount } = useQuery({
+    queryKey: ["userAuctionsCount", userData?.id],
+    queryFn: async () => {
+      if (!userData?.id) return 0;
+      const response = await auctionService.getUserAuctions(userData.id);
+      const auctions = Array.isArray(response) ? response : response.data || [];
+      return auctions.length;
+    },
+    enabled: !!userData?.id,
+  });
+
+  const { data: wonAuctionsCount } = useQuery({
+    queryKey: ["wonAuctionsCount", userData?.id],
+    queryFn: async () => {
+      if (!userData?.id) return 0;
+      const response = await auctionService.getCompletedAuctions();
+      const auctions = Array.isArray(response) ? response : response.data || [];
+      // المزادات الفائزة لهذا المستخدم فقط
+      return auctions.filter((auction) => {
+        if (!auction.bids || !auction.bids.length) return false;
+        const topBid = auction.bids.reduce((max, bid) => (Number(bid.amount ?? 0) > Number(max.amount ?? 0) ? bid : max), auction.bids[0]);
+        return String(topBid.userId) === String(userData.id);
+      }).length;
+    },
+    enabled: !!userData?.id,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -357,28 +385,28 @@ const Profile = () => {
           {userData.bio}
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center gap-2 mt-2 justify-center">
-        <span className="bg-white/80 text-blue px-3 py-1 rounded-xl text-sm font-semibold">{userData.username}</span>
-        <span className={`px-3 py-1 rounded-xl text-sm font-semibold ${userData.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{userData.isActive ? 'نشط' : 'غير نشط'}</span>
-        <span className="px-3 py-1 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700">{userData.role === 'Admin' ? 'مدير' : 'مستخدم'}</span>
-      </div>
     </div>
   );
 
   const StatsCard = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-      <h3 className="font-semibold text-lg mb-6 text-center">إحصائيات النشاط</h3>
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { value: userData.username, label: "اسم المستخدم" },
-          { value: userData.role === "Admin" ? "مدير" : "مستخدم", label: "الصلاحية" },
-          { value: userData.isActive ? "نشط" : "غير نشط", label: "الحالة" }
-        ].map((stat, index) => (
-          <div key={index} className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 shadow-sm">
-            <div className="text-lg font-semibold text-blue dark:text-blue-light mb-1">{stat.value}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
-          </div>
-        ))}
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
+      <h3 className="font-bold text-base mb-5 text-center tracking-wide text-blue-900 dark:text-blue-200">إحصائيات النشاط</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* اسم المستخدم */}
+        <div className="group flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 dark:from-blue-900 dark:via-blue-800 dark:to-blue-700 shadow border border-blue-100 dark:border-blue-900 transition-transform hover:-translate-y-0.5 hover:shadow-lg min-h-[90px]">
+          <div className="text-[10px] text-gray-500 dark:text-gray-300 mb-1">اسم المستخدم</div>
+          <div className="text-lg font-extrabold text-blue-900 dark:text-blue-100 break-all">{userData.username}</div>
+        </div>
+        {/* عدد المزادات */}
+        <div className="group flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-green-50 via-green-100 to-green-200 dark:from-green-900 dark:via-green-800 dark:to-green-700 shadow border border-green-100 dark:border-green-800 transition-transform hover:-translate-y-0.5 hover:shadow-lg min-h-[90px]">
+          <div className="text-[10px] text-gray-500 dark:text-gray-300 mb-1">عدد المزادات</div>
+          <div className="text-lg font-extrabold text-green-900 dark:text-green-100">{userAuctionsCount ?? '-'}</div>
+        </div>
+        {/* عدد المزادات الفائزة */}
+        <div className="group flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-200 dark:from-yellow-900 dark:via-yellow-800 dark:to-yellow-700 shadow border border-yellow-100 dark:border-yellow-800 transition-transform hover:-translate-y-0.5 hover:shadow-lg min-h-[90px]">
+          <div className="text-[10px] text-gray-500 dark:text-gray-300 mb-1">المزادات الفائزة</div>
+          <div className="text-lg font-extrabold text-yellow-900 dark:text-yellow-100">{wonAuctionsCount ?? '-'}</div>
+        </div>
       </div>
     </div>
   );
@@ -1248,7 +1276,7 @@ const Profile = () => {
                       }
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(report?.status)}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${getStatusBadgeClass(report?.status)}`}>
                         {getStatusText(report?.status)}
                       </span>
                     </TableCell>

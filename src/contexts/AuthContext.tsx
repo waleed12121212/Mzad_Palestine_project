@@ -22,6 +22,7 @@ interface AuthContextType {
   verifyEmailCode: (data: VerifyEmailCodeData) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPasswordWithCode: (data: ResetPasswordData) => Promise<void>;
+  isLoading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -36,21 +37,26 @@ export const AuthContext = createContext<AuthContextType>({
   sendEmailConfirmation: async () => {},
   verifyEmailCode: async () => {},
   forgotPassword: async () => {},
-  resetPasswordWithCode: async () => {}
+  resetPasswordWithCode: async () => {},
+  isLoading: true
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // تحميل بيانات المستخدم من localStorage عند تحميل التطبيق
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr && userStr !== "undefined") {
       setUser(JSON.parse(userStr));
+      setIsLoading(false);
     } else if (token) {
       fetchUserFromServer();
+    } else {
+      setIsLoading(false);
     }
   }, [token]);
 
@@ -62,11 +68,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Content-Type': 'application/json'
         }
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        setIsLoading(false);
+        return;
+      }
       const userData = await response.json();
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
-    } catch {}
+    } catch {
+      // Handle error silently
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const login = async (data: LoginData) => {
@@ -130,7 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sendEmailConfirmation,
         verifyEmailCode,
         forgotPassword,
-        resetPasswordWithCode
+        resetPasswordWithCode,
+        isLoading
       }}
     >
       {children}

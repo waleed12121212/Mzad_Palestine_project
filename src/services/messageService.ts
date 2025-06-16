@@ -3,6 +3,7 @@
 import axios, { AxiosError } from 'axios';
 import { auctionNotificationService } from './auctionNotificationService';
 import { userService } from './userService';
+import { signalRService } from './signalRService';
 
 const API_URL = '/Message';
 
@@ -20,7 +21,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) {
-      config.headers.Authorization = token; // بدون Bearer
+      config.headers.Authorization = token;
     }
     if (config.method === 'options') {
       delete config.headers['Content-Type'];
@@ -73,28 +74,38 @@ export interface MessagePayload {
 export const messageService = {
   // إرسال رسالة جديدة
   async sendMessage(payload: MessagePayload) {
-    const response = await axiosInstance.post('/', payload);
-    // Get senderId from localStorage user object
-    const user = JSON.parse(localStorage.getItem('user'));
-    const senderId = user?.id;
-    let senderName = 'مستخدم جديد';
-    if (senderId) {
-      try {
-        const { data } = await userService.getUserById(senderId.toString());
-        console.log('Debug: senderProfile =', data);
-        senderName = `${data.firstName} ${data.lastName}`;
-      } catch (e) {
-        console.log('Debug: Error fetching senderProfile', e);
-        // fallback to default if error
+    try {
+      // إرسال الرسالة عبر SignalR
+      await signalRService.sendMessage(payload.receiverId.toString(), payload.content);
+      
+      // إرسال نسخة احتياطية عبر REST API
+      const response = await axiosInstance.post('/', payload);
+      
+      // Get senderId from localStorage user object
+      const user = JSON.parse(localStorage.getItem('user'));
+      const senderId = user?.id;
+      let senderName = 'مستخدم جديد';
+      if (senderId) {
+        try {
+          const { data } = await userService.getUserById(senderId.toString());
+          console.log('Debug: senderProfile =', data);
+          senderName = `${data.firstName} ${data.lastName}`;
+        } catch (e) {
+          console.log('Debug: Error fetching senderProfile', e);
+        }
       }
+      
+      await auctionNotificationService.notifyNewMessage(
+        payload.receiverId,
+        senderName,
+        payload.subject
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
     }
-    console.log('Debug: senderName =', senderName);
-    await auctionNotificationService.notifyNewMessage(
-      payload.receiverId,
-      senderName,
-      payload.subject
-    );
-    return response.data.data;
   },
 
   // جلب الرسائل الواردة

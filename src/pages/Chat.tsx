@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useAuth } from '../contexts/AuthContext';
 import { messageService } from '@/services/messageService';
 import { userService } from '@/services/userService';
+import { signalRService } from '@/services/signalRService';
 
 interface Message {
   id: number;
@@ -558,21 +559,25 @@ const Chat: React.FC = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !messageSubject.trim()) return;
     const receiverId = selectedConversationId || activeContact?.id;
-    console.log('[Chat] selectedConversationId:', selectedConversationId);
-    console.log('[Chat] activeContact?.id:', activeContact?.id);
-    console.log('[Chat] Sending message to receiverId:', receiverId);
+    
     if (!receiverId) {
       toast.error('لا يوجد جهة اتصال محددة');
       return;
     }
+
+    // إذا لم يكن هناك محادثة محددة، عينها الآن
+    if (!selectedConversationId && activeContact?.id) {
+      setSelectedConversationId(activeContact.id);
+    }
+
     try {
       const sent = await messageService.sendMessage({
         receiverId,
         subject: messageSubject.trim() === '' ? "default" : messageSubject,
         content: newMessage,
       });
-      console.log('[Chat] Message sent successfully:', sent);
-      setMessages(prev => [...prev, sent]);
+
+      await fetchMessages(receiverId);
       setNewMessage('');
       setMessageSubject('');
       toast.success('تم إرسال الرسالة بنجاح');
@@ -609,12 +614,21 @@ const Chat: React.FC = () => {
     }
   };
 
-  const formatTime = (date: Date) => {
+  // دالة تحويل الوقت إلى توقيت فلسطين الصيفي UTC+3
+  const toPalestineTime = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : new Date(dateString.getTime());
+    date.setHours(date.getHours() + 3); // أضف 3 ساعات
+    return date;
+  };
+
+  const formatTime = (dateInput: string | Date) => {
+    const date = toPalestineTime(dateInput);
     return date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (date: Date) => {
-    const now = new Date();
+  const formatDate = (dateInput: string | Date) => {
+    const date = toPalestineTime(dateInput);
+    const now = toPalestineTime(new Date());
     const diffDays = now.getDate() - date.getDate();
     
     if (diffDays === 0) {
@@ -822,6 +836,43 @@ const Chat: React.FC = () => {
     fetchUnreadCount();
   }, []);
 
+  // إضافة معالج الرسائل الجديدة
+  useEffect(() => {
+    const handleNewMessage = (message: Message) => {
+      // أضف الرسالة إذا كانت تخص المحادثة الحالية (سواء أرسلها أو استقبلها المستخدم)
+      if (
+        (selectedConversationId && (message.senderId === selectedConversationId || message.receiverId === selectedConversationId)) ||
+        (user && (message.senderId === Number(user.id) || message.receiverId === Number(user.id)))
+      ) {
+        setMessages(prev => [...prev, message]);
+        // تحديث قائمة جهات الاتصال
+        setContacts(prev => prev.map(contact => {
+          if (contact.id === message.senderId) {
+            return {
+              ...contact,
+              lastMessage: message.content,
+              lastMessageTime: message.timestamp,
+              unreadCount: (contact.unreadCount || 0) + 1
+            };
+          }
+          return contact;
+        }));
+      }
+    };
+
+    // بدء اتصال SignalR عند تحميل المكون
+    signalRService.startConnection();
+
+    // إضافة معالج الرسائل الجديدة
+    signalRService.connection?.on('ReceiveMessage', handleNewMessage);
+
+    // تنظيف عند إزالة المكون
+    return () => {
+      signalRService.connection?.off('ReceiveMessage', handleNewMessage);
+      signalRService.stopConnection();
+    };
+  }, [selectedConversationId]);
+
   if (loading) {
     return (
         <div className="container mx-auto py-8 max-w-screen-xl">
@@ -1014,7 +1065,7 @@ const Chat: React.FC = () => {
                       style={{ direction: 'rtl' }}
                     />
                     <div className="flex flex-row-reverse bg-gray-50 dark:bg-[#232B3E] rounded-xl px-3 py-2 gap-2">
-                      {/* Left: Send and Attach buttons (blue, circular) */}
+                      {/* Left: Send button only */}
                       <button
                         onClick={handleSendMessage}
                         className="bg-blue-700 hover:bg-blue-800 text-white rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-50 ml-auto"
@@ -1023,20 +1074,6 @@ const Chat: React.FC = () => {
                       >
                         <Send className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-full w-9 h-9 flex items-center justify-center"
-                        aria-label="إرفاق ملف"
-                        type="button"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                      </button>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileUpload}
-                      />
                       {/* Center: Input field */}
                       <input
                         type="text"
@@ -1047,28 +1084,6 @@ const Chat: React.FC = () => {
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                         style={{ direction: 'rtl' }}
                       />
-                      {/* Right: gray icons */}
-                      <button
-                        className="text-gray-400 hover:text-blue-700"
-                        type="button"
-                        aria-label="إضافة صورة"
-                      >
-                        <Image className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-blue-700"
-                        type="button"
-                        aria-label="إرفاق ملف"
-                      >
-                        <Paperclip className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-blue-700"
-                        type="button"
-                        aria-label="إضافة إيموجي"
-                      >
-                        <Smile className="h-5 w-5" />
-                      </button>
                     </div>
                   </div>
                 </div>

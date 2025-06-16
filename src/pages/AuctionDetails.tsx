@@ -619,11 +619,17 @@ const AuctionDetails = () => {
           <div className="flex flex-col lg:flex-row gap-8 rtl">
             <div className="lg:w-8/12">
               <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-                <Link to="/" className="hover:text-blue dark:hover:text-blue-light">الرئيسية</Link>
+                <Link to="/" className="hover:underline text-gray-500">الرئيسية</Link>
                 <span className="mx-2">›</span>
-                <span className="text-gray-900 dark:text-gray-100">{auction.categoryName ?? "الفئة"}</span>
+                {auction.categoryId ? (
+                  <Link to="/auctions" className="hover:underline text-gray-500">
+                    {auction.categoryName ?? "الفئة"}
+                  </Link>
+                ) : (
+                  <span className="text-gray-900 dark:text-gray-100">{auction.categoryName ?? "الفئة"}</span>
+                )}
                 <span className="mx-2">›</span>
-                <span className="text-gray-900 dark:text-gray-100">{auction.title}</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100">{auction.title}</span>
               </div>
               
               {/* Main image display with navigation arrows */}

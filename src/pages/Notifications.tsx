@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { notificationService, NotificationType, Notification } from "@/services/notificationService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { signalRService } from '@/services/signalRService';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -26,6 +27,25 @@ const Notifications = () => {
     
   useEffect(() => {
     fetchNotifications();
+
+    // بدء اتصال SignalR
+    signalRService.startConnection();
+
+    // إضافة معالج الإشعارات الجديدة
+    const handleNewNotification = (notification: any) => {
+      // تحديث قائمة الإشعارات
+      setNotifications(prev => [notification, ...prev]);
+      // عرض إشعار للمستخدم
+      toast.info(notification.message);
+    };
+
+    signalRService.connection?.on('ReceiveNotification', handleNewNotification);
+
+    // تنظيف عند إزالة المكون
+    return () => {
+      signalRService.connection?.off('ReceiveNotification', handleNewNotification);
+      signalRService.stopConnection();
+    };
   }, []);
 
   const markAllAsRead = async () => {

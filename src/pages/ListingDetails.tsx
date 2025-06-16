@@ -211,6 +211,8 @@ export default function ListingDetails() {
           <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 rtl justify-start" style={{direction: 'rtl'}}>
             <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400">الرئيسية</Link>
             <span className="mx-2">›</span>
+            <Link to="/buy-now" className="hover:text-blue-600 dark:hover:text-blue-400">المنتجات</Link>
+            <span className="mx-2">›</span>
             <span className="text-gray-900 dark:text-gray-100">{listing?.categoryName}</span>
             <span className="mx-2">›</span>
             <span className="text-gray-900 dark:text-gray-100">{listing?.title}</span>
