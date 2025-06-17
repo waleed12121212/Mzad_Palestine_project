@@ -40,7 +40,8 @@ const PaymentPage: React.FC = () => {
         type: payment.auctionId ? 'auction' : 'listing',
         amount: payment.amount,
         title: payment.notes?.replace('Payment for: ', '') || `${payment.auctionId ? 'Auction' : 'Listing'} #${payment.id}`,
-        paymentMethod: selectedMethod
+        paymentMethod: selectedMethod,
+        transactionId: payment.transactionId
       };
 
       // Navigate to checkout with payment data

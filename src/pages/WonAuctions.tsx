@@ -176,6 +176,12 @@ const WonAuctions: React.FC = () => {
       }
 
       console.log('Payment created:', payment);
+      
+      // Store clientSecret in localStorage if available
+      if (payment.clientSecret) {
+        console.log('Storing clientSecret in localStorage');
+        localStorage.setItem(`payment_${payment.id}_clientSecret`, payment.clientSecret);
+      }
 
       // 3. Navigate to payment page
       navigate(`/payment/${payment.id}`);

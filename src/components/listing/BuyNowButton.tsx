@@ -58,6 +58,12 @@ export const BuyNowButton: React.FC<BuyNowButtonProps> = ({ listingId, price, ti
       console.log('Payment created:', payment);
       console.log('Payment with transaction ID:', payment.transactionId);
       
+      // Store clientSecret in localStorage if available
+      if (payment.clientSecret) {
+        console.log('Storing clientSecret in localStorage');
+        localStorage.setItem(`payment_${payment.id}_clientSecret`, payment.clientSecret);
+      }
+      
       // Navigate to payment page
       if (payment && payment.id) {
         console.log('Navigating to payment page:', `/payment/${payment.id}`);

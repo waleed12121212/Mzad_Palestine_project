@@ -81,6 +81,8 @@ export interface Payment {
   notes: string;
   createdAt: string;
   updatedAt: string | null;
+  paymentIntentId?: string | null;
+  clientSecret?: string | null;
 }
 
 export interface CreateListingPaymentDto {
@@ -108,15 +110,21 @@ export interface UpdatePaymentDto {
 export interface PaymentResponse {
   success: boolean;
   data: Payment | Payment[];
+  clientSecret?: string;
 }
 
 export interface ConfirmPaymentDto {
   paymentIntentId: string;
+  paymentMethod: string;
+}
+
+export interface PaymentWithClientSecret extends Payment {
+  clientSecret?: string;
 }
 
 class PaymentService {
   // Create a listing payment
-  async createListingPayment(data: CreateListingPaymentDto): Promise<Payment> {
+  async createListingPayment(data: CreateListingPaymentDto): Promise<PaymentWithClientSecret> {
     try {
       console.log('Creating listing payment:', data);
       console.log('Listing payment transactionId:', data.transactionId);
@@ -137,7 +145,12 @@ class PaymentService {
         throw new Error('Invalid response from payment creation');
       }
       
-      return response.data.data as Payment;
+      // Return payment data with clientSecret if available
+      const payment = response.data.data as Payment;
+      return {
+        ...payment,
+        clientSecret: response.data.clientSecret
+      };
     } catch (error) {
       console.error('Payment creation error:', error);
       throw error;
@@ -145,7 +158,7 @@ class PaymentService {
   }
 
   // Create an auction payment
-  async createAuctionPayment(data: CreateAuctionPaymentDto): Promise<Payment> {
+  async createAuctionPayment(data: CreateAuctionPaymentDto): Promise<PaymentWithClientSecret> {
     console.log('Creating auction payment:', data);
     console.log('Auction payment transactionId:', data.transactionId);
     
@@ -161,7 +174,12 @@ class PaymentService {
     console.log('Auction payment response data with transactionId:', 
       (response.data.data as Payment).transactionId);
     
-    return response.data.data as Payment;
+    // Return payment data with clientSecret if available
+    const payment = response.data.data as Payment;
+    return {
+      ...payment,
+      clientSecret: response.data.clientSecret 
+    };
   }
 
   // Get listing payment
@@ -210,6 +228,14 @@ class PaymentService {
   // Confirm payment
   async confirmPayment(data: ConfirmPaymentDto): Promise<Payment> {
     const response = await axiosInstance.post<PaymentResponse>('/confirm', data);
+    return response.data.data as Payment;
+  }
+
+  // Get payment by transaction ID
+  async getPaymentByTransactionId(transactionId: number | string): Promise<Payment> {
+    console.log('Getting payment by transaction ID:', transactionId);
+    const response = await axiosInstance.get<PaymentResponse>(`/transaction/${transactionId}`);
+    console.log('Payment by transaction response:', response.data);
     return response.data.data as Payment;
   }
 }

@@ -99,6 +99,8 @@ const TransactionsPage: React.FC = () => {
       return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">قيد الانتظار</Badge>;
     } else if (status === 'Completed' || status === '1' || Number(status) === 1) {
       return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">مكتمل</Badge>;
+    } else if (status === '2' || Number(status) === 2) {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">قيد المعالجة</Badge>;
     } else if (status === 'Cancelled' || status === '3' || Number(status) === 3) {
       return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">ملغي</Badge>;
     }

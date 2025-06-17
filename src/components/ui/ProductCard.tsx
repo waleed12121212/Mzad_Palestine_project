@@ -88,25 +88,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleBuyNow = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      toast({
-        title: 'يرجى تسجيل الدخول أولاً',
-        variant: 'destructive',
-      });
-      navigate('/login');
-      return;
-    }
-    
-    setIsBuying(true);
-    try {
-      await listingService.purchaseListing(listingId);
-      navigate('/purchases');
-    } catch (error) {
-      console.error('Error purchasing listing:', error);
-    } finally {
-      setIsBuying(false);
-    }
+    navigate(`/listing/${id}`);
   };
 
   const handleCardClick = () => {

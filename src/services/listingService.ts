@@ -378,7 +378,7 @@ class ListingService {
   async purchaseListing(listingId: number): Promise<any> {
     try {
       // First, call the purchase endpoint
-      const purchaseResponse = await axios.post(`${API_URL}/${listingId}/purchase`, {}, {
+      const purchaseResponse = await axios.post(`${API_URL}/${listingId}`, {}, {
         headers: getAuthHeader()
       });
       
