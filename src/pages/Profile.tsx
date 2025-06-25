@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink, Award, AlertCircle, Clock, Tag, MessageCircle, BellRing, CheckCheck, Trash2, X } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft, Upload, Camera, Loader2, Heart, Bell, Package, LogOut, AlertTriangle, Eye, ExternalLink, Award, AlertCircle, Clock, Tag, MessageCircle, BellRing, CheckCheck, Trash2, X, Settings, Lock, EyeOff, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,11 +31,22 @@ import { reportService, Report } from '@/services/reportService';
 const Profile = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, changePassword } = useAuth();
   
   // Add activeSection state
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: ''
+  });
   
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -58,6 +69,18 @@ const Profile = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const { wishlistItems: favoriteItems, isLoading, error, removeFromWishlist } = useWishlist();
+
+  // Add isSettingsOpen state to parent component
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Add effect to manage dropdown visibility based on active section
+  useEffect(() => {
+    if (activeSection === 'profile' || activeSection === 'settings') {
+      setIsSettingsOpen(true);
+    } else {
+      setIsSettingsOpen(false);
+    }
+  }, [activeSection]);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -313,6 +336,71 @@ const Profile = () => {
     enabled: !!userData?.id,
   });
 
+  const handlePasswordDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const togglePasswordVisibility = (field: 'current' | 'new') => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال جميع البيانات المطلوبة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "خطأ",
+        description: "يجب أن تكون كلمة المرور الجديدة 6 أحرف على الأقل",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changePassword({
+        email: userData?.email || '',
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      toast({
+        title: "تم تغيير كلمة المرور بنجاح",
+        description: "يمكنك الآن استخدام كلمة المرور الجديدة"
+      });
+      
+      // Reset form
+      setPasswordData({
+        currentPassword: '',
+        newPassword: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ في تغيير كلمة المرور",
+        description: error.message || "حدث خطأ أثناء تغيير كلمة المرور",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -411,45 +499,115 @@ const Profile = () => {
     </div>
   );
 
-  const QuickLinks = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-      <h3 className="font-semibold text-lg mb-4">روابط سريعة</h3>
-      <div className="space-y-2">
-        {[
-          { id: 'profile', to: "#", label: "البيانات الشخصية", icon: User },
-          { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
-          { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
-          { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
-          { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
-          { id: 'reports', to: "#", label: "بلاغاتي", icon: AlertTriangle },
-        ].map((link) => (
-          <button
-            key={link.id}
-            onClick={() => setActiveSection(link.id)}
-            className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
-              activeSection === link.id 
-                ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
-                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
+  // Memoize QuickLinks component
+  const QuickLinks = React.memo(() => {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h3 className="font-semibold text-lg mb-4">روابط سريعة</h3>
+        <div className="space-y-2">
+          {/* Other Quick Links */}
+          {[
+            { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
+            { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
+            { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
+            { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
+            { id: 'reports', to: "#", label: "بلاغاتي", icon: AlertTriangle },
+          ].map((link) => (
+            <button
+              key={link.id}
+              onClick={() => setActiveSection(link.id)}
+              className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
+                activeSection === link.id 
+                  ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <link.icon className={`h-5 w-5 ${
+                activeSection === link.id 
+                  ? 'text-blue dark:text-blue-light'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`} />
+              <span>{link.label}</span>
+            </button>
+          ))}
+
+          {/* Settings Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`flex items-center justify-between gap-3 p-3 rounded-xl w-full transition-colors ${
+                isSettingsOpen || activeSection === 'profile' || activeSection === 'settings'
+                  ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Settings className={`h-5 w-5 ${
+                  isSettingsOpen || activeSection === 'profile' || activeSection === 'settings'
+                    ? 'text-blue dark:text-blue-light'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`} />
+                <span>الإعدادات</span>
+              </div>
+              <ChevronDown className={`h-4 w-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''} ${
+                isSettingsOpen || activeSection === 'profile' || activeSection === 'settings'
+                  ? 'text-blue dark:text-blue-light'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`} />
+            </button>
+            
+            {/* Settings Dropdown Menu */}
+            {isSettingsOpen && (
+              <div className="mr-8 mt-1 space-y-1">
+                <button
+                  onClick={() => {
+                    setActiveSection('profile');
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
+                    activeSection === 'profile'
+                      ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <User className={`h-5 w-5 ${
+                    activeSection === 'profile'
+                      ? 'text-blue dark:text-blue-light'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                  <span>البيانات الشخصية</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection('settings');
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
+                    activeSection === 'settings'
+                      ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <Lock className={`h-5 w-5 ${
+                    activeSection === 'settings'
+                      ? 'text-blue dark:text-blue-light'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                  <span>الخصوصية والأمان</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           >
-            <link.icon className={`h-5 w-5 ${
-              activeSection === link.id 
-                ? 'text-blue dark:text-blue-light'
-                : 'text-gray-500 dark:text-gray-400'
-            }`} />
-            <span>{link.label}</span>
+            <LogOut className="h-5 w-5" />
+            <span>تسجيل الخروج</span>
           </button>
-        ))}
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span>تسجيل الخروج</span>
-        </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  });
 
   // Add UserAuctions component inside Profile (before MainContent):
   const UserAuctions = ({ userId }) => {
@@ -593,16 +751,90 @@ const Profile = () => {
   };
 
   // Add content components for each section
-  const ProfileForm = () => {
-    const InputField = ({ 
+  const ProfileForm = React.memo(() => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState<UpdateProfileData>({
+      firstName: userData?.firstName || '',
+      lastName: userData?.lastName || '',
+      email: userData?.email || '',
+      phoneNumber: userData?.phoneNumber || '',
+      address: userData?.address || '',
+      bio: userData?.bio || '',
+      dateOfBirth: userData?.dateOfBirth || ''
+    });
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    const toggleEditMode = () => {
+      if (isEditing) {
+        setFormData({
+          firstName: userData?.firstName || '',
+          lastName: userData?.lastName || '',
+          email: userData?.email || '',
+          phoneNumber: userData?.phoneNumber || '',
+          address: userData?.address || '',
+          bio: userData?.bio || '',
+          dateOfBirth: userData?.dateOfBirth || ''
+        });
+      }
+      setIsEditing(!isEditing);
+    };
+
+    const handleSaveChanges = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phoneNumber) {
+        toast({
+          title: "خطأ في حفظ البيانات",
+          description: "الرجاء إدخال جميع البيانات المطلوبة",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      try {
+        const updatedUser = await userService.updateProfile(formData);
+        setUserData(updatedUser);
+        setIsEditing(false);
+        toast({
+          title: "تم تحديث البيانات",
+          description: "تم حفظ بياناتك الشخصية بنجاح"
+        });
+      } catch (error: any) {
+        toast({
+          title: "خطأ في حفظ البيانات",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    };
+
+    // Memoize InputField component to prevent unnecessary re-renders
+    interface InputFieldProps {
+      id: string;
+      label: string;
+      icon: React.ElementType;
+      value: string;
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+      type?: string;
+      readonly?: boolean;
+    }
+
+    const InputField = React.memo(({ 
       id, 
       label, 
       icon: Icon, 
       value, 
       onChange, 
-      type,
+      type = "text",
       readonly = false 
-    }) => {
+    }: InputFieldProps) => {
       if (id === "dateOfBirth" && readonly) {
         const formatted = value ? new Date(value).toISOString().slice(0, 10) : '';
         return (
@@ -635,27 +867,27 @@ const Profile = () => {
           </div>
         );
       }
-      const inputType = id === "dateOfBirth" && !readonly ? "date" : "text";
+      const inputType = id === "dateOfBirth" && !readonly ? "date" : type;
       return (
         <div className="flex flex-col gap-1">
           <label htmlFor={id} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200 text-right pr-2">
-          {label}
-        </label>
-        <div className="relative">
-          <input
-            id={id}
-            name={id}
+            {label}
+          </label>
+          <div className="relative">
+            <input
+              id={id}
+              name={id}
               type={inputType}
-            value={value ?? ''}
-            onChange={onChange}
-            readOnly={readonly}
+              value={value ?? ''}
+              onChange={onChange}
+              readOnly={readonly}
               className={`w-full py-3 px-5 pr-10 rounded-xl border-0 ${readonly ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold' : 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white'} text-right text-base shadow-sm focus:ring-2 focus:ring-blue focus:border-transparent transition-colors`}
             />
             <Icon className="absolute top-1/2 transform -translate-y-1/2 right-3 h-5 w-5 text-gray-400 pointer-events-none" />
+          </div>
         </div>
-      </div>
-    );
-    };
+      );
+    });
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
@@ -692,7 +924,7 @@ const Profile = () => {
               label="الاسم الأول"
               icon={User}
               type="text"
-              value={isEditing ? formData.firstName : (userData.firstName ?? '')}
+              value={isEditing ? formData.firstName : (userData?.firstName ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -702,7 +934,7 @@ const Profile = () => {
               label="الاسم الأخير"
               icon={User}
               type="text"
-              value={isEditing ? formData.lastName : (userData.lastName ?? '')}
+              value={isEditing ? formData.lastName : (userData?.lastName ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -712,7 +944,7 @@ const Profile = () => {
               label="اسم المستخدم"
               icon={User}
               type="text"
-              value={userData.username ?? ''}
+              value={userData?.username ?? ''}
               onChange={() => {}}
               readonly={true}
             />
@@ -722,7 +954,7 @@ const Profile = () => {
               label="البريد الإلكتروني"
               icon={Mail}
               type="email"
-              value={isEditing ? formData.email : (userData.email ?? '')}
+              value={isEditing ? formData.email : (userData?.email ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -732,7 +964,7 @@ const Profile = () => {
               label="رقم الهاتف"
               icon={Phone}
               type="tel"
-              value={isEditing ? formData.phoneNumber : (userData.phoneNumber ?? '')}
+              value={isEditing ? formData.phoneNumber : (userData?.phoneNumber ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -742,7 +974,7 @@ const Profile = () => {
               label="العنوان"
               icon={MapPin}
               type="text"
-              value={isEditing ? formData.address : (userData.address ?? '')}
+              value={isEditing ? formData.address : (userData?.address ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -752,7 +984,7 @@ const Profile = () => {
               label="تاريخ الميلاد"
               icon={Calendar}
               type="date"
-              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData.dateOfBirth ?? '')}
+              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData?.dateOfBirth ?? '')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -762,7 +994,7 @@ const Profile = () => {
               label="نبذة عنك"
               icon={User}
               type="text"
-              value={isEditing ? formData.bio : (userData.bio ?? 'غير محدد')}
+              value={isEditing ? formData.bio : (userData?.bio ?? 'غير محدد')}
               onChange={handleInputChange}
               readonly={!isEditing}
             />
@@ -772,7 +1004,7 @@ const Profile = () => {
               label="تاريخ الانضمام"
               icon={Calendar}
               type="text"
-              value={userData.createdAt ?? ''}
+              value={userData?.createdAt ?? ''}
               onChange={() => {}}
               readonly={true}
             />
@@ -782,7 +1014,7 @@ const Profile = () => {
               label="نوع الحساب"
               icon={User}
               type="text"
-              value={userData.role === "Admin" ? "مدير" : "مستخدم"}
+              value={userData?.role === "Admin" ? "مدير" : "مستخدم"}
               onChange={() => {}}
               readonly={true}
             />
@@ -792,7 +1024,7 @@ const Profile = () => {
               label="حالة الحساب"
               icon={User}
               type="text"
-              value={userData.isActive ? "نشط" : "غير نشط"}
+              value={userData?.isActive ? "نشط" : "غير نشط"}
               onChange={() => {}}
               readonly={true}
             />
@@ -811,7 +1043,198 @@ const Profile = () => {
         </form>
       </div>
     );
-  };
+  });
+
+  // Add PasswordChangeForm component before MainContent
+  const PasswordChangeForm = React.memo(() => {
+    const { changePassword } = useAuth();
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [showSuccessState, setShowSuccessState] = useState(false);
+    const [showPasswords, setShowPasswords] = useState({
+      current: false,
+      new: false
+    });
+    const [passwordData, setPasswordData] = useState({
+      currentPassword: '',
+      newPassword: ''
+    });
+
+    const resetForm = () => {
+      setPasswordData({
+        currentPassword: '',
+        newPassword: ''
+      });
+      setShowPasswords({
+        current: false,
+        new: false
+      });
+    };
+
+    const handlePasswordDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setPasswordData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    const togglePasswordVisibility = (field: 'current' | 'new') => {
+      setShowPasswords(prev => ({
+        ...prev,
+        [field]: !prev[field]
+      }));
+    };
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!passwordData.currentPassword || !passwordData.newPassword) {
+        toast({
+          title: "خطأ",
+          description: "الرجاء إدخال جميع البيانات المطلوبة",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (passwordData.newPassword.length < 6) {
+        toast({
+          title: "خطأ",
+          description: "يجب أن تكون كلمة المرور الجديدة 6 أحرف على الأقل",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setIsChangingPassword(true);
+      try {
+        await changePassword({
+          email: userData?.email || '',
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        });
+        
+        // Show success state
+        setShowSuccessState(true);
+        
+        // Reset form
+        resetForm();
+        
+        // Hide success state after 3 seconds
+        setTimeout(() => {
+          setShowSuccessState(false);
+        }, 3000);
+        
+      } catch (error: any) {
+        toast({
+          title: "خطأ في تغيير كلمة المرور",
+          description: error.message || "حدث خطأ أثناء تغيير كلمة المرور",
+          variant: "destructive"
+        });
+      } finally {
+        setIsChangingPassword(false);
+      }
+    };
+
+    if (showSuccessState) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center animate-scale-up">
+              <CheckCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-20 h-20 border-4 border-green-500 rounded-full animate-success-circle"></div>
+          </div>
+          <h3 className="text-xl font-semibold text-green-600 dark:text-green-400">
+            تم تغيير كلمة المرور بنجاح
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            يمكنك الآن استخدام كلمة المرور الجديدة لتسجيل الدخول
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Privacy & Security Section */}
+        <div>
+          <h3 className="text-lg font-semibold mb-4">الخصوصية والأمان</h3>
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium mb-2">
+                  كلمة المرور الحالية
+                </label>
+                <div className="relative">
+                  <input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type={showPasswords.current ? "text" : "password"}
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordDataChange}
+                    className="w-full py-3 px-5 pr-12 rounded-xl bg-white dark:bg-gray-800 border-none text-base"
+                    placeholder="●●●●●●●●"
+                  />
+                  <Lock className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => togglePasswordVisibility('current')}
+                    className="absolute top-1/2 transform -translate-y-1/2 left-4 text-gray-400"
+                  >
+                    {showPasswords.current ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
+                  كلمة المرور الجديدة
+                </label>
+                <div className="relative">
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type={showPasswords.new ? "text" : "password"}
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordDataChange}
+                    className="w-full py-3 px-5 pr-12 rounded-xl bg-white dark:bg-gray-800 border-none text-base"
+                    placeholder="●●●●●●●●"
+                  />
+                  <Lock className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => togglePasswordVisibility('new')}
+                    className="absolute top-1/2 transform -translate-y-1/2 left-4 text-gray-400"
+                  >
+                    {showPasswords.new ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full btn-primary py-3 rounded-xl flex items-center justify-center gap-2"
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>جاري تغيير كلمة المرور...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-5 w-5" />
+                    <span>تغيير كلمة المرور</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  });
 
   // Then define MainContent after ProfileForm
   const MainContent = () => {
@@ -843,9 +1266,42 @@ const Profile = () => {
       </div>
     );
 
+    // If no section is selected, return null
+    if (!activeSection) {
+      return (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="relative w-20 h-20 mb-8">
+              <div className="absolute inset-0 bg-blue/5 dark:bg-blue-light/5 rounded-xl animate-pulse"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-1">
+                  <Package className="h-6 w-6 text-blue dark:text-blue-light" />
+                  <Heart className="h-5 w-5 text-blue/70 dark:text-blue-light/70" />
+                  <Bell className="h-4 w-4 text-blue/40 dark:text-blue-light/40" />
+                </div>
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+              اختر قسماً من القائمة
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md">
+              يمكنك اختيار أي قسم من القائمة الجانبية لعرض محتواه هنا
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeSection) {
       case 'profile':
         return <ProfileForm />;
+      
+      case 'settings':
+        return (
+          <ContentWrapper title="">
+            <PasswordChangeForm />
+          </ContentWrapper>
+        );
       
       case 'auctions':
         return (
@@ -1153,7 +1609,7 @@ const Profile = () => {
         );
       
       default:
-        return <ProfileForm />;
+        return null;
     }
   };
 
@@ -1408,12 +1864,6 @@ const Profile = () => {
           {/* Admin tab navigation */}
           {userData.role === 'Admin' && (
             <div className="flex justify-center gap-4 mt-8 mb-8">
-              <button
-                className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'profile' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
-                onClick={() => setAdminTab('profile')}
-              >
-                البيانات الشخصية
-              </button>
               <button
                 className={`px-6 py-2 rounded-xl font-semibold transition-all ${adminTab === 'users' ? 'bg-blue text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
                 onClick={() => setAdminTab('users')}
