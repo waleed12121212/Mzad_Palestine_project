@@ -2,27 +2,36 @@
   "rewrites": [
     {
       "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*"
+      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
     },
     {
       "source": "/uploads/images/:path*",
       "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
     },
     {
       "source": "/uploads/profile-pictures/:path*",
       "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "image/.*"
+        }
+      ]
     },
     {
       "source": "/uploads/:path*",
@@ -209,7 +218,7 @@
         },
         {
           "key": "Cross-Origin-Embedder-Policy",
-          "value": "credentialless"
+          "value": "unsafe-none"
         },
         {
           "key": "Cross-Origin-Opener-Policy",

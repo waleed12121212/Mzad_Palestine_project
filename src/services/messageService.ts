@@ -146,7 +146,15 @@ export const messageService = {
 
   getUnreadCount: () => axiosInstance.get('/inbox/unread-count').then(response => response.data),
 
- 
+  /**
+   * حذف محادثة كاملة حسب رقم المحادثة (conversationId)
+   * @param conversationId رقم المحادثة
+   */
+  async deleteConversation(conversationId: number) {
+    // endpoint: http://mazadpalestine.runasp.net/Message/conversation/{conversationId}
+    const response = await axiosInstance.delete(`/conversation/${conversationId}`);
+    return response.data;
+  },
 
   // Send message with attachments
   async sendMessageWithAttachments(payload: MessagePayload) {

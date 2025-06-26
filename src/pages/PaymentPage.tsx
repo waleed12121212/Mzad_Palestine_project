@@ -123,14 +123,6 @@ const PaymentPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2 space-x-reverse p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-                    <RadioGroupItem value="PayPal" id="paypal" />
-                    <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer">
-                      <Wallet className="w-5 h-5" />
-                      باي بال
-                    </Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 space-x-reverse p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
                     <RadioGroupItem value="BankTransfer" id="bank-transfer" />
                     <Label htmlFor="bank-transfer" className="flex items-center gap-2 cursor-pointer">
                       <Building2 className="w-5 h-5" />

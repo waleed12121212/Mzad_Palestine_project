@@ -130,7 +130,7 @@ const Notifications = () => {
   const handleNotificationClick = (notification: Notification) => {
     switch (notification.type) {
       case "MassageReceived":
-        navigate(`/messages/${notification.relatedId}`);
+        navigate(`/chat`);
         break;
       case "AuctionWon":
       case "BidOutbid":

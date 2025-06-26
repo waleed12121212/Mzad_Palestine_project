@@ -3,18 +3,18 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Check, Loader2, CreditCard } from "lucide-react";
+import { Calendar, Check, Loader2, CreditCard, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { paymentService, ConfirmPaymentDto } from "@/services/paymentService";
 import { transactionService } from "@/services/transactionService";
 import { loadStripe } from "@stripe/stripe-js";
-import { 
-  Elements, 
-  CardNumberElement, 
-  CardExpiryElement, 
+import {
+  Elements,
+  CardNumberElement,
+  CardExpiryElement,
   CardCvcElement,
-  useStripe, 
-  useElements 
+  useStripe,
+  useElements
 } from "@stripe/react-stripe-js";
 
 // Initialize Stripe outside of component to avoid recreating on each render
@@ -257,7 +257,10 @@ const CardForm = ({ onPaymentMethodCreated }: { onPaymentMethodCreated: (payment
               <div className="p-3 border rounded-md bg-white dark:bg-transparent border-slate-200 dark:border-gray-700">
                 <CardExpiryElement 
                   id="cardExpiry"
-                  options={elementStyle}
+                  options={{
+                    ...elementStyle,
+                    placeholder: 'M/Y'
+                  }}
                   onChange={handleExpiryChange}
                 />
               </div>
@@ -531,101 +534,95 @@ const Checkout: React.FC<CheckoutProps> = () => {
 
   // If no checkout data yet, show loading
   if (!checkoutData) {
-    return <div className="flex justify-center items-center min-h-screen">جاري التحميل...</div>;
+    return <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-white">جاري التحميل...</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8 text-center">إتمام الطلب</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-extrabold mb-10 text-center text-blue-700 drop-shadow">إتمام الطلب</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          {paymentSuccess ? (
-            <div className="bg-white dark:bg-gray-900 p-8 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 text-center">
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <Check className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">تم الدفع بنجاح!</h2>
-              <p className="text-gray-600 mb-6">
-                تم إتمام عملية الدفع بنجاح. سيتم توجيهك تلقائيًا.
-              </p>
-              <Button 
-                onClick={() => {
-                  navigate("/");  // Redirect to main page
-                }}
-                className="w-full md:w-auto"
-              >
-                العودة للصفحة الرئيسية
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-8 rtl">
-              {/* قسم بيانات البطاقة (يظهر فقط إذا كانت طريقة الدفع بطاقة ائتمانية) */}
-              {checkoutData.paymentMethod === "CreditCard" && (
-                <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
-                  <h2 className="text-xl font-semibold mb-4">بيانات البطاقة</h2>
-                  <Elements stripe={stripePromise} options={stripeElementsOptions}>
-                    <CardForm onPaymentMethodCreated={handlePaymentMethodCreated} />
-                  </Elements>
-                  
-                  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-gray-700">
-                    <button 
-                      onClick={handleDirectPayment}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 flex items-center justify-center rounded-md"
-                      disabled={isProcessing || !paymentMethodId || !checkoutData}
-                      type="button"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          جاري معالجة الدفع...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="mr-2 h-5 w-5" />
-                          إتمام عملية الدفع
-                        </>
-                      )}
-                    </button>
-                    <p className="text-xs text-slate-500 dark:text-gray-400 text-center mt-2">
-                      بيانات بطاقتك آمنة ومشفرة بالكامل
-                    </p>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2">
+            {paymentSuccess ? (
+              <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 text-center">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="h-8 w-8 text-green-600" />
                 </div>
-              )}
+                <h2 className="text-2xl font-bold mb-2">تم الدفع بنجاح!</h2>
+                <p className="text-gray-600 mb-6">
+                  تم إتمام عملية الدفع بنجاح. سيتم توجيهك تلقائيًا.
+                </p>
+                <Button 
+                  onClick={() => {
+                    navigate("/");  // Redirect to main page
+                  }}
+                  className="w-full md:w-auto"
+                >
+                  العودة للصفحة الرئيسية
+                </Button>
               </div>
-          )}
-        </div>
-        
-        {/* ملخص الطلب */}
-        <div>
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 sticky top-8">
-            <h2 className="text-xl font-semibold mb-4">ملخص الطلب</h2>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b">
-                <span>{checkoutData.type === 'listing' ? 'منتج' : 'مزاد'}</span>
-                <span className="font-semibold">{checkoutData.title}</span>
+            ) : (
+              <div className="space-y-8 rtl">
+                {/* قسم بيانات البطاقة (يظهر فقط إذا كانت طريقة الدفع بطاقة ائتمانية) */}
+                {checkoutData.paymentMethod === "CreditCard" && (
+                  <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                      <CreditCard className="text-blue-600" /> بيانات البطاقة
+                    </h2>
+                    <Elements stripe={stripePromise} options={stripeElementsOptions}>
+                      <CardForm onPaymentMethodCreated={handlePaymentMethodCreated} />
+                    </Elements>
+                    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-gray-700">
+                      <button 
+                        onClick={handleDirectPayment}
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 flex items-center justify-center rounded-xl text-lg font-bold shadow transition"
+                        disabled={isProcessing || !paymentMethodId || !checkoutData}
+                        type="button"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            جاري معالجة الدفع...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-6 w-6" />
+                            إتمام عملية الدفع
+                          </>
+                        )}
+                      </button>
+                      <p className="text-xs text-slate-500 dark:text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
+                        <Lock className="w-4 h-4 text-green-500" />
+                        بيانات بطاقتك آمنة ومشفرة بالكامل
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <div className="flex justify-between items-center py-3 border-b">
-                <span>السعر</span>
-                <span className="font-semibold">{checkoutData.amount.toLocaleString()} ₪</span>
-              </div>
-              
-              <div className="flex justify-between items-center py-3 border-b">
-                <span>الشحن</span>
-                <span className="font-semibold">30 ₪</span>
-              </div>
-              
-              <div className="flex justify-between items-center py-3 border-b">
-                <span>الضريبة</span>
-                <span className="font-semibold">{(checkoutData.amount * 0.15).toLocaleString()} ₪</span>
-              </div>
-              
-              <div className="flex justify-between items-center py-3 text-lg font-bold">
-                <span>الإجمالي</span>
-                <span>{(checkoutData.amount + 30 + checkoutData.amount * 0.15).toLocaleString()} ₪</span>
+            )}
+          </div>
+          {/* ملخص الطلب */}
+          <div>
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 sticky top-8">
+              <h2 className="text-xl font-bold mb-6">ملخص الطلب</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-3 border-b">
+                  <span>{checkoutData.type === 'listing' ? 'منتج' : 'مزاد'}</span>
+                  <span className="font-semibold">{checkoutData.title}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b">
+                  <span>السعر</span>
+                  <span className="font-semibold">{checkoutData.amount.toLocaleString()} ₪</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b">
+                  <span>الشحن</span>
+                  <span className="font-semibold">30 ₪</span>
+                </div>
+                <div className="flex justify-between items-center py-3 text-lg font-bold">
+                  <span>الإجمالي</span>
+                  <span>{(checkoutData.amount + 30 ).toLocaleString()} ₪</span>
+                </div>
               </div>
             </div>
           </div>

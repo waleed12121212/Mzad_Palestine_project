@@ -924,15 +924,14 @@ const AuctionDetails = () => {
                         <CountdownTimer 
                           endTime={new Date(auction.endDate || auction.endTime)} 
                           onComplete={async () => {
+                            console.log('Countdown finished! Trying to close auction:', auction.id, 'status:', auction.status);
                             try {
-                              // Only attempt to close if auction is still active
                               if (auction.status !== 'Closed') {
                                 await auctionService.closeAuction(auction.id);
                                 toast({
                                   title: "تم إغلاق المزاد",
                                   description: "انتهى وقت المزاد وتم إغلاقه تلقائياً.",
                                 });
-                                // Refresh auction data
                                 refetch();
                               }
                             } catch (error) {
