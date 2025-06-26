@@ -55,14 +55,6 @@ interface SelectedFile {
   previewUrl?: string;
 }
 
-// Add new interface for download state
-interface DownloadState {
-  isDownloading: boolean;
-  progress: number;
-  downloadedUrl?: string;
-  fileName: string;
-}
-
 // Utility function to parse the auction block
 function parseAuctionBlock(content: string) {
   // Flexible regex: matches [مزاد: title](url) optionally followed by image and price, then the rest
@@ -492,7 +484,6 @@ interface FilePreviewProps {
 const FilePreview: React.FC<FilePreviewProps> = ({ attachment, fileUrl, fileType, messageId, content, isCurrentUser }) => {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [downloadState, setDownloadState] = useState<DownloadState | null>(null);
 
   const handleImageClick = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
@@ -513,49 +504,12 @@ const FilePreview: React.FC<FilePreviewProps> = ({ attachment, fileUrl, fileType
     return url;
   };
 
-  const handlePdfDownload = async (url: string, fileName: string) => {
-    try {
-      setDownloadState({
-        isDownloading: true,
-        progress: 0,
-        fileName: fileName || 'document.pdf'
-      });
-
-      const response = await axios({
-        url: url,
-        method: 'GET',
-        responseType: 'blob',
-        onDownloadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total ?? 100));
-          setDownloadState(prev => prev ? { ...prev, progress } : null);
-        }
-      });
-
-      // Create blob URL
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      setDownloadState(prev => prev ? {
-        ...prev,
-        isDownloading: false,
-        progress: 100,
-        downloadedUrl: blobUrl
-      } : null);
-
-      // Open PDF in new tab
-      window.open(blobUrl, '_blank');
-
-      // Clean up after a delay
-      setTimeout(() => {
-        window.URL.revokeObjectURL(blobUrl);
-        setDownloadState(null);
-      }, 1000);
-
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error('حدث خطأ أثناء تحميل الملف');
-      setDownloadState(null);
-    }
+  const handlePdfDownload = (fileUrlToOpen: string) => {
+    if (!fileUrlToOpen) return;
+    // The fileUrl from the backend has backslashes, which need to be replaced with forward slashes for the URL.
+    const correctedFileUrl = fileUrlToOpen.replace(/\\/g, '/');
+    const fullUrl = `http://mazadpalestine.runasp.net/${correctedFileUrl}`;
+    window.open(fullUrl, '_blank');
   };
 
   // If we have a direct file (new format)
@@ -651,31 +605,18 @@ const FilePreview: React.FC<FilePreviewProps> = ({ attachment, fileUrl, fileType
                     </p>
                 )}
                 <button
-                    onClick={() => handlePdfDownload(downloadUrl, 'document.pdf')}
+                    onClick={() => handlePdfDownload(fileUrl)}
                     className={`flex items-center justify-center gap-2 p-2 rounded-lg w-full text-sm font-medium transition-colors ${
                         isCurrentUser
                             ? 'bg-gray-700 hover:bg-gray-600 text-white'
                             : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'
                     }`}
-                    disabled={downloadState?.isDownloading}
                 >
                     <FileText className="w-5 h-5 text-red-500" />
                     <span>
-                        {downloadState?.isDownloading
-                            ? `جاري التحميل... ${downloadState.progress}%`
-                            : downloadState?.downloadedUrl
-                                ? 'تم التحميل - انقر للعرض'
-                                : 'تحميل وعرض الملف'}
+                        تحميل وعرض الملف
                     </span>
                 </button>
-                {downloadState?.isDownloading && (
-                    <div className="mt-2 h-1 w-full bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-blue-600 transition-all duration-300"
-                            style={{ width: `${downloadState.progress}%` }}
-                        />
-                    </div>
-                )}
             </div>
         </div>
         );
@@ -685,29 +626,18 @@ const FilePreview: React.FC<FilePreviewProps> = ({ attachment, fileUrl, fileType
       return (
         <div className="relative">
           <button 
-            onClick={() => handlePdfDownload(downloadUrl, 'document.pdf')}
-            className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 w-full"
-            disabled={downloadState?.isDownloading}
+            onClick={() => handlePdfDownload(fileUrl)}
+            className={`flex items-center justify-center gap-2 p-2 rounded-lg w-full text-sm font-medium transition-colors ${
+                isCurrentUser
+                    ? 'bg-black/20 hover:bg-black/30 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200'
+            }`}
           >
             <FileText className="w-5 h-5 text-red-500" />
-            <span className="text-sm">
-              {downloadState?.isDownloading ? (
-                `جاري التحميل... ${downloadState.progress}%`
-              ) : downloadState?.downloadedUrl ? (
-                'تم التحميل - انقر للعرض'
-              ) : (
-                'تحميل وعرض الملف'
-              )}
+            <span>
+                تحميل وعرض الملف
             </span>
           </button>
-          {downloadState?.isDownloading && (
-            <div className="mt-1 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${downloadState.progress}%` }}
-              />
-            </div>
-          )}
         </div>
       );
     }
