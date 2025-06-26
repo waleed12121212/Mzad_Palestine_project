@@ -69,6 +69,16 @@ export interface MessagePayload {
   receiverId: string | number;
   subject?: string;
   content: string;
+  attachments?: File[];
+}
+
+export interface MessageAttachment {
+  id: number;
+  messageId: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
 }
 
 export const messageService = {
@@ -134,5 +144,42 @@ export const messageService = {
 
   markAllInboxAsRead: () => axiosInstance.put('/inbox/read-all'),
 
-  getUnreadCount: () => axiosInstance.get('/inbox/unread-count').then(response => response.data)
+  getUnreadCount: () => axiosInstance.get('/inbox/unread-count').then(response => response.data),
+
+ 
+
+  // Send message with attachments
+  async sendMessageWithAttachments(payload: MessagePayload) {
+    try {
+
+      // Send the message with attachments
+      const response = await axiosInstance.post('/with-file', {
+        ...payload
+      });
+
+      // Get senderId from localStorage user object
+      const user = JSON.parse(localStorage.getItem('user'));
+      const senderId = user?.id;
+      let senderName = 'مستخدم جديد';
+      if (senderId) {
+        try {
+          const { data } = await userService.getUserById(senderId.toString());
+          senderName = `${data.firstName} ${data.lastName}`;
+        } catch (e) {
+          console.log('Debug: Error fetching senderProfile', e);
+        }
+      }
+      
+      await auctionNotificationService.notifyNewMessage(
+        payload.receiverId,
+        senderName,
+        payload.subject
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Error sending message with attachments:', error);
+      throw error;
+    }
+  }
 };

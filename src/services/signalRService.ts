@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private static instance: SignalRService;
+  private messageHandler: ((message: any) => void) | null = null;
 
   private constructor() {}
 
@@ -34,6 +35,11 @@ class SignalRService {
 
       await this.connection.start();
       console.log('SignalR Connected!');
+
+      // Setup message handler if exists
+      if (this.messageHandler) {
+        this.connection.on('ReceiveMessage', this.messageHandler);
+      }
     } catch (err) {
       console.error('Error while establishing SignalR connection:', err);
       toast.error('فشل الاتصال بالخادم');
@@ -61,6 +67,20 @@ class SignalRService {
       console.log('Auction update received:', update);
       // تحديث واجهة المستخدم مع معلومات المزاد الجديدة
     });
+  }
+
+  public addMessageHandler(handler: (message: any) => void): void {
+    this.messageHandler = handler;
+    if (this.connection) {
+      this.connection.on('ReceiveMessage', handler);
+    }
+  }
+
+  public removeMessageHandler(handler: (message: any) => void): void {
+    if (this.connection && this.messageHandler === handler) {
+      this.connection.off('ReceiveMessage', handler);
+      this.messageHandler = null;
+    }
   }
 
   public async sendMessage(receiverId: string, content: string): Promise<void> {

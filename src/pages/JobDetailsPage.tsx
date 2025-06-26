@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { jobService } from '../services/jobService';
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
-import { MapPin, Briefcase, DollarSign, Clock, Building, Mail, Phone, Calendar, Edit, Trash2, Share2, Heart } from 'lucide-react';
+import { MapPin, Briefcase, DollarSign, Clock, Building, Mail, Phone, Calendar, Edit, Trash2, Share2, Heart, Send, Paperclip, FileText, X } from 'lucide-react';
 import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { messageService } from '../services/messageService';
 import { toast } from 'sonner';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
+import axios from 'axios';
 
 const JobDetailsPage = () => {
   const { id } = useParams();
@@ -24,6 +25,8 @@ const JobDetailsPage = () => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // دوال مساعدة للتحقق من نوع التواصل
   const isEmail = (val) => val && val.includes('@');
@@ -250,51 +253,141 @@ const JobDetailsPage = () => {
               تقديم طلب
             </Button>
           )}
-          {/* Modal for sending application message (مودال React بسيط) */}
+          {/* Modal for sending application message */}
           {showApplyModal && (
-            <div style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-              <div style={{background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%', position: 'relative'}}>
-                <button onClick={() => setShowApplyModal(false)} style={{position: 'absolute', left: 16, top: 16, fontSize: 24, color: '#888', background: 'none', border: 'none', cursor: 'pointer'}}>×</button>
-                <h2 className="text-xl font-bold mb-4 text-blue-700">تقديم طلب على وظيفة {job.title}</h2>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  setIsSending(true);
-                  try {
-                    // Format message to include job details
-                    const jobUrl = `${window.location.origin}/jobs/${job.id}`;
-                    const formattedMessage = 
-                      `[وظيفة: ${job.title}](${jobUrl})\n` +
-                      `الشركة: ${job.companyName}\n` +
-                      `الموقع: ${job.location}\n` +
-                      `-----------------\n` +
-                      messageContent;
-
-                    await messageService.sendMessage({
-                      receiverId: jobOwner.id,
-                      subject: `تقديم طلب على وظيفة ${job.title}`,
-                      content: formattedMessage,
-                    });
-                    toast.success('تم إرسال الطلب بنجاح');
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+              <div className="bg-background dark:bg-gray-900 rounded-2xl p-8 max-w-lg w-full relative border border-border">
+                <button 
+                  onClick={() => {
                     setShowApplyModal(false);
+                    setSelectedFile(null);
                     setMessageContent('');
-                  } catch (err) {
-                    toast.error('فشل إرسال الطلب');
-                  } finally {
-                    setIsSending(false);
-                  }
-                }}>
-                  <label className="block mb-2 font-semibold">محتوى الرسالة</label>
-                  <Textarea
-                    className="w-full mb-4"
-                    rows={5}
-                    value={messageContent}
-                    onChange={e => setMessageContent(e.target.value)}
-                    required
-                    placeholder="اكتب رسالتك هنا..."
-                  />
-                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg text-lg py-3" disabled={isSending}>
-                    {isSending ? 'جاري الإرسال...' : 'إرسال الطلب'}
-                  </Button>
+                  }} 
+                  className="absolute left-4 top-4 text-2xl text-muted-foreground hover:text-foreground"
+                  type="button"
+                >
+                  ×
+                </button>
+
+                <h2 className="text-xl font-bold mb-6 text-foreground">تقديم طلب على وظيفة {job.title}</h2>
+                
+                <form 
+                  className="space-y-6"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsSending(true);
+                    try {
+                      const jobUrl = `${window.location.origin}/jobs/${job.id}`;
+                      const formattedMessage = 
+                        `[وظيفة: ${job.title}](${jobUrl})\n` +
+                        `الشركة: ${job.companyName}\n` +
+                        `الموقع: ${job.location}\n` +
+                        `-----------------\n` +
+                        messageContent;
+
+                      if (selectedFile) {
+                        const formData = new FormData();
+                        formData.append('file', selectedFile);
+                        formData.append('ReceiverId', jobOwner.id.toString());
+                        formData.append('Subject', `تقديم طلب على وظيفة ${job.title}`);
+                        formData.append('Content', formattedMessage);
+
+                        await axios.post('/Message/with-file', formData, {
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          }
+                        });
+                      } else {
+                        await messageService.sendMessage({
+                          receiverId: jobOwner.id,
+                          subject: `تقديم طلب على وظيفة ${job.title}`,
+                          content: formattedMessage,
+                        });
+                      }
+
+                      toast.success('تم إرسال الطلب بنجاح');
+                      setShowApplyModal(false);
+                      setMessageContent('');
+                      setSelectedFile(null);
+                    } catch (err) {
+                      console.error('Error sending application:', err);
+                      toast.error('فشل إرسال الطلب');
+                    } finally {
+                      setIsSending(false);
+                    }
+                  }}
+                >
+                  <div>
+                    <label className="block mb-2 font-semibold text-foreground">محتوى الرسالة</label>
+                    <Textarea
+                      className="w-full bg-background text-foreground border-input"
+                      rows={5}
+                      value={messageContent}
+                      onChange={e => setMessageContent(e.target.value)}
+                      required
+                      placeholder="اكتب رسالتك هنا..."
+                    />
+                  </div>
+
+                  <div className="flex flex-row-reverse bg-muted rounded-xl px-3 py-2 gap-2">
+                    <Button 
+                      type="submit" 
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-50"
+                      disabled={isSending}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (!files || files.length === 0) return;
+
+                        const file = files[0];
+                        const maxSize = 10 * 1024 * 1024; // 10MB
+
+                        if (file.size > maxSize) {
+                          toast.error('حجم الملف يجب أن يكون أقل من 10 ميجابايت');
+                          return;
+                        }
+
+                        setSelectedFile(file);
+                      }}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-muted-foreground hover:text-foreground rounded-full w-9 h-9 flex items-center justify-center"
+                      aria-label="إرفاق ملف"
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </button>
+
+                    {selectedFile && (
+                      <div className="flex-1 text-sm text-muted-foreground flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="truncate">{selectedFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFile(null)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <strong>تنبيه:</strong> بمجرد الضغط على زر الإرسال، سيتم إرسال رسالتك والملف المرفق مباشرة إلى صاحب العمل. تأكد من مراجعة المحتوى قبل الإرسال.
+                    </p>
+                  </div>
                 </form>
               </div>
             </div>

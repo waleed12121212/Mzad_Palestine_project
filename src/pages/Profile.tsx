@@ -502,34 +502,34 @@ const Profile = () => {
   // Memoize QuickLinks component
   const QuickLinks = React.memo(() => {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-        <h3 className="font-semibold text-lg mb-4">روابط سريعة</h3>
-        <div className="space-y-2">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+      <h3 className="font-semibold text-lg mb-4">روابط سريعة</h3>
+      <div className="space-y-2">
           {/* Other Quick Links */}
-          {[
-            { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
-            { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
-            { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
-            { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
-            { id: 'reports', to: "#", label: "بلاغاتي", icon: AlertTriangle },
-          ].map((link) => (
-            <button
-              key={link.id}
-              onClick={() => setActiveSection(link.id)}
-              className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
-                activeSection === link.id 
-                  ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
-            >
-              <link.icon className={`h-5 w-5 ${
-                activeSection === link.id 
-                  ? 'text-blue dark:text-blue-light'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`} />
-              <span>{link.label}</span>
-            </button>
-          ))}
+        {[
+          { id: 'auctions', to: "#", label: "مزاداتي", icon: Package },
+          { id: 'favorites', to: "#", label: "المفضلة", icon: Heart },
+          { id: 'disputes', to: "#", label: "نزاعاتي", icon: AlertTriangle },
+          { id: 'notifications', to: "#", label: "الإشعارات", icon: Bell },
+          { id: 'reports', to: "#", label: "بلاغاتي", icon: AlertTriangle },
+        ].map((link) => (
+          <button
+            key={link.id}
+            onClick={() => setActiveSection(link.id)}
+            className={`flex items-center gap-3 p-3 rounded-xl w-full transition-colors ${
+              activeSection === link.id 
+                ? 'bg-blue/10 text-blue dark:bg-blue-light/10 dark:text-blue-light'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            }`}
+          >
+            <link.icon className={`h-5 w-5 ${
+              activeSection === link.id 
+                ? 'text-blue dark:text-blue-light'
+                : 'text-gray-500 dark:text-gray-400'
+            }`} />
+            <span>{link.label}</span>
+          </button>
+        ))}
 
           {/* Settings Dropdown */}
           <div className="relative">
@@ -597,16 +597,16 @@ const Profile = () => {
             )}
           </div>
 
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>تسجيل الخروج</span>
-          </button>
-        </div>
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 p-3 rounded-xl w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>تسجيل الخروج</span>
+        </button>
       </div>
-    );
+    </div>
+  );
   });
 
   // Add UserAuctions component inside Profile (before MainContent):
@@ -871,22 +871,22 @@ const Profile = () => {
       return (
         <div className="flex flex-col gap-1">
           <label htmlFor={id} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200 text-right pr-2">
-            {label}
-          </label>
-          <div className="relative">
-            <input
-              id={id}
-              name={id}
+          {label}
+        </label>
+        <div className="relative">
+          <input
+            id={id}
+            name={id}
               type={inputType}
-              value={value ?? ''}
-              onChange={onChange}
-              readOnly={readonly}
+            value={value ?? ''}
+            onChange={onChange}
+            readOnly={readonly}
               className={`w-full py-3 px-5 pr-10 rounded-xl border-0 ${readonly ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold' : 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white'} text-right text-base shadow-sm focus:ring-2 focus:ring-blue focus:border-transparent transition-colors`}
             />
             <Icon className="absolute top-1/2 transform -translate-y-1/2 right-3 h-5 w-5 text-gray-400 pointer-events-none" />
-          </div>
         </div>
-      );
+      </div>
+    );
     });
 
     return (
