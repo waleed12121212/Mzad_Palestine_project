@@ -262,7 +262,11 @@ const Navbar: React.FC = () => {
                                       className="w-full text-right flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-800/70 rounded-lg transition-colors"
                                     >
                                       <img
-                                        src={user.profilePicture || "/images/default-avatar.png"}
+                                        src={user.profilePicture ? 
+                                          (user.profilePicture.startsWith('http') 
+                                            ? user.profilePicture 
+                                            : `http://mazadpalestine.runasp.net${user.profilePicture}`)
+                                          : "/images/default-avatar.png"}
                                         alt={user.username}
                                         className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                                       />
@@ -605,7 +609,11 @@ const Navbar: React.FC = () => {
                                 className="w-full text-right flex items-center p-2 my-1 hover:bg-gray-50 dark:hover:bg-gray-800/70 rounded-lg transition-colors"
                               >
                                 <img
-                                  src={user.profilePicture || "/images/default-avatar.png"}
+                                  src={user.profilePicture ? 
+                                    (user.profilePicture.startsWith('http') 
+                                      ? user.profilePicture 
+                                      : `http://mazadpalestine.runasp.net${user.profilePicture}`)
+                                    : "/images/default-avatar.png"}
                                   alt={user.username}
                                   className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                                 />
