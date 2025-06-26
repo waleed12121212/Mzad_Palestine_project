@@ -957,51 +957,81 @@ const Chat: React.FC = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() && !messageSubject.trim() && !selectedFile) return;
-    const receiverId = selectedConversationId || activeContact?.id;
-    
-    if (!receiverId) {
-      toast.error('لا يوجد جهة اتصال محددة');
-      return;
-    }
+    if (!newMessage.trim() && !selectedFile) return;
+    if (!selectedConversationId) return;
 
     try {
-      if (selectedFile) {
-        // Create FormData for file upload
-        const formData = new FormData();
-        formData.append('file', selectedFile.file);
-        formData.append('ReceiverId', receiverId.toString());
-        formData.append('Subject', messageSubject.trim() || 'مرفقات');
-        formData.append('Content', newMessage.trim() || 'تم إرسال مرفقات');
+      console.log('Chat - Sending message to:', selectedConversationId);
+      console.log('Chat - Message content:', newMessage);
+      console.log('Chat - SignalR connection active:', signalRService.isConnectionActive());
 
-        await axios.post('/Message/with-file', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        // Clean up preview URL
-        if (selectedFile.previewUrl) {
-          URL.revokeObjectURL(selectedFile.previewUrl);
-        }
-        setSelectedFile(null);
+      // إرسال الرسالة عبر SignalR أولاً
+      if (signalRService.isConnectionActive()) {
+        console.log('Chat - Sending message via SignalR');
+        await signalRService.sendMessage(selectedConversationId.toString(), newMessage);
       } else {
-        // Send regular message without file
-        await messageService.sendMessage({
-          receiverId,
-          subject: messageSubject.trim() === '' ? "default" : messageSubject,
-          content: newMessage,
-        });
+        console.warn('Chat - SignalR not connected, sending via HTTP only');
       }
 
-      await fetchMessages(receiverId);
+      // إرسال الرسالة عبر HTTP API كنسخة احتياطية
+      const messageData = {
+        receiverId: selectedConversationId,
+        content: newMessage,
+        subject: messageSubject || undefined
+      };
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('receiverId', selectedConversationId.toString());
+        formData.append('content', newMessage);
+        if (messageSubject) formData.append('subject', messageSubject);
+        formData.append('file', selectedFile.file);
+
+        const response = await axios.post(
+          'http://mazadpalestine.runasp.net/api/messages/send',
+          formData,
+          {
+            headers: {
+              ...getAuthHeader(),
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        if (response.data.success) {
+          console.log('Chat - Message sent successfully via HTTP');
+          const newMsg = response.data.data;
+          setMessages(prev => [...prev, newMsg]);
+        }
+      } else {
+        const response = await axios.post(
+          'http://mazadpalestine.runasp.net/api/messages/send',
+          messageData,
+          { headers: getAuthHeader() }
+        );
+
+        if (response.data.success) {
+          console.log('Chat - Message sent successfully via HTTP');
+          const newMsg = response.data.data;
+          setMessages(prev => [...prev, newMsg]);
+        }
+      }
+
       setNewMessage('');
       setMessageSubject('');
-      toast.success('تم إرسال الرسالة بنجاح');
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // تمرير للأسفل
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
     } catch (error) {
-      console.error('[Chat] Error sending message:', error);
-      toast.error('حدث خطأ أثناء إرسال الرسالة');
+      console.error('Chat - Error sending message:', error);
+      toast.error('فشل في إرسال الرسالة');
     }
   };
 
@@ -1230,12 +1260,18 @@ const Chat: React.FC = () => {
   // إضافة معالج الرسائل الجديدة
   useEffect(() => {
     const handleNewMessage = (message: Message) => {
+      console.log('Chat - Received new message:', message);
+      console.log('Chat - Current selectedConversationId:', selectedConversationId);
+      console.log('Chat - Current user ID:', user?.id);
+      
       // أضف الرسالة إذا كانت تخص المحادثة الحالية (سواء أرسلها أو استقبلها المستخدم)
       if (
         (selectedConversationId && (message.senderId === selectedConversationId || message.receiverId === selectedConversationId)) ||
         (user && (message.senderId === Number(user.id) || message.receiverId === Number(user.id)))
       ) {
+        console.log('Chat - Adding message to current conversation');
         setMessages(prev => [...prev, message]);
+        
         // تحديث قائمة جهات الاتصال
         setContacts(prev => prev.map(contact => {
           if (contact.id === message.senderId) {
@@ -1248,17 +1284,27 @@ const Chat: React.FC = () => {
           }
           return contact;
         }));
+      } else {
+        console.log('Chat - Message not for current conversation, ignoring');
       }
     };
 
     // بدء اتصال SignalR عند تحميل المكون
-    signalRService.startConnection();
+    console.log('Chat - Starting SignalR connection');
+    signalRService.startConnection().then(() => {
+      console.log('Chat - SignalR connection started successfully');
+      console.log('Chat - Connection active:', signalRService.isConnectionActive());
+      console.log('Chat - Connection ID:', signalRService.getConnectionId());
+    }).catch((error) => {
+      console.error('Chat - Failed to start SignalR connection:', error);
+    });
 
     // إضافة معالج الرسائل الجديدة
     signalRService.addMessageHandler(handleNewMessage);
 
     // تنظيف عند إزالة المكون
     return () => {
+      console.log('Chat - Cleaning up SignalR connection');
       signalRService.removeMessageHandler(handleNewMessage);
       signalRService.stopConnection();
     };
@@ -1454,7 +1500,7 @@ const Chat: React.FC = () => {
                         <DialogContent className="max-w-lg w-full">
                           <DialogTitle>مكالمة صوتية</DialogTitle>
                           <VoiceCall
-                            currentUserId={user?.id}
+                            currentUserId={Number(user?.id)}
                             targetUserId={selectedConversationId}
                             token={localStorage.getItem('token')}
                             onEndCall={() => setCallDialogOpen(false)}
