@@ -57,7 +57,6 @@ interface SidebarCategory {
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [pendingAuctions, setPendingAuctions] = useState<Auction[]>([]);
@@ -198,13 +197,6 @@ const Index = () => {
   const handleCarouselCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
     navigate(`/categories/${categoryId}`);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/auctions?search=${encodeURIComponent(searchQuery)}`);
-    }
   };
 
   const getFilteredAuctions = () => {

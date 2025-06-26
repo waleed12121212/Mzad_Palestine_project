@@ -188,6 +188,14 @@
       "destination": "http://mazadpalestine.runasp.net/auth/:path*"
     },
     {
+      "source": "/Search",
+      "destination": "http://mazadpalestine.runasp.net/Search"
+    },
+    {
+      "source": "/Search/:path*",
+      "destination": "http://mazadpalestine.runasp.net/Search/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -312,6 +312,43 @@ export default defineConfig(({ mode }) => ({
             }
           });
         }
+      },
+      '/Search': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/Searchy/, '/Search'),
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // إزالة رؤوس CORS من الطلب الأصلي
+            proxyReq.removeHeader('Origin');
+            proxyReq.removeHeader('Referer');
+            
+            // إضافة رؤوس جديدة
+            proxyReq.setHeader('Origin', API_URL);
+            proxyReq.setHeader('Host', new URL(API_URL).host);
+            
+            // معالجة التوكن
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+
+          // معالجة الاستجابة
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // إضافة رؤوس CORS للاستجابة
+            proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:8081';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+            proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+            
+            // معالجة طلبات OPTIONS
+            if (req.method === 'OPTIONS') {
+              res.statusCode = 204;
+              res.end();
+            }
+          });
+        }
       }
     }
   },
