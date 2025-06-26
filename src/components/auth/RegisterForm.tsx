@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, Phone, Calendar, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../ui/use-toast';
 
@@ -15,10 +15,14 @@ export const RegisterForm: React.FC = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    bio: '',
+    dateOfBirth: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -70,7 +74,11 @@ export const RegisterForm: React.FC = () => {
         username: formData.username,
         email: formData.email,
         phone: formData.phone,
-        password: formData.password
+        password: formData.password,
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        bio: formData.bio || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined
       });
       
       console.log('Registration successful, sending email confirmation...');
@@ -128,6 +136,46 @@ export const RegisterForm: React.FC = () => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+            الاسم الأول (اختياري)
+          </label>
+          <div className="relative">
+            <input
+              id="firstName"
+              name="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={handleChange}
+              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+              placeholder="الاسم الأول"
+              disabled={loading}
+            />
+            <User className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+            اسم العائلة (اختياري)
+          </label>
+          <div className="relative">
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              value={formData.lastName}
+              onChange={handleChange}
+              className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+              placeholder="اسم العائلة"
+              disabled={loading}
+            />
+            <User className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+      </div>
+
       <div>
         <label htmlFor="email" className="block text-sm font-medium mb-2">
           البريد الإلكتروني
@@ -163,6 +211,43 @@ export const RegisterForm: React.FC = () => {
             disabled={loading}
           />
           <Phone className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="dateOfBirth" className="block text-sm font-medium mb-2">
+          تاريخ الميلاد (اختياري)
+        </label>
+        <div className="relative">
+          <input
+            id="dateOfBirth"
+            name="dateOfBirth"
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={handleChange}
+            className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+            disabled={loading}
+          />
+          <Calendar className="absolute top-1/2 transform -translate-y-1/2 right-4 h-5 w-5 text-gray-400" />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="bio" className="block text-sm font-medium mb-2">
+          نبذة شخصية (اختياري)
+        </label>
+        <div className="relative">
+          <textarea
+            id="bio"
+            name="bio"
+            value={formData.bio}
+            onChange={handleChange}
+            className="w-full py-3 px-5 pr-12 rounded-xl bg-gray-100 dark:bg-gray-700 border-none text-base"
+            placeholder="نبذة قصيرة عنك"
+            rows={3}
+            disabled={loading}
+          />
+          <FileText className="absolute top-6 transform right-4 h-5 w-5 text-gray-400" />
         </div>
       </div>
 

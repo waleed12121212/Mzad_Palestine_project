@@ -73,6 +73,10 @@ const Profile = () => {
   // Add isSettingsOpen state to parent component
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // Add at the top, after imports and inside the component:
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | number | null>(null);
+
   // Add effect to manage dropdown visibility based on active section
   useEffect(() => {
     if (activeSection === 'profile' || activeSection === 'settings') {
@@ -213,14 +217,17 @@ const Profile = () => {
   };
 
   // Delete user
-  const handleDeleteUser = async (id: string | number) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      await userService.deleteUser(id.toString());
+      await userService.deleteUser(userToDelete.toString());
       toast({ title: 'تم حذف المستخدم بنجاح' });
       fetchAllUsers();
     } catch (error: any) {
       toast({ title: 'خطأ في حذف المستخدم', description: error.message, variant: 'destructive' });
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
   };
 
@@ -273,7 +280,7 @@ const Profile = () => {
                 <td className="p-2">
                   <button
                     className="text-red-500 hover:underline"
-                    onClick={() => handleDeleteUser(u.id)}
+                    onClick={() => { setUserToDelete(u.id); setShowDeleteModal(true); }}
                   >
                     حذف
                   </button>
@@ -978,16 +985,19 @@ const Profile = () => {
               onChange={handleInputChange}
               readonly={!isEditing}
             />
-            <InputField
-              key="dateOfBirth"
-              id="dateOfBirth"
-              label="تاريخ الميلاد"
-              icon={Calendar}
-              type="date"
-              value={isEditing ? (formData.dateOfBirth ? formData.dateOfBirth.substring(0, 10) : '') : (userData?.dateOfBirth ?? '')}
-              onChange={handleInputChange}
-              readonly={!isEditing}
-            />
+           <InputField
+           key="dateOfBirth"
+           id="dateOfBirth"
+          label="تاريخ الميلاد"
+          icon={Calendar}
+          type="date"
+          value={isEditing 
+    ? (formData.dateOfBirth ? formData.dateOfBirth.split('T')[0] : '') 
+    : (userData?.dateOfBirth ? userData.dateOfBirth.split('T')[0] : '')
+  }
+  onChange={handleInputChange}
+  readonly={!isEditing}
+/>
             <InputField
               key="bio"
               id="bio"
@@ -1919,6 +1929,30 @@ const Profile = () => {
           </div>
         </div>
       </main>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">تأكيد الحذف</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => { setShowDeleteModal(false); setUserToDelete(null); }}
+                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

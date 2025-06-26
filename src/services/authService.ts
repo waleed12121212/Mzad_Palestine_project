@@ -78,6 +78,10 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  dateOfBirth?: string;
 }
 
 export interface LoginData {
