@@ -19,6 +19,8 @@ import { userService } from '@/services/userService';
 import { signalRService } from '@/services/signalRService';
 import axios from 'axios';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import VoiceCall from "../components/VoiceCall";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface Message {
   id: number;
@@ -688,6 +690,7 @@ const Chat: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
 
   // Get contact ID from URL
   const contactId = useMemo(() => {
@@ -1412,7 +1415,7 @@ const Chat: React.FC = () => {
               <>
                 {/* Header */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-900">
-                <div className="flex items-center">
+                  <div className="flex items-center">
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -1438,48 +1441,69 @@ const Chat: React.FC = () => {
                         </div>
                       ) : null;
                     })()}
-                </div>
-                {/* زر حذف المحادثة */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900" aria-label="حذف المحادثة">
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent dir="rtl">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>تأكيد حذف المحادثة</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        هل أنت متأكد أنك تريد حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={async () => {
-                          try {
-                            await messageService.deleteConversation(selectedConversationId);
-                            toast.success('تم حذف المحادثة بنجاح');
-                            setSelectedConversationId(null);
-                            // إعادة تحميل قائمة المحادثات
-                            const inboxData = await messageService.getInbox();
-                            // تحديث قائمة جهات الاتصال بعد الحذف
-                            let contactIds = Array.from(new Set(inboxData.map((msg: any) => msg.senderId)));
-                            setContacts(prevContacts => prevContacts.filter(c => contactIds.includes(c.id)));
-                          } catch (error) {
-                            toast.error('حدث خطأ أثناء حذف المحادثة');
-                          }
-                        }}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        حذف
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  </div>
+                  {/* الأزرار بجانب بعض */}
+                  <div className="flex items-center gap-2">
+                    {selectedConversationId && (
+                      <Dialog open={callDialogOpen} onOpenChange={setCallDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900" aria-label="بدء مكالمة صوتية">
+                            <Phone className="h-5 w-5" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-lg w-full">
+                          <DialogTitle>مكالمة صوتية</DialogTitle>
+                          <VoiceCall
+                            currentUserId={user?.id}
+                            targetUserId={selectedConversationId}
+                            token={localStorage.getItem('token')}
+                            onEndCall={() => setCallDialogOpen(false)}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {/* زر حذف المحادثة */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900" aria-label="حذف المحادثة">
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent dir="rtl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>تأكيد حذف المحادثة</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            هل أنت متأكد أنك تريد حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              try {
+                                await messageService.deleteConversation(selectedConversationId);
+                                toast.success('تم حذف المحادثة بنجاح');
+                                setSelectedConversationId(null);
+                                // إعادة تحميل قائمة المحادثات
+                                const inboxData = await messageService.getInbox();
+                                // تحديث قائمة جهات الاتصال بعد الحذف
+                                let contactIds = Array.from(new Set(inboxData.map((msg: any) => msg.senderId)));
+                                setContacts(prevContacts => prevContacts.filter(c => contactIds.includes(c.id)));
+                              } catch (error) {
+                                toast.error('حدث خطأ أثناء حذف المحادثة');
+                              }
+                            }}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            حذف
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               
-              {/* Messages Area */}
+                {/* Messages Area */}
                 <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 {messages.length > 0 ? (
                     messages.map((message, index) => {

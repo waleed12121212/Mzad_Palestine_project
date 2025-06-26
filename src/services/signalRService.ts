@@ -1,6 +1,17 @@
 import * as signalR from '@microsoft/signalr';
 import { toast } from 'sonner';
 
+// دالة استخراج UserId من التوكن (خارج الكلاس)
+function getUserIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || null;
+  } catch {
+    return null;
+  }
+}
+
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private static instance: SignalRService;
@@ -22,6 +33,9 @@ class SignalRService {
         console.error('No authentication token found');
         return;
       }
+      // استخراج UserId من التوكن
+      const userId = getUserIdFromToken(token);
+      console.log('UserId from token:', userId);
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl('http://mazadpalestine.runasp.net/chatHub', {
@@ -67,6 +81,8 @@ class SignalRService {
       console.log('Auction update received:', update);
       // تحديث واجهة المستخدم مع معلومات المزاد الجديدة
     });
+
+    // أضف طباعة لأي أحداث أخرى مهمة هنا
   }
 
   public addMessageHandler(handler: (message: any) => void): void {
