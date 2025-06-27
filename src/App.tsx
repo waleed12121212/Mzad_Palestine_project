@@ -56,6 +56,7 @@ import ServiceDetailsPage from '@/pages/ServiceDetailsPage';
 import CreateService from '@/pages/CreateService';
 import EditService from '@/pages/EditService';
 import { EditJobPage } from '@/pages/EditJobPage';
+import SearchResults from '@/pages/SearchResults';
 
 const queryClient = new QueryClient();
 
@@ -278,6 +279,7 @@ function App() {
                     <Route path="/services/:id" element={<ServiceDetailsPage />} />
                     <Route path="/services/create" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
                     <Route path="/services/edit/:id" element={<ProtectedRoute><EditService /></ProtectedRoute>} />
+                    <Route path="/search-results" element={<SearchResults />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster
