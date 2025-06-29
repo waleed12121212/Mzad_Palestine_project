@@ -40,6 +40,8 @@ interface ApiAuction {
   description?: string;
   address?: string;
   categoryId?: number;
+  features?: string;
+  condition?: number;
   // API response fields (PascalCase)
   Id?: number;
   AuctionId?: number;
@@ -59,6 +61,8 @@ interface ApiAuction {
   Description?: string;
   Address?: string;
   CategoryId?: number;
+  Features?: string;
+  Condition?: number;
 }
 
 // AuctionStatus enum that matches backend expectations
@@ -95,22 +99,11 @@ const formSchema = z.object({
   address: z.string().min(2, {
     message: 'يرجى إدخال العنوان',
   }),
-  startTime: z.date({
-    required_error: 'يرجى تحديد وقت بدء المزاد',
-  }),
-  endTime: z.date({
-    required_error: 'يرجى تحديد وقت نهاية المزاد',
-  }),
-  reservePrice: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: 'يجب أن يكون السعر الابتدائي رقماً موجباً',
-  }),
   bidIncrement: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: 'يجب أن تكون قيمة الزيادة رقماً موجباً',
   }),
-  categoryId: z.number().min(1, {
-    message: 'يرجى اختيار الفئة',
-  }),
-  status: z.string(),
+  features: z.string().optional(),
+  condition: z.number().optional(),
 });
 
 const EditAuction = () => {
@@ -122,6 +115,7 @@ const EditAuction = () => {
   const [currentImages, setCurrentImages] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [auction, setAuction] = useState<ApiAuction | null>(null);
+  const [hasBids, setHasBids] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -129,14 +123,11 @@ const EditAuction = () => {
       title: '',
       description: '',
       address: '',
-      startTime: new Date(),
-      endTime: new Date(),
-      reservePrice: '',
       bidIncrement: '',
-      categoryId: 1,
-      status: 'Open',
       newImages: [],
       imagesToDelete: [],
+      features: '',
+      condition: 0,
     },
   });
 
@@ -181,6 +172,10 @@ const EditAuction = () => {
         setAuction(auctionData);
         setCurrentImages(auctionData.images || auctionData.Images || []);
         
+        // Check if auction has bids
+        const bids = auctionData.bids || auctionData.Bids || [];
+        setHasBids(bids.length > 0);
+        
         // Parse dates
         const startTime = new Date(auctionData.startDate || auctionData.StartDate || auctionData.startTime || auctionData.StartTime);
         const endTime = new Date(auctionData.endDate || auctionData.EndDate || auctionData.endTime || auctionData.EndTime);
@@ -204,14 +199,11 @@ const EditAuction = () => {
           title: auctionData.title || auctionData.Title || '',
           description: auctionData.description || auctionData.Description || '',
           address: auctionData.address || auctionData.Address || '',
-          startTime,
-          endTime,
-          reservePrice: String(reservePrice),
           bidIncrement: String(bidIncrement),
-          categoryId: auctionData.categoryId || auctionData.CategoryId || 1,
-          status: getStatusString(auctionData.status || auctionData.Status || 'Open'),
           newImages: [],
           imagesToDelete: [],
+          features: auctionData.features || auctionData.Features || '',
+          condition: auctionData.condition || auctionData.Condition || 0,
         });
         
         setLoading(false);
@@ -293,41 +285,16 @@ const EditAuction = () => {
         }
       }
 
-      // Convert string status to numeric enum value
-      let statusEnum: number;
-      switch (values.status) {
-        case 'Draft': statusEnum = AuctionStatus.Draft; break;
-        case 'Open': statusEnum = AuctionStatus.Active; break;
-        case 'Closed': statusEnum = AuctionStatus.Completed; break;
-        case 'Cancelled': statusEnum = AuctionStatus.Cancelled; break;
-        default: statusEnum = AuctionStatus.Active;
-      }
-
-      // Get current auction status
-      const currentAuction = await auctionService.getAuctionById(Number(id));
-      const currentStatus = currentAuction.status || currentAuction.Status;
-
-      // Adjust dates for UTC
-      const startDate = new Date(values.startTime);
-      const endDate = new Date(values.endTime);
-      
-      // Add 3 hours to convert from Palestine time to UTC
-      startDate.setHours(startDate.getHours() + 3);
-      endDate.setHours(endDate.getHours() + 3);
-
       // Prepare update data
       const updateData = {
         title: values.title.trim(),
         description: values.description.trim(),
         address: values.address.trim(),
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        reservePrice: Number(values.reservePrice),
         bidIncrement: Number(values.bidIncrement),
-        categoryId: Number(values.categoryId),
-        status: currentStatus,
         imagesToDelete: imagesToDelete,
-        newImages: newImageUrls
+        newImages: newImageUrls,
+        features: values.features,
+        condition: Number(values.condition),
       };
 
       console.log('Sending update data:', updateData);
@@ -466,105 +433,6 @@ const EditAuction = () => {
               )}
             />
 
-            {/* Start Time Field */}
-            <FormField
-              control={form.control}
-              name="startTime"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>وقت بدء المزاد</FormLabel>
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      type="datetime-local"
-                      value={(() => {
-                        try {
-                          const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
-                            ? field.value 
-                            : new Date();
-                          return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-                            .toISOString()
-                            .slice(0, 16);
-                        } catch (e) {
-                          console.error("Error formatting start date:", e);
-                          return new Date().toISOString().slice(0, 16);
-                        }
-                      })()}
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          try {
-                            field.onChange(new Date(e.target.value));
-                          } catch (error) {
-                            console.error("Error parsing date:", error);
-                            field.onChange(new Date());
-                          }
-                        }
-                      }}
-                      className="w-full"
-                    />
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* End Time Field */}
-            <FormField
-              control={form.control}
-              name="endTime"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>وقت نهاية المزاد</FormLabel>
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      type="datetime-local"
-                      value={(() => {
-                        try {
-                          const date = field.value instanceof Date && !isNaN(field.value.getTime()) 
-                            ? field.value 
-                            : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                          return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-                            .toISOString()
-                            .slice(0, 16);
-                        } catch (e) {
-                          console.error("Error formatting end date:", e);
-                          return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
-                        }
-                      })()}
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          try {
-                            field.onChange(new Date(e.target.value));
-                          } catch (error) {
-                            console.error("Error parsing date:", error);
-                            const futureDate = new Date();
-                            futureDate.setDate(futureDate.getDate() + 7);
-                            field.onChange(futureDate);
-                          }
-                        }
-                      }}
-                      className="w-full"
-                    />
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Reserve Price Field */}
-            <FormField
-              control={form.control}
-              name="reservePrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>السعر الابتدائي</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="number" min="0" placeholder="أدخل السعر الابتدائي" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Bid Increment Field */}
             <FormField
               control={form.control}
@@ -580,53 +448,40 @@ const EditAuction = () => {
               )}
             />
 
-            {/* Category ID Field */}
+            {/* Features Field */}
             <FormField
               control={form.control}
-              name="categoryId"
+              name="features"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>الفئة</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر فئة المزاد" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={String(category.id)}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>الميزات</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="أدخل الميزات" />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Status Field */}
+            {/* Condition Field */}
             <FormField
               control={form.control}
-              name="status"
+              name="condition"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>حالة المزاد</FormLabel>
+                  <FormLabel>حالة العنصر</FormLabel>
                   <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    defaultValue={String(field.value || 1)}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر حالة المزاد" />
+                        <SelectValue placeholder="اختر حالة العنصر" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Draft">مسودة</SelectItem>
-                      <SelectItem value="Open">نشط</SelectItem>
-                      <SelectItem value="Closed">منتهي</SelectItem>
-                      <SelectItem value="Cancelled">ملغي</SelectItem>
+                      <SelectItem value="1">جديد</SelectItem>
+                      <SelectItem value="2">مستعمل</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

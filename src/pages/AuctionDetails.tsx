@@ -50,8 +50,8 @@ interface ExtendedAuction {
   category?: string;
   categoryName: string;
   subcategory?: string;
-  features?: string[];
-  condition?: string;
+  features?: string;
+  condition?: number;
   location?: string;
   views?: number;
   imageUrl?: string;
@@ -535,6 +535,17 @@ const AuctionDetails = () => {
 
   const handleDelete = async () => {
     try {
+      // Check if auction has bids
+      if (auction.bids && auction.bids.length > 0) {
+        toast({
+          title: "لا يمكن حذف المزاد",
+          description: "لا يمكن حذف المزاد عند وجود مزايدات",
+          variant: "destructive"
+        });
+        setShowDeleteDialog(false);
+        return;
+      }
+
       await auctionService.deleteAuction(auction.id);
       toast({
         title: "تم حذف المزاد بنجاح",
@@ -671,7 +682,7 @@ const AuctionDetails = () => {
                         title="إغلاق المزاد"
                       >
                         <Lock className="h-5 w-5 text-orange-500" />
-                        <span className="hidden sm:inline">{closing ? 'جاري الإغلاق...' : 'إغلاق المزاد'}</span>
+                        <span className="hidden sm:inline text-orange-500">{closing ? 'جاري الإغلاق...' : 'إغلاق المزاد'}</span>
                       </button>
                     )}
                   </div>
@@ -823,19 +834,31 @@ const AuctionDetails = () => {
                 <p className="paragraph mb-6">{auction.description}</p>
                 
                 <h3 className="heading-sm mb-4">المميزات:</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
-                  {(auction.features ?? []).map((feature: string, idx: number) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue dark:bg-blue-light"></div>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                {auction.features ? (
+                  <div className="mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+                      {auction.features
+                        .split(/\n|،|,|\r|\u060C/)
+                        .map(f => f.trim())
+                        .filter(f => f.length > 0)
+                        .map((feature, idx) => (
+                          <div key={idx} className="flex items-center mb-2 text-lg text-right">
+                            <span className="inline-block w-2 h-2 rounded-full bg-blue-900 ml-2"></span>
+                            {feature}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 mb-8">لا توجد مميزات محددة</p>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="neo-card p-4 text-center">
                     <h4 className="font-medium mb-2">الحالة</h4>
-                    <p className="text-lg font-bold">-</p>
+                    <p className="text-lg font-bold">
+                      {auction.condition === 1 ? 'جديد' : auction.condition === 2 ? 'مستعمل' : '-'}
+                    </p>
                   </div>
                   <div className="neo-card p-4 text-center">
                     <h4 className="font-medium mb-2">الموقع</h4>

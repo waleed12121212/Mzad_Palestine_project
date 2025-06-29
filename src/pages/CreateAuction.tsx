@@ -72,6 +72,7 @@ const CreateAuction = () => {
     endTime: "",
     location: "",
     condition: "new" as "new" | "used",
+    features: "",
     terms: false
   });
 
@@ -372,7 +373,9 @@ const CreateAuction = () => {
           bidIncrement: Number(formData.incrementAmount || 10),
           categoryId: Number(formData.category),
           images: processedImages.length > 0 ? processedImages : ["https://example.com/images/placeholder.jpg"],
-          userId: Number(user?.id) || 1
+          userId: Number(user?.id) || 1,
+          features: formData.features.trim(),
+          condition: formData.condition === "new" ? 1 : 2
         };
 
         // Validate auction data before sending
@@ -686,6 +689,21 @@ const CreateAuction = () => {
                         مستعمل
                       </label>
                     </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="features" className="block mb-2 text-sm font-medium">
+                      المميزات
+                    </label>
+                    <textarea
+                      id="features"
+                      name="features"
+                      rows={3}
+                      placeholder="اكتب مميزات العنصر (مثال: 256GB, Space Black, Original Box, Charger Included)"
+                      value={formData.features}
+                      onChange={handleChange}
+                      className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                    />
                   </div>
 
                   <div>

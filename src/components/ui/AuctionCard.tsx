@@ -30,6 +30,7 @@ interface AuctionCardProps {
   errorState?: boolean;
   isPending?: boolean;
   categoryName?: string;
+  bids?: any[];
   phoneData?: {
     deviceName: string;
     batteryCapacity: number;
@@ -82,6 +83,7 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
   errorState = false,
   isPending = false,
   categoryName,
+  bids,
   phoneData,
   laptopData
 }) => {
@@ -175,6 +177,17 @@ const AuctionCard: React.FC<AuctionCardProps> = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Check if auction has bids
+    if (bids && bids.length > 0) {
+      toast({
+        title: "لا يمكن حذف المزاد",
+        description: "لا يمكن حذف المزاد عند وجود مزايدات",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (window.confirm("هل أنت متأكد أنك تريد حذف هذا المزاد؟")) {
       try {
         const response = await auctionService.deleteAuction(numericId);

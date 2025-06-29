@@ -36,6 +36,8 @@ export interface Auction {
   bidsCount?: number;
   listingId?: number;
   userId?: string | number;
+  features?: string;
+  condition?: number; // 1 for new, 2 for used
 }
 
 export interface ApiResponse<T> {
@@ -54,6 +56,8 @@ export interface CreateAuctionDto {
   categoryId: number;
   images: string[];
   userId: number;
+  features?: string;
+  condition?: number;
 }
 
 interface UpdateAuctionDto {
@@ -68,6 +72,8 @@ interface UpdateAuctionDto {
   status?: number;
   imagesToDelete?: string[];
   newImages?: string[];
+  features?: string;
+  condition?: number;
 }
 
 class AuctionService {
@@ -113,7 +119,9 @@ class AuctionService {
         bidIncrement: Number(data.bidIncrement),
         categoryId: Number(data.categoryId),
         images: processedImages,
-        userId: data.userId
+        userId: data.userId,
+        features: data.features,
+        condition: data.condition
       };
 
       // Log the exact data being sent

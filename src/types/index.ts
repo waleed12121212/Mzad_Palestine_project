@@ -11,7 +11,7 @@ export interface Category {
 export interface SubCategory {
   id: string;
   name: string;
-  listingsCount?: number;
+  categoryId: string;
 }
 
 export interface AuctionBid {
@@ -42,6 +42,8 @@ export interface Auction {
   createdAt: string;
   updatedAt: string;
   bids: AuctionBid[];
+  features?: string;
+  condition?: number; // 1 for new, 2 for used
 }
 
 // Export all transaction types
