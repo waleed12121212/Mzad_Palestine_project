@@ -39,14 +39,21 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    const axiosError = error as AxiosError<{ message?: string }>;
+    const axiosError = error as AxiosError<{ error?: string, message?: string }>;
     
     // Handle network errors
     if (!axiosError.response) {
       throw new Error('خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت الخاص بك');
     }
     
-    // Handle API errors
+    console.log("API Error Response:", axiosError.response.data);
+    
+    // Check for error format seen in screenshot - { error: "message text..." }
+    if (axiosError.response?.data?.error) {
+      throw new Error(axiosError.response.data.error);
+    }
+    
+    // Handle API errors with message property
     if (axiosError.response?.data?.message) {
       throw new Error(axiosError.response.data.message);
     }
@@ -145,6 +152,18 @@ export const authService = {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       return response.data;
     } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        responseData: error.response?.data,
+        responseStatus: error.response?.status
+      });
+      
+      // If the error contains the specific email verification error, pass it directly
+      if (error.response?.data?.error && typeof error.response.data.error === 'string' && 
+          error.response.data.error.includes('يجب تأكيد البريد الإلكتروني')) {
+        throw new Error(error.response.data.error);
+      }
+      
       throw new Error(error.message || 'خطأ في البريد الإلكتروني أو كلمة المرور');
     }
   },

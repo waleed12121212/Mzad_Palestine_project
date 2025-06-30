@@ -1148,17 +1148,7 @@ const CreateAuction = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue/5 dark:bg-blue/10 rounded-lg p-4 border border-blue/20">
-                  <div className="flex items-start">
-                    <Info className="h-5 w-5 text-blue dark:text-blue-light ml-2 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue dark:text-blue-light mb-1">ملاحظة هامة</h4>
-                      <p className="text-sm">
-                        سيتم مراجعة المزاد من قبل إدارة المنصة قبل نشره، وقد يستغرق ذلك ما يصل إلى 24 ساعة. ستتلقى إشعاراً عند الموافقة على المزاد.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+               
 
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <label className="flex items-center gap-2 cursor-pointer text-base font-medium">
