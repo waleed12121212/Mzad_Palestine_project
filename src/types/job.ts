@@ -8,7 +8,7 @@ export interface JobCategory {
 
 export interface Job {
   id?: number;
-  jobCategoryId: number;
+  jobCategoryId?: number;
   title: string;
   description: string;
   companyName: string;
@@ -20,9 +20,9 @@ export interface Job {
   benefits: string;
   contactInfo: string;
   createdAt?: string;
-  updatedAt?: string;
-  date?: string;
-  userId?: string | number;
+  applicationDeadline?: string;
+  status?: string;
+  userId?: string;
   userName?: string | null;
 }
 

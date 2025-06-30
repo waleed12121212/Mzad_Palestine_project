@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Job, JobCategory } from '../../types/job';
 import { Button } from '../ui/button';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 interface JobFormProps {
   initialData?: Job;
   categories: JobCategory[];
-  onSubmit: (data: Job) => void;
+  onSubmit: (data: Partial<Job>) => void;
   isSubmitting?: boolean;
 }
 
@@ -20,12 +20,25 @@ export const JobForm: React.FC<JobFormProps> = ({
   onSubmit,
   isSubmitting = false,
 }) => {
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<Job>({
-    defaultValues: initialData
+  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<Partial<Job>>({
+    defaultValues: initialData,
   });
+
+  useEffect(() => {
+    if (initialData) {
+      const formattedData = {
+        ...initialData,
+        applicationDeadline: initialData.applicationDeadline
+          ? new Date(initialData.applicationDeadline).toISOString().slice(0, 16)
+          : '',
+      };
+      reset(formattedData);
+    }
+  }, [initialData, reset]);
 
   const jobTypes = ['دوام كامل', 'دوام جزئي', 'عن بعد', 'عقد مؤقت'];
   const experienceLevels = ['مبتدئ', 'متوسط', 'متقدم', 'خبير'];
+  const jobStatuses = ['Open', 'Closed'];
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-background border-border">
@@ -148,18 +161,39 @@ export const JobForm: React.FC<JobFormProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="salary" className="text-sm font-medium text-foreground">الراتب</label>
-            <Input
-              id="salary"
-              type="number"
-              {...register('salary', { required: 'هذا الحقل مطلوب', min: 0 })}
-              placeholder="مثال: 3000"
-              className="bg-background text-foreground border-input"
-            />
-            {errors.salary && (
-              <p className="text-sm text-destructive">{errors.salary.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="salary" className="text-sm font-medium text-foreground">الراتب</label>
+              <Input
+                id="salary"
+                type="number"
+                {...register('salary', { required: 'هذا الحقل مطلوب', valueAsNumber: true })}
+                placeholder="مثال: 3000"
+                className="bg-background text-foreground border-input"
+              />
+              {errors.salary && (
+                <p className="text-sm text-destructive">{errors.salary.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="status" className="text-sm font-medium text-foreground">الحالة</label>
+              <Select
+                defaultValue={initialData?.status}
+                onValueChange={(value) => setValue('status', value)}
+              >
+                <SelectTrigger className="bg-background text-foreground border-input">
+                  <SelectValue placeholder="اختر الحالة" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover text-popover-foreground border-border">
+                  {jobStatuses.map((status) => (
+                    <SelectItem key={status} value={status} className="hover:bg-accent hover:text-accent-foreground">
+                      {status === 'Open' ? 'مفتوحة' : 'مغلقة'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -198,6 +232,19 @@ export const JobForm: React.FC<JobFormProps> = ({
             />
             {errors.contactInfo && (
               <p className="text-sm text-destructive">{errors.contactInfo.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="applicationDeadline" className="text-sm font-medium text-foreground">آخر موعد للتقديم</label>
+            <Input
+              id="applicationDeadline"
+              type="datetime-local"
+              {...register('applicationDeadline')}
+              className="bg-background text-foreground border-input"
+            />
+            {errors.applicationDeadline && (
+              <p className="text-sm text-destructive">{errors.applicationDeadline.message}</p>
             )}
           </div>
 

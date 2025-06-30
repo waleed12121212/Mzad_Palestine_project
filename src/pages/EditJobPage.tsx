@@ -5,6 +5,7 @@ import { jobCategoryService } from '../services/jobCategoryService';
 import { JobForm } from '../components/jobs/JobForm';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { Job } from '../types/job';
 
 export const EditJobPage: React.FC = () => {
   const { id } = useParams();
@@ -41,10 +42,29 @@ export const EditJobPage: React.FC = () => {
     fetchData();
   }, [id, user, navigate]);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data: Partial<Job>) => {
     setIsSubmitting(true);
     try {
-      await jobService.updateJob(Number(id), data);
+      const payload: Partial<Job> = {
+        jobCategoryId: data.jobCategoryId,
+        title: data.title,
+        description: data.description,
+        companyName: data.companyName,
+        location: data.location,
+        jobType: data.jobType,
+        experienceLevel: data.experienceLevel,
+        salary: data.salary,
+        requirements: data.requirements,
+        benefits: data.benefits,
+        contactInfo: data.contactInfo,
+        status: data.status,
+      };
+
+      if (data.applicationDeadline) {
+        payload.applicationDeadline = new Date(data.applicationDeadline).toISOString();
+      }
+
+      await jobService.updateJob(Number(id), payload);
       toast.success('تم تحديث الوظيفة بنجاح');
       navigate('/jobs');
     } catch {

@@ -4,6 +4,7 @@ import { jobService } from '../services/jobService';
 import { jobCategoryService } from '../services/jobCategoryService';
 import { JobForm } from '../components/jobs/JobForm';
 import { toast } from 'sonner';
+import { Job } from '../types/job';
 
 export const AddJobPage: React.FC = () => {
   const [categories, setCategories] = useState([]);
@@ -14,10 +15,14 @@ export const AddJobPage: React.FC = () => {
     jobCategoryService.getAllJobCategories().then(setCategories);
   }, []);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data: Partial<Job>) => {
     setIsSubmitting(true);
     try {
-      await jobService.createJob(data);
+      const payload = { ...data };
+      if (payload.applicationDeadline) {
+        payload.applicationDeadline = new Date(payload.applicationDeadline).toISOString();
+      }
+      await jobService.createJob(payload);
       toast.success('تم إضافة الوظيفة بنجاح');
       navigate('/jobs');
     } catch {

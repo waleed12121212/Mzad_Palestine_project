@@ -71,21 +71,9 @@ api.interceptors.response.use(
 );
 
 export const jobService = {
-  createJob: async (data: Omit<Job, "id">): Promise<Job> => {
+  createJob: async (data: Partial<Job>): Promise<Job> => {
     try {
-      const response = await api.post<JobResponse>('/create', {
-        jobCategoryId: data.jobCategoryId,
-        title: data.title,
-        description: data.description,
-        companyName: data.companyName,
-        location: data.location,
-        jobType: data.jobType,
-        experienceLevel: data.experienceLevel,
-        salary: data.salary,
-        requirements: data.requirements,
-        benefits: data.benefits,
-        contactInfo: data.contactInfo
-      });
+      const response = await api.post<JobResponse>('/create', data);
       return response.data.data[0];
     } catch (error) {
       console.error('Error creating job:', error);
@@ -105,32 +93,20 @@ export const jobService = {
 
   getJobById: async (id: number): Promise<Job> => {
     try {
-      const response = await api.get<JobResponse>(`/get/${id}`);
+      const response = await api.get<{ data: Job | Job[] }>(`/get/${id}`);
       if (Array.isArray(response.data.data)) {
         return response.data.data[0];
       }
-      return response.data.data;
+      return response.data.data as Job;
     } catch (error) {
       console.error('Error fetching job:', error);
       throw error;
     }
   },
 
-  updateJob: async (id: number, data: Omit<Job, "id">): Promise<Job> => {
+  updateJob: async (id: number, data: Partial<Job>): Promise<Job> => {
     try {
-      const response = await api.put<JobResponse>(`/update/${id}`, {
-        jobCategoryId: data.jobCategoryId,
-        title: data.title,
-        description: data.description,
-        companyName: data.companyName,
-        location: data.location,
-        jobType: data.jobType,
-        experienceLevel: data.experienceLevel,
-        salary: data.salary,
-        requirements: data.requirements,
-        benefits: data.benefits,
-        contactInfo: data.contactInfo
-      });
+      const response = await api.put<JobResponse>(`/update/${id}`, data);
       return response.data.data[0];
     } catch (error) {
       console.error('Error updating job:', error);

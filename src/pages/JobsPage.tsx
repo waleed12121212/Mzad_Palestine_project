@@ -24,6 +24,7 @@ export const JobsPage: React.FC = () => {
   const [minSalary, setMinSalary] = useState('');
   const [maxSalary, setMaxSalary] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
     loadData();
@@ -84,7 +85,7 @@ export const JobsPage: React.FC = () => {
     // فلترة التاريخ
     let dateOk = true;
     if (dateFilter) {
-      const jobDate = new Date(job.createdAt || job.updatedAt || job.date || Date.now());
+      const jobDate = new Date(job.createdAt || Date.now());
       const now = new Date();
       if (dateFilter === 'today') {
         dateOk = jobDate.toDateString() === now.toDateString();
@@ -107,7 +108,8 @@ export const JobsPage: React.FC = () => {
         job.companyName.toLowerCase().includes(search.toLowerCase())
       ) &&
       salaryOk &&
-      dateOk
+      dateOk &&
+      (!filterStatus || job.status === filterStatus)
     );
   });
 
@@ -179,6 +181,17 @@ export const JobsPage: React.FC = () => {
                 <option value="week">جديدة (خلال أسبوع)</option>
               </select>
             </div>
+            {/* Job Status */}
+            <div className="mb-4">
+              <label className="block font-semibold mb-2 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-400" /> الحالة
+              </label>
+              <select className="w-full border rounded-lg px-3 py-2" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <option value="">كل الحالات</option>
+                <option value="Open">مفتوحة</option>
+                <option value="Closed">مغلقة</option>
+              </select>
+            </div>
             {/* نوع الدوام */}
             <div className="mb-4">
               <label className="block font-semibold mb-2 flex items-center gap-2">
@@ -231,6 +244,7 @@ export const JobsPage: React.FC = () => {
               setMinSalary('');
               setMaxSalary('');
               setDateFilter('');
+              setFilterStatus('');
             }}>إعادة ضبط</Button>
           </div>
         </aside>
@@ -275,7 +289,16 @@ export const JobsPage: React.FC = () => {
                     <Briefcase className="w-8 h-8 text-blue-500" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 group-hover:text-blue-600 transition">{job.title}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 group-hover:text-blue-600 transition">{job.title}</h2>
+                      {job.status && (
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          job.status === 'Open' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        }`}>
+                          {job.status === 'Open' ? 'مفتوحة' : 'مغلقة'}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-gray-500 dark:text-gray-400 text-sm">{job.companyName} • {job.location}</div>
                   </div>
                 </div>

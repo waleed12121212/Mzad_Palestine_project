@@ -121,7 +121,7 @@ const JobDetailsPage = () => {
         {/* المحتوى الرئيسي */}
         <section className="col-span-1 lg:col-span-3">
           {/* شبكة معلومات سريعة */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col items-center">
               <span className="text-gray-500 text-xs mb-1">نوع الوظيفة</span>
               <span className="font-bold text-blue-700 dark:text-blue-300">{job.jobType}</span>
@@ -137,6 +137,16 @@ const JobDetailsPage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col items-center">
               <span className="text-gray-500 text-xs mb-1">تاريخ النشر</span>
               <span className="font-bold text-blue-700 dark:text-blue-300">{job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-GB') : '-'}</span>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col items-center">
+              <span className="text-gray-500 text-xs mb-1">آخر موعد للتقديم</span>
+              <span className="font-bold text-red-700 dark:text-red-300">{job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString('en-GB') : '-'}</span>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col items-center">
+              <span className="text-gray-500 text-xs mb-1">الحالة</span>
+              <span className={`font-bold ${job.status === 'Open' ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                {job.status === 'Open' ? 'مفتوحة' : 'مغلقة'}
+              </span>
             </div>
           </div>
           {/* أقسام التفاصيل */}
@@ -200,55 +210,26 @@ const JobDetailsPage = () => {
             )}
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4 mt-6">معلومات التواصل</h3>
             <div className="space-y-4 w-full">
-              {(() => {
-                // الأولوية: رقم الهاتف ثم الإيميل
-                if (job.contactPhone && job.contactPhone !== '-' && isPhone(job.contactPhone)) {
-                  return (
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm text-gray-500">رقم الهاتف</div>
-                        <div className="font-medium">{job.contactPhone}</div>
-                      </div>
+              {job.contactInfo ? (
+                <div className="flex items-center gap-3">
+                  {isEmail(job.contactInfo) ? (
+                    <Mail className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Phone className="w-5 h-5 text-blue-600" />
+                  )}
+                  <div>
+                    <div className="text-sm text-gray-500">
+                      {isEmail(job.contactInfo) ? 'البريد الإلكتروني' : 'معلومات التواصل'}
                     </div>
-                  );
-                } else if (job.contactInfo && isPhone(job.contactInfo)) {
-                  return (
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm text-gray-500">رقم الهاتف</div>
-                        <div className="font-medium">{job.contactInfo}</div>
-                      </div>
-                    </div>
-                  );
-                } else if (job.contactEmail && isEmail(job.contactEmail)) {
-                  return (
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm text-gray-500">البريد الإلكتروني</div>
-                        <div className="font-medium">{job.contactEmail}</div>
-                      </div>
-                    </div>
-                  );
-                } else if (job.contactInfo && isEmail(job.contactInfo)) {
-                  return (
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm text-gray-500">البريد الإلكتروني</div>
-                        <div className="font-medium">{job.contactInfo}</div>
-                      </div>
-                    </div>
-                  );
-                } else {
-                  return <div className="text-gray-400">لا يوجد معلومات تواصل متاحة</div>;
-                }
-              })()}
+                    <div className="font-medium">{job.contactInfo}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-400">لا يوجد معلومات تواصل متاحة</div>
+              )}
             </div>
           </div>
-          {user && user.id !== job.userId && (
+          {user && user.id !== job.userId && job.status === 'Open' && (
             <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg text-lg py-3 mt-4" onClick={() => setShowApplyModal(true)}>
               تقديم طلب
             </Button>
