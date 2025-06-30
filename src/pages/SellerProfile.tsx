@@ -33,6 +33,7 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  discount?: number;
   imageUrl: string;
   isNew?: boolean;
   discountedPrice?: number;
@@ -197,6 +198,7 @@ const SellerProfile = () => {
               title: product.title || '',
               description: product.description || '',
               price: product.price || 0,
+              discount: product.discount,
               imageUrl: getFormattedImageUrl(
                 Array.isArray(product.images) && product.images.length > 0
                   ? product.images[0]
@@ -345,11 +347,18 @@ const SellerProfile = () => {
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {sellerProducts.map((product) => (
-          <Link key={product.id} to={`/listing/${product.id}`} className="block">
-            <ProductCard
-              {...product}
-            />
-          </Link>
+          <ProductCard
+            key={product.id}
+            id={product.id}
+            title={product.title}
+            description={product.description}
+            price={product.price}
+            discountedPrice={product.discount && product.discount > 0 ? product.price - product.discount : undefined}
+            imageUrl={product.imageUrl}
+            isNew={product.isNew}
+            isOnSale={!!product.discount && product.discount > 0}
+            sellerId={product.sellerId}
+          />
         ))}
       </div>
     );

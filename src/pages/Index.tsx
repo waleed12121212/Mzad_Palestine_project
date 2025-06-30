@@ -503,7 +503,7 @@ const Index = () => {
               ))}
             </div>
           ) : listings.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {listings.slice(0, 8).map((listing) => (
                 <ProductCard
                   key={listing.listingId}
@@ -511,8 +511,10 @@ const Index = () => {
                   title={listing.title}
                   description={listing.description}
                   price={listing.price}
+                  discountedPrice={listing.discount && listing.discount > 0 ? listing.price - listing.discount : undefined}
                   imageUrl={listing.images?.[0] || "https://via.placeholder.com/300"}
-                  isNew={new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+                  isNew={new Date(listing.createdAt).getTime() > new Date().getTime() - 7 * 24 * 60 * 60 * 1000}
+                  isOnSale={!!listing.discount && listing.discount > 0}
                   sellerId={listing.userId}
                 />
               ))}

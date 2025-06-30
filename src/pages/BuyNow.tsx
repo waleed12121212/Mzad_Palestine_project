@@ -481,21 +481,23 @@ const BuyNow: React.FC = () => {
             ))}
           </div>
             ) : sortedListings.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedListings.map((listing) => (
-              <ProductCard
-                key={listing.listingId}
-                id={listing.listingId}
-                title={listing.title}
-                description={listing.description}
-                price={listing.price}
-                imageUrl={listing.images?.[0] || "https://via.placeholder.com/300"}
-                isNew={new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-                sellerId={listing.userId}
-              />
-            ))}
-          </div>
-        ) : (
+                  <ProductCard
+                    key={listing.listingId}
+                    id={listing.listingId}
+                    title={listing.title}
+                    description={listing.description}
+                    price={listing.price}
+                    discountedPrice={listing.discount && listing.discount > 0 ? listing.price - listing.discount : undefined}
+                    imageUrl={listing.images?.[0]||"https://via.placeholder.com/300"}
+                    isNew={new Date(listing.createdAt).getTime() > new Date().getTime() - 7 * 24 * 60 * 60 * 1000}
+                    isOnSale={!!listing.discount && listing.discount > 0}
+                    sellerId={listing.userId}
+                  />
+                ))}
+              </div>
+            ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <Filter className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
                 <h2 className="text-xl font-semibold mb-2">لا توجد منتجات مطابقة</h2>

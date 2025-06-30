@@ -74,6 +74,8 @@ const CreateListing: React.FC = () => {
     endTime: '',
     condition: 'new' as 'new' | 'used',
     terms: false,
+    quantity: '',
+    discount: '',
   });
   const [errors, setErrors] = useState<any>({});
   const [laptopData, setLaptopData] = useState({
@@ -346,12 +348,14 @@ const CreateListing: React.FC = () => {
       if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
         stepErrors.price = 'السعر يجب أن يكون أكبر من 0';
       }
-      if (!formData.endDate) stepErrors.endDate = 'تاريخ انتهاء العرض مطلوب';
-      if (!formData.endTime) stepErrors.endDate = 'وقت انتهاء العرض مطلوب';
       if (images.length === 0) stepErrors.images = 'يجب إضافة صورة واحدة على الأقل';
       
-      // Validate end date is in the future
-      if (formData.endDate && formData.endTime) {
+      // Validate end date is in the future, only if provided
+      if (formData.endDate && !formData.endTime) {
+        stepErrors.endTime = 'يجب تحديد وقت الانتهاء أيضاً.';
+      } else if (!formData.endDate && formData.endTime) {
+        stepErrors.endDate = 'يجب تحديد تاريخ الانتهاء أيضاً.';
+      } else if (formData.endDate && formData.endTime) {
         const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
         if (endDateTime <= new Date()) {
           stepErrors.endDate = 'تاريخ ووقت انتهاء العرض يجب أن يكون في المستقبل';
@@ -424,20 +428,24 @@ const CreateListing: React.FC = () => {
         const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
         // Create listing data
-        const listingData = {
+        const listingData: CreateListingDto = {
           title: formData.title.trim(),
           description: formData.description.trim(),
           address: formData.address.trim(),
           price: Number(formData.price),
           categoryId: Number(formData.categoryId),
-          endDate: endDateTime.toISOString(),
           images: processedImages,
-          condition: formData.condition,
-          // Add category-specific data
-          ...(formData.categoryId === "8" && { laptopData }),
-          ...(formData.categoryId === "2" && { carData }),
-          ...(formData.categoryId === "5" && { mobileData })
         };
+
+        if (formData.quantity) {
+          listingData.quantity = parseInt(formData.quantity, 10);
+        }
+        if (formData.discount) {
+          listingData.discount = parseFloat(formData.discount);
+        }
+        if (formData.endDate && formData.endTime) {
+          listingData.endDate = `${formData.endDate}T${formData.endTime}:00`;
+        }
 
         // Validate listing data
         if (!listingData.title || !listingData.description || !listingData.address || 
@@ -859,9 +867,23 @@ const CreateListing: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="quantity" className="block mb-2 text-sm font-medium">الكمية (اختياري)</label>
+                    <Input id="quantity" name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="1" min="1" className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"/>
+                  </div>
+                  <div>
+                    <label htmlFor="discount" className="block mb-2 text-sm font-medium">الخصم (اختياري)</label>
+                    <div className="relative">
+                      <Input id="discount" name="discount" type="number" value={formData.discount} onChange={handleChange} placeholder="0" min="0" step="0.01" className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"/>
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₪</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="endDate" className="block mb-2 text-sm font-medium">
-                        تاريخ انتهاء المنتج <span className="text-red-500">*</span>
+                        تاريخ انتهاء المنتج (اختياري)
                       </label>
                       <div className="relative">
                         <input
@@ -871,7 +893,6 @@ const CreateListing: React.FC = () => {
                           value={formData.endDate}
                           onChange={handleChange}
                           className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
-                          required
                           min={new Date().toISOString().split('T')[0]}
                           placeholder=""
                         />
@@ -882,7 +903,7 @@ const CreateListing: React.FC = () => {
 
                     <div>
                       <label htmlFor="endTime" className="block mb-2 text-sm font-medium">
-                        وقت انتهاء المنتج <span className="text-red-500">*</span>
+                        وقت انتهاء المنتج (اختياري)
                       </label>
                       <div className="relative">
                         <input
@@ -892,7 +913,6 @@ const CreateListing: React.FC = () => {
                           value={formData.endTime}
                           onChange={handleChange}
                           className="w-full py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-right"
-                          required
                           placeholder=""
                         />
                         <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />

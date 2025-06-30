@@ -19,9 +19,20 @@ const formSchema = z.object({
   title: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
   description: z.string().min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
   address: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
-  price: z.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
-  categoryId: z.number().min(1, 'يجب اختيار تصنيف'),
-  endDate: z.string().min(1, 'يجب تحديد تاريخ الانتهاء'),
+  price: z.coerce.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
+  quantity: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "الكمية يجب أن تكون رقماً" }).optional()
+  ),
+  discount: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number({ invalid_type_error: "الخصم يجب أن يكون رقماً" }).optional()
+  ),
+  categoryId: z.coerce.number().min(1, 'يجب اختيار تصنيف'),
+  endDate: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().optional()
+  ),
   images: z.array(z.instanceof(File)).min(1, 'يجب إضافة صورة واحدة على الأقل'),
 });
 
@@ -38,9 +49,11 @@ export const CreateListingForm: React.FC = () => {
       title: '',
       description: '',
       address: '',
-      price: 0,
-      categoryId: 0,
-      endDate: '',
+      price: undefined,
+      quantity: undefined,
+      discount: undefined,
+      categoryId: undefined,
+      endDate: undefined,
       images: [],
     },
   });
@@ -84,6 +97,8 @@ export const CreateListingForm: React.FC = () => {
         description: values.description,
         address: values.address,
         price: values.price,
+        quantity: values.quantity,
+        discount: values.discount,
         categoryId: values.categoryId,
         endDate: values.endDate,
         images: imageUrls,
@@ -155,44 +170,42 @@ export const CreateListingForm: React.FC = () => {
           <FormField
             control={form.control}
             name="price"
-            render={({ field }) => {
-              // Initialize display value if needed
-              React.useEffect(() => {
-                setPriceDisplayValue(field.value === 0 ? '' : String(field.value));
-              }, []);
-              
-              const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                const val = e.target.value;
-                setPriceDisplayValue(val);
-                
-                const numValue = val === '' ? 0 : Number(val);
-                field.onChange(numValue);
-              };
-              
-              return (
+            render={({ field }) => (
                 <FormItem>
                   <FormLabel>السعر</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       placeholder="0"
-                      className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      value={priceDisplayValue}
-                      onChange={handleInputChange}
-                      onBlur={() => {
-                        if (priceDisplayValue === '') {
-                          field.onChange(0);
-                          setPriceDisplayValue('0');
-                        }
-                      }}
+                      {...field}
+                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              );
-            }}
+              )}
           />
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+                <FormItem>
+                  <FormLabel>الكمية (اختياري)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="1"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+          />
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="categoryId"
@@ -202,6 +215,7 @@ export const CreateListingForm: React.FC = () => {
                 <Select 
                   onValueChange={(value) => field.onChange(Number(value))} 
                   defaultValue={field.value ? String(field.value) : undefined}
+                  value={field.value ? String(field.value) : ""}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -220,6 +234,24 @@ export const CreateListingForm: React.FC = () => {
               </FormItem>
             )}
           />
+           <FormField
+            control={form.control}
+            name="discount"
+            render={({ field }) => (
+                <FormItem>
+                  <FormLabel>الخصم (اختياري)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+          />
         </div>
 
         <FormField
@@ -227,9 +259,13 @@ export const CreateListingForm: React.FC = () => {
           name="endDate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>تاريخ الانتهاء</FormLabel>
+              <FormLabel>تاريخ الانتهاء (اختياري)</FormLabel>
               <FormControl>
-                <Input type="datetime-local" {...field} />
+                <Input
+                  type="datetime-local"
+                  {...field}
+                  value={field.value ?? ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -257,8 +293,8 @@ export const CreateListingForm: React.FC = () => {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'جاري الإنشاء...' : 'إضافة منتج للبيع'}
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? 'جاري الإنشاء...' : 'إنشاء المنتج'}
         </Button>
       </form>
     </Form>

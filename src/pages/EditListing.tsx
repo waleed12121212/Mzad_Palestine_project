@@ -21,7 +21,9 @@ const formSchema = z.object({
   title: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
   description: z.string().min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
   address: z.string().min(3, 'العنوان يجب أن يكون 3 أحرف على الأقل'),
-  price: z.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
+  price: z.coerce.number().min(1, 'السعر يجب أن يكون أكبر من 0'),
+  quantity: z.coerce.number().optional(),
+  discount: z.coerce.number().optional(),
   categoryId: z.number().min(1, 'يجب اختيار تصنيف'),
   endDate: z.string().min(1, 'يجب تحديد تاريخ الانتهاء'),
   newImages: z.array(z.instanceof(File)).optional(),
@@ -46,6 +48,8 @@ const EditListing: React.FC = () => {
       description: '',
       address: '',
       price: 0,
+      quantity: 1,
+      discount: 0,
       categoryId: 0,
       endDate: '',
       newImages: [],
@@ -111,6 +115,8 @@ const EditListing: React.FC = () => {
           description: data.description,
           address: data.address,
           price: data.price,
+          quantity: data.quantity,
+          discount: data.discount || 0,
           categoryId: data.categoryId,
           endDate: formattedEndDate,
           newImages: [],
@@ -162,6 +168,8 @@ const EditListing: React.FC = () => {
         description: values.description,
         address: values.address,
         price: values.price,
+        quantity: values.quantity,
+        discount: values.discount,
         categoryId: values.categoryId,
         endDate: values.endDate,
         newImages: newImageUrls,
@@ -255,43 +263,36 @@ const EditListing: React.FC = () => {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="price"
-                    render={({ field }) => {
-                      const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                        const val = e.target.value;
-                        setPriceDisplayValue(val);
-                        
-                        const numValue = val === '' ? 0 : Number(val);
-                        field.onChange(numValue);
-                      };
-                      
-                      return (
-                        <FormItem>
-                          <FormLabel>السعر</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              className="text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              value={priceDisplayValue}
-                              onChange={handleInputChange}
-                              onBlur={() => {
-                                if (priceDisplayValue === '') {
-                                  field.onChange(0);
-                                  setPriceDisplayValue('0');
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>السعر</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="quantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الكمية</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="categoryId"
@@ -315,6 +316,19 @@ const EditListing: React.FC = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="discount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الخصم (اختياري)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -575,14 +575,16 @@ const CategoryPage: React.FC = () => {
                           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
                           {sortedListings.map((listing) => (
-                            <motion.div key={listing.listingId} variants={itemVariants}>
+                            <motion.div key={`listing-${listing.listingId}`} variants={itemVariants}>
                               <ProductCard
                                 id={listing.listingId}
                                 title={listing.title}
                                 description={listing.description}
                                 price={listing.price}
-                                imageUrl={listing.images?.[0] || ""}
-                                isNew={new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+                                discountedPrice={listing.discount && listing.discount > 0 ? listing.price - listing.discount : undefined}
+                                imageUrl={listing.images[0]}
+                                isNew={new Date(listing.createdAt).getTime() > new Date().getTime() - 7 * 24 * 60 * 60 * 1000}
+                                isOnSale={!!listing.discount && listing.discount > 0}
                                 sellerId={listing.userId}
                               />
                             </motion.div>
@@ -596,77 +598,67 @@ const CategoryPage: React.FC = () => {
               
               {/* Auctions Tab */}
               <TabsContent value="auctions">
-                {sortedAuctions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <Gavel className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">لا توجد مزادات مطابقة</h2>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                      حاول تغيير معايير البحث أو التصفية للعثور على المزادات التي تبحث عنها.
-                    </p>
-                    <Button onClick={handleResetFilters}>إعادة ضبط الفلاتر</Button>
-                  </div>
+                {sortedAuctions.length > 0 ? (
+                   <motion.div
+                     variants={containerVariants}
+                     initial="hidden"
+                     animate="visible"
+                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                   >
+                     {sortedAuctions.map((auction) => (
+                       <motion.div key={auction.id} variants={itemVariants}>
+                         <AuctionCard
+                           key={auction.id}
+                           id={auction.id}
+                           listingId={auction.listingId}
+                           title={auction.title}
+                           description={auction.description || ""}
+                           currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
+                           minBidIncrement={auction.bidIncrement}
+                           imageUrl={Array.isArray(auction.images) && auction.images.length > 0 ? auction.images[0] : ''}
+                           endTime={auction.endDate}
+                           bidders={auction.bidsCount || auction.bids?.length || 0}
+                           userId={auction.userId}
+                           type="auction"
+                           isPending={new Date(auction.startDate) > new Date()}
+                         />
+                       </motion.div>
+                     ))}
+                   </motion.div>
                 ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-                    {sortedAuctions.map((auction) => (
-              <motion.div key={auction.id} variants={itemVariants}>
-                <AuctionCard
-                  key={auction.id}
-                  id={auction.id}
-                  listingId={auction.listingId}
-                  title={auction.title}
-                  description={auction.description || ""}
-                  currentPrice={auction.currentBid > 0 ? auction.currentBid : auction.reservePrice}
-                  minBidIncrement={auction.bidIncrement}
-                  imageUrl={Array.isArray(auction.images) && auction.images.length > 0 ? auction.images[0] : ''}
-                  endTime={auction.endDate}
-                  bidders={auction.bidsCount || auction.bids?.length || 0}
-                  userId={auction.userId}
-                  type="auction"
-                  isPending={new Date(auction.startDate) > new Date()}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+                  <div className="text-center py-12">
+                    <Gavel className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">لا توجد مزادات</h3>
+                    <p className="mt-1 text-sm text-gray-500">لا توجد مزادات في هذا التصنيف حالياً.</p>
+                  </div>
                 )}
               </TabsContent>
               
               {/* Listings Tab */}
               <TabsContent value="listings">
-                {sortedListings.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <Tag className="h-16 w-16 text-gray-300 dark:text-gray-700 mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">لا توجد منتجات مطابقة</h2>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                      حاول تغيير معايير البحث أو التصفية للعثور على المنتجات التي تبحث عنها.
-                    </p>
-                    <Button onClick={handleResetFilters}>إعادة ضبط الفلاتر</Button>
+                {sortedListings.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {sortedListings.map((listing) => (
+                      <ProductCard
+                        key={`listing-${listing.listingId}`}
+                        id={listing.listingId}
+                        title={listing.title}
+                        description={listing.description}
+                        price={listing.price}
+                        discountedPrice={listing.discount && listing.discount > 0 ? listing.price - listing.discount : undefined}
+                        imageUrl={listing.images[0]}
+                        isNew={new Date(listing.createdAt).getTime() > new Date().getTime() - 7 * 24 * 60 * 60 * 1000}
+                        isOnSale={!!listing.discount && listing.discount > 0}
+                        sellerId={listing.userId}
+                      />
+                    ))}
                   </div>
                 ) : (
-                  <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  >
-                    {sortedListings.map((listing) => (
-                      <motion.div key={listing.listingId} variants={itemVariants}>
-                        <ProductCard
-                          id={listing.listingId}
-                          title={listing.title}
-                          description={listing.description}
-                          price={listing.price}
-                          imageUrl={listing.images?.[0] || ""}
-                          isNew={new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-                          sellerId={listing.userId}
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
+                  <div className="text-center py-12">
+                    <Tag className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">لا توجد منتجات</h3>
+                    <p className="mt-1 text-sm text-gray-500">لا توجد منتجات في هذا التصنيف حالياً.</p>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>

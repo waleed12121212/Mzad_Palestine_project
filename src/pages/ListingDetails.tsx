@@ -374,9 +374,50 @@ export default function ListingDetails() {
                 )}
               </div>
 
+              {/* Price, category, etc. */}
+              <div className="flex items-center flex-wrap gap-4 mb-4 text-gray-600 dark:text-gray-400">
+                  {listing.discount && listing.discount > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xl text-red-500 line-through">
+                          ₪{listing.price.toLocaleString()}
+                      </span>
+                      <span className="font-bold text-2xl text-blue-600 dark:text-blue-400">
+                          ₪{(listing.price - listing.discount).toLocaleString()}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-bold text-2xl text-blue-600 dark:text-blue-400">
+                        ₪{listing.price.toLocaleString()}
+                    </span>
+                  )}
+                <Badge variant="secondary">{listing.categoryName}</Badge>
+                <Badge variant={listing.status === 'Active' ? 'default' : 'destructive'}>
+                  {listing.status}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center gap-4 mb-4 text-gray-600 dark:text-gray-400">
+                <div className="flex items-center text-sm">
+                  <Package className="w-4 h-4 ml-2 text-blue-500" />
+                  <span>
+                    الكمية: <span className="font-semibold">{listing.quantity > 0 ? listing.quantity : 'نفذت الكمية'}</span>
+                  </span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <MapPin className="w-4 h-4 ml-2 text-blue-500" />
+                  <span>{listing.address}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <Calendar className="w-4 h-4 ml-2 text-blue-500" />
+                  <span>ينتهي في: {formatDate(listing.endDate)}</span>
+                </div>
+              </div>
+
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-2">الوصف</h3>
-                <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
+                <div className="prose dark:prose-invert max-w-none">
+                  <p>{listing.description}</p>
+                </div>
               </div>
 
               {/* استبدال Badge ببطاقة الفئة */}
@@ -420,104 +461,104 @@ export default function ListingDetails() {
           {/* Sidebar - seller info and actions */}
           <div className="md:col-span-1">
             <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex items-center mb-4">
-                  <Link to={`/seller/${listing.userId}`} className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group" tabIndex={0}>
-                    {sellerLoading ? (
-                      <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
-                    ) : seller && seller.profilePicture ? (
-                      <img
-                        src={seller.profilePicture.startsWith('http') ? seller.profilePicture : `http://mazadpalestine.runasp.net${seller.profilePicture}`}
-                        alt={seller.username}
-                        className="w-full h-full object-cover group-hover:opacity-80 transition"
-                        onError={e => {
-                          (e.target as HTMLImageElement).src = '/default-avatar.png';
-                          (e.target as HTMLImageElement).onerror = () => {
-                            e.currentTarget.style.display = 'none';
-                            if (e.currentTarget.parentElement) {
-                              e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
-                            }
-                          };
+                <CardContent className="pt-6">
+                  <div className="flex items-center mb-4">
+                    <Link to={`/seller/${listing.userId}`} className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center group" tabIndex={0}>
+                      {sellerLoading ? (
+                        <div className="w-8 h-8 border-4 border-blue border-t-transparent rounded-full animate-spin"></div>
+                      ) : seller && seller.profilePicture ? (
+                        <img
+                          src={seller.profilePicture.startsWith('http') ? seller.profilePicture : `http://mazadpalestine.runasp.net${seller.profilePicture}`}
+                          alt={seller.username}
+                          className="w-full h-full object-cover group-hover:opacity-80 transition"
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = '/default-avatar.png';
+                            (e.target as HTMLImageElement).onerror = () => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.parentElement) {
+                                e.currentTarget.parentElement.innerHTML = seller.username?.charAt(0)?.toUpperCase() || 'U';
+                              }
+                            };
+                          }}
+                        />
+                      ) : seller ? (
+                        <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
+                          {seller.username?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      ) : (
+                        <span className="text-xl font-bold text-gray-400">?</span>
+                      )}
+                    </Link>
+                    <div className="ml-3 rtl:mr-3">
+                      <Link to={`/seller/${listing.userId}`} className="font-semibold text-gray-900 dark:text-white hover:no-underline focus:outline-none">
+                        {seller ? seller.username : listing.userName}
+                      </Link>
+                      <p className="text-sm text-gray-500">البائع</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mt-6">
+                    {!isPaymentCompleted ? (
+                      <BuyNowButton
+                        listingId={listing?.listingId || 0}
+                        price={listing.discount && listing.discount > 0 ? listing.price - listing.discount : listing.price}
+                        title={listing?.title || ''}
+                        onSold={async () => {
+                          if (listing?.listingId) {
+                            // Check payment status using listingId as auctionId
+                            const isPaid = await checkPaymentStatus(listing.listingId);
+                            setIsPaymentCompleted(isPaid);
+                          }
                         }}
                       />
-                    ) : seller ? (
-                      <span className="text-xl font-bold text-gray-600 dark:text-gray-300">
-                        {seller.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
                     ) : (
-                      <span className="text-xl font-bold text-gray-400">?</span>
+                      <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-300">
+                          تم بيع هذا المنتج
+                        </p>
+                      </div>
                     )}
-                  </Link>
-                  <div className="ml-3 rtl:mr-3">
-                    <Link to={`/seller/${listing.userId}`} className="font-semibold text-gray-900 dark:text-white hover:no-underline focus:outline-none">
-                      {seller ? seller.username : listing.userName}
-                    </Link>
-                    <p className="text-sm text-gray-500">البائع</p>
-                  </div>
-                </div>
+                    
+                    {!isPaymentCompleted && (
+                      <ListingContactSellerDialog 
+                        sellerId={listing?.userId || 0}
+                        productName={listing?.title || ''} 
+                        productImage={listing?.images && listing?.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
+                        productPrice={listing.discount && listing.discount > 0 ? listing.price - listing.discount : listing.price}
+                      />
+                    )}
 
-                <div className="space-y-4 mt-6">
-                  {!isPaymentCompleted ? (
-                    <BuyNowButton
-                      listingId={listing?.listingId || 0}
-                      price={listing?.price || 0}
-                      title={listing?.title || ''}
-                      onSold={async () => {
-                        if (listing?.listingId) {
-                          // Check payment status using listingId as auctionId
-                          const isPaid = await checkPaymentStatus(listing.listingId);
-                          setIsPaymentCompleted(isPaid);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <p className="text-gray-600 dark:text-gray-300">
-                        تم بيع هذا المنتج
-                      </p>
+                    {/* أزرار المفضلة والمشاركة والإبلاغ */}
+                    <div className="flex gap-2 mt-4 justify-center">
+                      <button
+                        onClick={handleToggleWishlist}
+                        disabled={isAddingToWishlist}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200 ${isInWishlist ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
+                      >
+                        <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                        <span>المفضلة</span>
+                      </button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 flex items-center gap-2 justify-center"
+                        onClick={handleShareListing}
+                      >
+                        <Share2 className="h-5 w-5" />
+                        <span>مشاركة</span>
+                      </Button>
+                      <ReportDialog 
+                        listingId={listing.listingId}
+                        onReportSubmitted={() => {
+                          toast({
+                            title: "تم إرسال البلاغ",
+                            description: "سيتم مراجعة البلاغ من قبل فريق الإدارة"
+                          });
+                        }}
+                      />
                     </div>
-                  )}
-                  
-                  {!isPaymentCompleted && (
-                    <ListingContactSellerDialog 
-                      sellerId={listing?.userId || 0}
-                      productName={listing?.title || ''} 
-                      productImage={listing?.images && listing?.images.length > 0 ? listing.images[0] : '/placeholder.svg'} 
-                      productPrice={listing?.price || 0}
-                    />
-                  )}
-
-                  {/* أزرار المفضلة والمشاركة والإبلاغ */}
-                  <div className="flex gap-2 mt-4 justify-center">
-                    <button
-                      onClick={handleToggleWishlist}
-                      disabled={isAddingToWishlist}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200 ${isInWishlist ? 'bg-red-50 text-red-500 border-red-200 dark:bg-red-900/20 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}
-                    >
-                      <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-                      <span>المفضلة</span>
-                    </button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 flex items-center gap-2 justify-center"
-                      onClick={handleShareListing}
-                    >
-                      <Share2 className="h-5 w-5" />
-                      <span>مشاركة</span>
-                    </Button>
-                    <ReportDialog 
-                      listingId={listing.listingId}
-                      onReportSubmitted={() => {
-                        toast({
-                          title: "تم إرسال البلاغ",
-                          description: "سيتم مراجعة البلاغ من قبل فريق الإدارة"
-                        });
-                      }}
-                    />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             {/* بطاقة نصائح للشراء الآمن */}
             <Card className="mb-6">
               <CardContent className="pt-6">

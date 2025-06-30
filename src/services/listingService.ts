@@ -120,7 +120,7 @@ const tryMultipleUrls = async (id: number): Promise<any> => {
 
 export interface Listing {
   listingId: number;
-  userId: string;
+  userId: number;
   userName: string;
   title: string;
   description: string;
@@ -129,10 +129,15 @@ export interface Listing {
   subcategoryId?: number;
   subcategoryName?: string;
   price: number;
+  quantity: number;
+  discount: number | null;
+  status: string;
+  isSold: boolean;
   images: string[];
   address: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
   endDate: string;
   viewCount: number;
   latitude?: number;
@@ -145,8 +150,10 @@ export interface CreateListingDto {
   address: string;
   price: number;
   categoryId: number;
-  endDate: string;
+  endDate?: string;
   images: string[];
+  quantity?: number;
+  discount?: number;
 }
 
 export interface UpdateListingDto {
@@ -154,6 +161,8 @@ export interface UpdateListingDto {
   description?: string;
   address?: string;
   price?: number;
+  quantity?: number;
+  discount?: number;
   categoryId?: number;
   endDate?: string;
   newImages?: string[];

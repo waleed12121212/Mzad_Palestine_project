@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Edit, Trash2, Plus, ExternalLink } from 'lucide-react';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 
 const MyListings: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const MyListings: React.FC = () => {
   const handleDeleteListing = async (id: number) => {
     try {
       await listingService.deleteListing(id);
-      setListings(listings.filter(listing => listing.id !== id));
+      setListings(listings.filter(listing => listing.listingId !== id));
       toast.success('تم حذف الإدراج بنجاح');
     } catch (error) {
       toast.error('حدث خطأ أثناء حذف الإدراج');
@@ -103,23 +104,38 @@ const MyListings: React.FC = () => {
               {listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {listings.map((listing) => (
-                    <Card key={listing.id} className="p-4">
+                    <Card key={listing.listingId} className="p-4 flex flex-col">
                       <div className="aspect-video relative mb-4">
                         <img
                           src={listing.images[0]}
                           alt={listing.title}
                           className="w-full h-full object-cover rounded-lg"
                         />
+                        <Badge className="absolute top-2 right-2" variant={listing.status === 'Active' ? 'default' : 'destructive'}>
+                          {listing.status}
+                        </Badge>
                       </div>
-                      <h3 className="font-semibold mb-2">{listing.title}</h3>
-                      <p className="text-sm text-gray-500 mb-4 line-clamp-2">{listing.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold">₪{listing.startingPrice}</span>
+                      <div className="flex-grow">
+                        <h3 className="font-semibold mb-2">{listing.title}</h3>
+                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{listing.description}</p>
+                      </div>
+                      <div className="flex justify-between items-center mt-auto">
+                        <div>
+                          {listing.discount && listing.discount > 0 ? (
+                            <>
+                              <span className="text-md font-bold text-red-500 line-through">₪{listing.price.toLocaleString()}</span>
+                              <span className="text-lg font-bold"> ₪{(listing.price - listing.discount).toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <span className="text-lg font-bold">₪{listing.price.toLocaleString()}</span>
+                          )}
+                          <p className="text-xs text-gray-500">الكمية: {listing.quantity}</p>
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => navigate(`/edit-listing/${listing.id}`)}
+                            onClick={() => navigate(`/listing/${listing.listingId}/edit`)}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -138,7 +154,7 @@ const MyListings: React.FC = () => {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteListing(listing.id)}>
+                                <AlertDialogAction onClick={() => handleDeleteListing(listing.listingId)}>
                                   حذف
                                 </AlertDialogAction>
                               </AlertDialogFooter>
