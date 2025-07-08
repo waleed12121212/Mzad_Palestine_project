@@ -344,6 +344,20 @@ const CreateAuction = () => {
           return;
         }
 
+        // Format dates as YYYY-MM-DDTHH:MM:SS without timezone
+        const formatDateForAPI = (date: Date) => {
+          // Get local date components to preserve the exact time entered by the user
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          
+          // Format as YYYY-MM-DDTHH:MM:SS (no timezone indicator)
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        };
+
         // Upload images
         const processedImages: string[] = [];
         for (const file of images) {
@@ -367,8 +381,8 @@ const CreateAuction = () => {
           title: formData.title.trim(),
           description: formData.description.trim(),
           address: formData.location.trim(),
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          startDate: formatDateForAPI(startDate),
+          endDate: formatDateForAPI(endDate),
           reservePrice: Number(formData.startingPrice),
           bidIncrement: Number(formData.incrementAmount || 10),
           categoryId: Number(formData.category),

@@ -56,7 +56,7 @@ const formatStartDate = (dateString?: string | null): string => {
   if (!dateString) return "-";
   try {
     const date = new Date(dateString);
-    return format(date, "dd/MM/yyyy HH:mm", { locale: ar });
+    return format(date, "dd/MM/yyyy hh:mm a", { locale: ar });
   } catch (error) {
     console.error("Error formatting date:", error);
     return "-";

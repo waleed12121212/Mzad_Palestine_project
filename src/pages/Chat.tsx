@@ -1044,7 +1044,7 @@ const Chat: React.FC = () => {
 
   const formatTime = (dateInput: string | Date) => {
     const date = toPalestineTime(dateInput);
-    return date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const formatDate = (dateInput: string | Date) => {

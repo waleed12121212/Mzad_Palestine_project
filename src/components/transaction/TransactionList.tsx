@@ -149,7 +149,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   const formatDateTime = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ar });
+      return format(new Date(dateString), 'dd/MM/yyyy hh:mm a', { locale: ar });
     } catch (error) {
       return dateString;
     }
