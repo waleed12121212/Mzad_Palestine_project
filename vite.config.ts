@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-const API_URL = process.env.VITE_API_URL || 'http://mazadpalestine.runasp.net';
+const API_URL = process.env.VITE_API_URL || 'https://mazadpalestine.runasp.net';
 
 // Add base URL configuration for production
 const base = process.env.NODE_ENV === 'production' ? '/' : '/';

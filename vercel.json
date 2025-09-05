@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "destination": "https://mazadpalestine.runasp.net/uploads/:path*",
       "has": [
         {
           "type": "header",
@@ -13,7 +13,7 @@
     },
     {
       "source": "/uploads/images/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/images/:path*",
+      "destination": "https://mazadpalestine.runasp.net/uploads/images/:path*",
       "has": [
         {
           "type": "header",
@@ -24,7 +24,7 @@
     },
     {
       "source": "/uploads/profile-pictures/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/profile-pictures/:path*",
+      "destination": "https://mazadpalestine.runasp.net/uploads/profile-pictures/:path*",
       "has": [
         {
           "type": "header",
@@ -35,7 +35,7 @@
     },
     {
       "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "destination": "https://mazadpalestine.runasp.net/uploads/:path*",
       "has": [
         {
           "type": "query",
@@ -45,7 +45,7 @@
     },
     {
       "source": "/uploads/:path*",
-      "destination": "http://mazadpalestine.runasp.net/uploads/:path*",
+      "destination": "https://mazadpalestine.runasp.net/uploads/:path*",
       "has": [
         {
           "type": "header",
@@ -56,84 +56,84 @@
     },
     {
       "source": "/Auth/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Auth/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Auth/:path*"
     },
     {
       "source": "/Notification/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Notification/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Notification/:path*"
     },
     {
       "source": "/Message/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Message/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Message/:path*"
     },
     {
       "source": "/User/:path*",
-      "destination": "http://mazadpalestine.runasp.net/User/:path*"
+      "destination": "https://mazadpalestine.runasp.net/User/:path*"
     },
     {
       "source": "/JobCategory/:path*",
-      "destination": "http://mazadpalestine.runasp.net/JobCategory/:path*"
+      "destination": "https://mazadpalestine.runasp.net/JobCategory/:path*"
     },
     {
       "source": "/job/:path*",
-      "destination": "http://mazadpalestine.runasp.net/job/:path*"
+      "destination": "https://mazadpalestine.runasp.net/job/:path*"
     },
     {
       "source": "/Payment/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Payment/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Payment/:path*"
     },
     {
       "source": "/Transaction/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Transaction/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Transaction/:path*"
     },
     {
       "source": "/Support/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Support/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Support/:path*"
     },
     {
       "source": "/Category/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Category/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Category/:path*"
     },
     {
       "source": "/Listing/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Listing/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Listing/:path*"
     },
     {
       "source": "/Auction/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Auction/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Auction/:path*"
     },
     {
       "source": "/Bid/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Bid/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Bid/:path*"
     },
     {
       "source": "/Review/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Review/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Review/:path*"
     },
     {
       "source": "/Wishlist/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Wishlist/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Wishlist/:path*"
     },
     {
       "source": "/Report/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Report/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Report/:path*"
     },
     {
       "source": "/Dispute/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Dispute/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Dispute/:path*"
     },
     {
       "source": "/Image/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Image/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Image/:path*"
     },
     
     {
       "source": "/NewService/:path*",
-      "destination": "http://mazadpalestine.runasp.net/NewService/:path*"
+      "destination": "https://mazadpalestine.runasp.net/NewService/:path*"
     },
     {
       "source": "/NewService/images/:path*",
-      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "destination": "https://mazadpalestine.runasp.net/NewService/images/:path*",
       "has": [
         {
           "type": "header",
@@ -144,7 +144,7 @@
     },
     {
       "source": "/NewService/images/:path*",
-      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "destination": "https://mazadpalestine.runasp.net/NewService/images/:path*",
       "has": [
         {
           "type": "query",
@@ -154,7 +154,7 @@
     },
     {
       "source": "/NewService/images/:path*",
-      "destination": "http://mazadpalestine.runasp.net/NewService/images/:path*",
+      "destination": "https://mazadpalestine.runasp.net/NewService/images/:path*",
       "has": [
         {
           "type": "header",
@@ -165,35 +165,35 @@
     },
     {
       "source": "/NewServiceCategory/:path*",
-      "destination": "http://mazadpalestine.runasp.net/NewServiceCategory/:path*"
+      "destination": "https://mazadpalestine.runasp.net/NewServiceCategory/:path*"
     },
     {
       "source": "/LaptopPrediction/:path*",
-      "destination": "http://mazadpalestine.runasp.net/LaptopPrediction/:path*"
+      "destination": "https://mazadpalestine.runasp.net/LaptopPrediction/:path*"
     },
     {
       "source": "/CarPrediction/:path*",
-      "destination": "http://mazadpalestine.runasp.net/CarPrediction/:path*"
+      "destination": "https://mazadpalestine.runasp.net/CarPrediction/:path*"
     },
     {
       "source": "/Phone/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Phone/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Phone/:path*"
     },
     {
       "source": "/api/:path*",
-      "destination": "http://mazadpalestine.runasp.net/api/:path*"
+      "destination": "https://mazadpalestine.runasp.net/api/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "http://mazadpalestine.runasp.net/auth/:path*"
+      "destination": "https://mazadpalestine.runasp.net/auth/:path*"
     },
     {
       "source": "/Search",
-      "destination": "http://mazadpalestine.runasp.net/Search"
+      "destination": "https://mazadpalestine.runasp.net/Search"
     },
     {
       "source": "/Search/:path*",
-      "destination": "http://mazadpalestine.runasp.net/Search/:path*"
+      "destination": "https://mazadpalestine.runasp.net/Search/:path*"
     },
     {
       "source": "/(.*)",
@@ -279,7 +279,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: http://mazadpalestine.runasp.net/uploads/ http://mazadpalestine.runasp.net/uploads/images/ http://mazadpalestine.runasp.net/uploads/profile-pictures/ https://mzadpalestine.vercel.app/uploads/ https://mzadpalestine.vercel.app/uploads/profile-pictures/ https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://mazadpalestine.runasp.net https://mzadpalestine.vercel.app https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com; frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://pagead2.googlesyndication.com"
+          "value": "default-src 'self' https://mazadpalestine.runasp.net httpss://mzadpalestine.vercel.app httpss://*.google.com httpss://*.googleapis.com httpss://*.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' httpss://*.google.com httpss://*.googleapis.com httpss://*.gstatic.com httpss://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' httpss://fonts.googleapis.com; img-src 'self' data: httpss: https://mazadpalestine.runasp.net/uploads/ https://mazadpalestine.runasp.net/uploads/images/ https://mazadpalestine.runasp.net/uploads/profile-pictures/ httpss://mzadpalestine.vercel.app/uploads/ httpss://mzadpalestine.vercel.app/uploads/profile-pictures/ httpss://*.google.com httpss://*.googleapis.com httpss://*.gstatic.com httpss://pagead2.googlesyndication.com; font-src 'self' data: httpss://fonts.gstatic.com; connect-src 'self' https://mazadpalestine.runasp.net httpss://mzadpalestine.vercel.app httpss://*.google.com httpss://*.googleapis.com httpss://*.gstatic.com httpss://pagead2.googlesyndication.com; frame-src 'self' httpss://*.google.com httpss://*.googleapis.com httpss://*.gstatic.com httpss://pagead2.googlesyndication.com"
         }
       ]
     }
